@@ -11,7 +11,7 @@ from chainer import cuda, optimizers, Chain, serializers
 import chainer.functions as F
 import chainer.links as L
 import matplotlib.pyplot as plt
-from skimage import color, io, transform
+from skimage import io, transform
 import time
 import copy
 import tqdm
@@ -21,14 +21,17 @@ import tqdm
 class Convnet(Chain):
     def __init__(self):
         super(Convnet, self).__init__(
-            conv1=L.Convolution2D(3, 16, 3, stride=2, pad=1),
-            conv2=L.Convolution2D(16, 32, 3, stride=1, pad=1),
-            conv3=L.Convolution2D(32, 32, 3, stride=2, pad=1),
-            conv4=L.Convolution2D(32, 64, 3, stride=1, pad=1),
-            conv5=L.Convolution2D(64, 64, 3, stride=2, pad=1),
+            conv1=L.Convolution2D(3, 64, 3, stride=2, pad=1),
+            conv2=L.Convolution2D(64, 64, 3, stride=2, pad=1),
+            conv3=L.Convolution2D(64, 128, 3, stride=2, pad=1),
+            conv4=L.Convolution2D(128, 128, 3, stride=2, pad=1),
+            conv5=L.Convolution2D(128, 256, 3, stride=2, pad=1),
+            conv6=L.Convolution2D(256, 256, 3, stride=2, pad=1),
+            conv7=L.Convolution2D(256, 512, 3, stride=2, pad=1),
+            conv8=L.Convolution2D(512, 512, 3, stride=2, pad=1),
 
-            l1=L.Linear(254016, 250),
-            l2=L.Linear(250, 1),
+            l1=L.Linear(2048, 1000),
+            l2=L.Linear(1000, 1),
         )
 
     def network(self, X):
@@ -37,6 +40,9 @@ class Convnet(Chain):
         h = F.relu(self.conv3(h))
         h = F.relu(self.conv4(h))
         h = F.relu(self.conv5(h))
+        h = F.relu(self.conv6(h))
+        h = F.relu(self.conv7(h))
+        h = F.relu(self.conv8(h))
         h = F.relu(self.l1(h))
         y = self.l2(h)
         return y
@@ -60,53 +66,15 @@ class Convnet(Chain):
         return np.mean(losses)
 
 
-def random_aspect_ratio_and_resize_image(image):
-    h_image, w_image = image.shape[:2]
-
-    while True:
-        aspect_ratio = np.random.rand() * 2  # 0.5~2の乱数を生成
-        if aspect_ratio > 0.5:
-            break
-
-    w_image = w_image * aspect_ratio
-
-    square_image = transform.resize(image, (500, 500))
-
-    if h_image >= w_image:
-        h_image = int(h_image * (500.0 / w_image))
-        if (h_image % 2) == 1:
-            h_image = h_image + 1
-        w_image = 500
-        resize_image = transform.resize(image, (h_image, w_image))
-        diff = h_image - w_image
-        margin = int(diff / 2)
-        if margin == 0:
-            square_image = resize_image
-        else:
-            square_image = resize_image[margin:-margin, :]
-    else:
-        w_image = int(w_image * (500.0 / h_image))
-        if (w_image % 2) == 1:
-            w_image = w_image + 1
-        h_image = 500
-        resize_image = transform.resize(image, (h_image, w_image))
-        diff = w_image - h_image
-        margin = int(diff / 2)
-        if margin == 0:
-            square_image = resize_image
-        else:
-            square_image = resize_image[:, margin:-margin]
-
-    return square_image, aspect_ratio
-
-
 def random_aspect_ratio_and_square_image(image):
     h_image, w_image = image.shape[:2]
     T = 0
 
     while True:
         aspect_ratio = np.random.rand() * 4  # 0.5~2の乱数を生成
-        if aspect_ratio > 0.25:
+        if aspect_ratio > 0 and aspect_ratio < 0.5:
+            break
+        elif aspect_ratio > 2.0 and aspect_ratio < 4.0:
             break
 
     square_image = transform.resize(image, (500, 500))
@@ -168,7 +136,7 @@ if __name__ == '__main__':
     max_iteration = 1000  # 繰り返し回数
     batch_size = 25  # ミニバッチサイズ
     valid_size = 100
-    learning_rate = 0.1
+    learning_rate = 0.01
 
     model = Convnet().to_gpu()
     # Optimizerの設定
