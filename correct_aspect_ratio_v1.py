@@ -11,7 +11,7 @@ from chainer import cuda, optimizers, Chain, serializers
 import chainer.functions as F
 import chainer.links as L
 import matplotlib.pyplot as plt
-from skimage import io, transform
+from skimage import io, transform, draw
 import time
 import copy
 import tqdm
@@ -21,47 +21,56 @@ import tqdm
 class Convnet(Chain):
     def __init__(self):
         super(Convnet, self).__init__(
-            conv1=L.Convolution2D(3, 64, 3, stride=2, pad=1),
+            conv1=L.Convolution2D(1, 64, 3, stride=2, pad=1),
+            norm1=L.BatchNormalization(64),
             conv2=L.Convolution2D(64, 64, 3, stride=2, pad=1),
+            norm2=L.BatchNormalization(64),
             conv3=L.Convolution2D(64, 128, 3, stride=2, pad=1),
+            norm3=L.BatchNormalization(128),
             conv4=L.Convolution2D(128, 128, 3, stride=2, pad=1),
+            norm4=L.BatchNormalization(128),
             conv5=L.Convolution2D(128, 256, 3, stride=2, pad=1),
+            norm5=L.BatchNormalization(256),
             conv6=L.Convolution2D(256, 256, 3, stride=2, pad=1),
+            norm6=L.BatchNormalization(256),
             conv7=L.Convolution2D(256, 512, 3, stride=2, pad=1),
+            norm7=L.BatchNormalization(512),
             conv8=L.Convolution2D(512, 512, 3, stride=2, pad=1),
+            norm8=L.BatchNormalization(512),
 
             l1=L.Linear(2048, 1000),
+            norm9=L.BatchNormalization(1000),
             l2=L.Linear(1000, 1),
         )
 
-    def network(self, X):
-        h = F.relu(self.conv1(X))
-        h = F.relu(self.conv2(h))
-        h = F.relu(self.conv3(h))
-        h = F.relu(self.conv4(h))
-        h = F.relu(self.conv5(h))
-        h = F.relu(self.conv6(h))
-        h = F.relu(self.conv7(h))
-        h = F.relu(self.conv8(h))
-        h = F.relu(self.l1(h))
+    def network(self, X, test):
+        h = F.relu(self.norm1(self.conv1(X), test=test))
+        h = F.relu(self.norm2(self.conv2(h), test=test))
+        h = F.relu(self.norm3(self.conv3(h), test=test))
+        h = F.relu(self.norm4(self.conv4(h), test=test))
+        h = F.relu(self.norm5(self.conv5(h), test=test))
+        h = F.relu(self.norm6(self.conv6(h), test=test))
+        h = F.relu(self.norm7(self.conv7(h), test=test))
+        h = F.relu(self.norm8(self.conv8(h), test=test))
+        h = F.relu(self.norm9(self.l1(h), test=test))
         y = self.l2(h)
         return y
 
-    def forward(self, X):
-        y = self.network(X)
+    def forward(self, X, test):
+        y = self.network(X, test)
         return y
 
-    def lossfun(self, X, t):
-        y = self.forward(X)
+    def lossfun(self, X, t, test):
+        y = self.forward(X, test)
         loss = F.sigmoid_cross_entropy(y, t)
         return loss
 
-    def loss_ave(self, image_list, num_batches):
+    def loss_ave(self, image_list, num_batches, test):
         losses = []
         total_data = np.arange(len(image_list))
         for indexes in np.array_split(total_data, num_batches):
             X_batch, T_batch = read_images_and_T(image_list, indexes)
-            loss = self.lossfun(X_batch, T_batch)
+            loss = self.lossfun(X_batch, T_batch, test)
             losses.append(cuda.to_cpu(loss.data))
         return np.mean(losses)
 
@@ -113,12 +122,11 @@ def random_aspect_ratio_and_square_image(image):
 
 def read_images_and_T(image_list, indexes):
     images = []
-    t = []
     count = 0
     T = np.zeros((len(indexes), 1))
 
     for i in indexes:
-        image = io.imread(image_list[i])
+        image = create_image()
         resize_image, t = random_aspect_ratio_and_square_image(image)
         images.append(resize_image)
         T[count] = t
@@ -131,12 +139,37 @@ def read_images_and_T(image_list, indexes):
     return cuda.to_gpu(X), cuda.to_gpu(T)
 
 
+def create_image():
+    image = np.zeros((224, 224), dtype=np.float64)
+    rand = np.random.rand()
+    x = np.random.randint(56, 168)
+    y = np.random.randint(56, 168)
+    r = np.random.randint(28, 56)
+
+    if rand > 0.7:  # 半々の確率で
+        rr, cc = draw.circle(x, y, r)
+        image[rr, cc] = 1
+    elif rand > 0.3:
+        for i in range(0, 56):
+            rr, cr = draw.line(x+i, y, x+i, y+56)
+            image[rr, cr] = 1
+    else:
+        rr, cc = draw.circle(x, y, r)
+        image[rr, cc] = 1
+        for i in range(0, 56):
+            rr, cr = draw.line(x+i, y, x+i, y+56)
+            image[rr, cr] = 1
+
+    image = np.reshape(image, (224, 224, 1))
+    return image
+
+
 if __name__ == '__main__':
     # 超パラメータ
     max_iteration = 1000  # 繰り返し回数
     batch_size = 25  # ミニバッチサイズ
-    valid_size = 100
-    learning_rate = 0.01
+    valid_size = 1000
+    learning_rate = 0.001
 
     model = Convnet().to_gpu()
     # Optimizerの設定
@@ -171,7 +204,7 @@ if __name__ == '__main__':
                 # 勾配を初期化
                 optimizer.zero_grads()
                 # 順伝播を計算し、誤差と精度を取得
-                loss = model.lossfun(X_batch, T_batch)
+                loss = model.lossfun(X_batch, T_batch, False)
                 # 逆伝搬を計算
                 loss.backward()
                 optimizer.update()
@@ -182,7 +215,7 @@ if __name__ == '__main__':
             total_time = time_end - time_origin
             epoch_loss.append(np.mean(losses))
 
-            loss_valid = model.loss_ave(valid_image_list, num_batches)
+            loss_valid = model.loss_ave(valid_image_list, num_batches, False)
 
             epoch_valid_loss.append(loss_valid)
 
