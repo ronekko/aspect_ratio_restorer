@@ -142,8 +142,10 @@ def create_image():
     x_square = np.random.randint(0, 300)
     y_square = np.random.randint(0, 300)
     r_square = np.random.randint(50, 200)
-    rr, cc = draw.circle(x_circle, y_circle, r_circle)
-    image[rr, cc] = 1
+    for i in range(0, r_square):
+        rr, cr = draw.line(
+                x_square+i, y_square, x_square+i, y_square+r_square)
+        image[rr, cr] = 1
 #    if rand > 0.7:  # 半々の確率で
 #        rr, cc = draw.circle(x_circle, y_circle, r_circle)
 #        image[rr, cc] = 1
