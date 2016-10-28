@@ -33,13 +33,9 @@ class Convnet(Chain):
             norm5=L.BatchNormalization(256),
             conv6=L.Convolution2D(256, 256, 3, stride=2, pad=1),
             norm6=L.BatchNormalization(256),
-            conv7=L.Convolution2D(256, 512, 3, stride=2, pad=1),
-            norm7=L.BatchNormalization(512),
-            conv8=L.Convolution2D(512, 512, 3, stride=2, pad=1),
-            norm8=L.BatchNormalization(512),
 
-            l1=L.Linear(2048, 1000),
-            norm9=L.BatchNormalization(1000),
+            l1=L.Linear(4096, 1000),
+            norm7=L.BatchNormalization(1000),
             l2=L.Linear(1000, 1),
         )
 
@@ -50,9 +46,7 @@ class Convnet(Chain):
         h = F.relu(self.norm4(self.conv4(h), test=test))
         h = F.relu(self.norm5(self.conv5(h), test=test))
         h = F.relu(self.norm6(self.conv6(h), test=test))
-        h = F.relu(self.norm7(self.conv7(h), test=test))
-        h = F.relu(self.norm8(self.conv8(h), test=test))
-        h = F.relu(self.norm9(self.l1(h), test=test))
+        h = F.relu(self.norm7(self.l1(h), test=test))
         y = self.l2(h)
         return y
 
@@ -86,17 +80,17 @@ def random_aspect_ratio_and_square_image(image):
         elif aspect_ratio > 2.0 and aspect_ratio < 4.0:
             break
 
-    square_image = transform.resize(image, (500, 500))
+    square_image = transform.resize(image, (224, 224))
 
     if np.random.rand() > 0.5:  # 半々の確率で
         w_image = w_image * aspect_ratio
         T = 1
 
     if h_image >= w_image:
-        h_image = int(h_image * (500.0 / w_image))
+        h_image = int(h_image * (224.0 / w_image))
         if (h_image % 2) == 1:
             h_image = h_image + 1
-        w_image = 500
+        w_image = 224
         resize_image = transform.resize(image, (h_image, w_image))
         diff = h_image - w_image
         margin = int(diff / 2)
@@ -105,10 +99,10 @@ def random_aspect_ratio_and_square_image(image):
         else:
             square_image = resize_image[margin:-margin, :]
     else:
-        w_image = int(w_image * (500.0 / h_image))
+        w_image = int(w_image * (224.0 / h_image))
         if (w_image % 2) == 1:
             w_image = w_image + 1
-        h_image = 500
+        h_image = 224
         resize_image = transform.resize(image, (h_image, w_image))
         diff = w_image - h_image
         margin = int(diff / 2)
@@ -140,27 +134,32 @@ def read_images_and_T(image_list, indexes):
 
 
 def create_image():
-    image = np.zeros((224, 224), dtype=np.float64)
+    image = np.zeros((500, 500), dtype=np.float64)
     rand = np.random.rand()
-    x = np.random.randint(56, 168)
-    y = np.random.randint(56, 168)
-    r = np.random.randint(28, 56)
+    x_circle = np.random.randint(150, 350)
+    y_circle = np.random.randint(150, 350)
+    r_circle = np.random.randint(50, 150)
+    x_square = np.random.randint(0, 300)
+    y_square = np.random.randint(0, 300)
+    r_square = np.random.randint(50, 200)
 
     if rand > 0.7:  # 半々の確率で
-        rr, cc = draw.circle(x, y, r)
+        rr, cc = draw.circle(x_circle, y_circle, r_circle)
         image[rr, cc] = 1
     elif rand > 0.3:
-        for i in range(0, 56):
-            rr, cr = draw.line(x+i, y, x+i, y+56)
+        for i in range(0, r_square):
+            rr, cr = draw.line(
+                    x_square+i, y_square, x_square+i, y_square+r_square)
             image[rr, cr] = 1
     else:
-        rr, cc = draw.circle(x, y, r)
+        rr, cc = draw.circle(x_circle, y_circle, r_circle)
         image[rr, cc] = 1
-        for i in range(0, 56):
-            rr, cr = draw.line(x+i, y, x+i, y+56)
+        for i in range(0, r_square):
+            rr, cr = draw.line(
+                    x_square+i, y_square, x_square+i, y_square+r_square)
             image[rr, cr] = 1
 
-    image = np.reshape(image, (224, 224, 1))
+    image = np.reshape(image, (500, 500, 1))
     return image
 
 
@@ -168,8 +167,9 @@ if __name__ == '__main__':
     # 超パラメータ
     max_iteration = 1000  # 繰り返し回数
     batch_size = 25  # ミニバッチサイズ
+    train_size = 1000
     valid_size = 1000
-    learning_rate = 0.001
+    learning_rate = 0.0001
 
     model = Convnet().to_gpu()
     # Optimizerの設定
@@ -187,8 +187,8 @@ if __name__ == '__main__':
         image_list.append(path)
     f.close()
 
-    train_image_list = image_list[:valid_size]
-    valid_image_list = image_list[valid_size:valid_size + 100]
+    train_image_list = image_list[:train_size]
+    valid_image_list = image_list[-valid_size:]
 
     num_train = len(train_image_list)
     num_batches = num_train / batch_size
@@ -246,8 +246,8 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print "割り込み停止が実行されました"
 
-    model_filename = 'model' + str(time.time()) + '.npz'
-    serializers.save_npz(model_filename, model_best)
+#    model_filename = 'model' + str(time.time()) + '.npz'
+#    serializers.save_npz(model_filename, model_best)
 
     print 'max_iteration:', max_iteration
     print 'learning_rate:', learning_rate
