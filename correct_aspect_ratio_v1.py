@@ -75,7 +75,7 @@ def random_aspect_ratio_and_square_image(image):
 
     while True:
         aspect_ratio = np.random.rand() * 4  # 0.5~2の乱数を生成
-        if aspect_ratio > 0 and aspect_ratio < 0.5:
+        if aspect_ratio > 0.2 and aspect_ratio < 0.5:
             break
         elif aspect_ratio > 2.0 and aspect_ratio < 4.0:
             break
@@ -87,29 +87,33 @@ def random_aspect_ratio_and_square_image(image):
         T = 1
 
     if h_image >= w_image:
-        h_image = int(h_image * (224.0 / w_image))
-        if (h_image % 2) == 1:
-            h_image = h_image + 1
-        w_image = 224
+        w_image = int(w_image * (224.0 / h_image))
+        if (w_image % 2) == 1:
+            w_image = w_image + 1
+        h_image = 224
         resize_image = transform.resize(image, (h_image, w_image))
         diff = h_image - w_image
         margin = int(diff / 2)
         if margin == 0:
             square_image = resize_image
         else:
-            square_image = resize_image[margin:-margin, :]
+            square_image[:, :margin] = 0
+            square_image[:, margin:-margin] = resize_image
+            square_image[:, -margin:] = 0
     else:
-        w_image = int(w_image * (224.0 / h_image))
-        if (w_image % 2) == 1:
-            w_image = w_image + 1
-        h_image = 224
+        h_image = int(h_image * (224.0 / w_image))
+        if (h_image % 2) == 1:
+            h_image = h_image + 1
+        w_image = 224
         resize_image = transform.resize(image, (h_image, w_image))
         diff = w_image - h_image
         margin = int(diff / 2)
         if margin == 0:
             square_image = resize_image
         else:
-            square_image = resize_image[:, margin:-margin]
+            square_image[:margin, :] = 0
+            square_image[margin:-margin, :] = resize_image
+            square_image[-margin:, :] = 0
 
     return square_image, T
 
@@ -144,25 +148,25 @@ def create_image():
     r_square = np.random.randint(50, 200)
     rr, cc = draw.circle(x_circle, y_circle, r_circle)
     image[rr, cc] = 1
-    for i in range(0, r_square):
-        rr, cr = draw.line(
-                x_square+i, y_square, x_square+i, y_square+r_square)
-        image[rr, cr] = 1
-#    if rand > 0.7:  # 半々の確率で
-#        rr, cc = draw.circle(x_circle, y_circle, r_circle)
-#        image[rr, cc] = 1
-#    elif rand > 0.3:
-#        for i in range(0, r_square):
-#            rr, cr = draw.line(
-#                    x_square+i, y_square, x_square+i, y_square+r_square)
-#            image[rr, cr] = 1
-#    else:
-#        rr, cc = draw.circle(x_circle, y_circle, r_circle)
-#        image[rr, cc] = 1
-#        for i in range(0, r_square):
-#            rr, cr = draw.line(
-#                    x_square+i, y_square, x_square+i, y_square+r_square)
-#            image[rr, cr] = 1
+#    for i in range(0, r_square):
+#        rr, cr = draw.line(
+#                x_square+i, y_square, x_square+i, y_square+r_square)
+#        image[rr, cr] = 1
+    if rand > 0.7:  # 半々の確率で
+        rr, cc = draw.circle(x_circle, y_circle, r_circle)
+        image[rr, cc] = 1
+    elif rand > 0.3:
+        for i in range(0, r_square):
+            rr, cr = draw.line(
+                    x_square+i, y_square, x_square+i, y_square+r_square)
+            image[rr, cr] = 1
+    else:
+        rr, cc = draw.circle(x_circle, y_circle, r_circle)
+        image[rr, cc] = 1
+        for i in range(0, r_square):
+            rr, cr = draw.line(
+                    x_square+i, y_square, x_square+i, y_square+r_square)
+            image[rr, cr] = 1
 
     image = np.reshape(image, (500, 500, 1))
     return image
