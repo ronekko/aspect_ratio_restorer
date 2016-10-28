@@ -142,22 +142,23 @@ def create_image():
     x_square = np.random.randint(0, 300)
     y_square = np.random.randint(0, 300)
     r_square = np.random.randint(50, 200)
-
-    if rand > 0.7:  # 半々の確率で
-        rr, cc = draw.circle(x_circle, y_circle, r_circle)
-        image[rr, cc] = 1
-    elif rand > 0.3:
-        for i in range(0, r_square):
-            rr, cr = draw.line(
-                    x_square+i, y_square, x_square+i, y_square+r_square)
-            image[rr, cr] = 1
-    else:
-        rr, cc = draw.circle(x_circle, y_circle, r_circle)
-        image[rr, cc] = 1
-        for i in range(0, r_square):
-            rr, cr = draw.line(
-                    x_square+i, y_square, x_square+i, y_square+r_square)
-            image[rr, cr] = 1
+    rr, cc = draw.circle(x_circle, y_circle, r_circle)
+    image[rr, cc] = 1
+#    if rand > 0.7:  # 半々の確率で
+#        rr, cc = draw.circle(x_circle, y_circle, r_circle)
+#        image[rr, cc] = 1
+#    elif rand > 0.3:
+#        for i in range(0, r_square):
+#            rr, cr = draw.line(
+#                    x_square+i, y_square, x_square+i, y_square+r_square)
+#            image[rr, cr] = 1
+#    else:
+#        rr, cc = draw.circle(x_circle, y_circle, r_circle)
+#        image[rr, cc] = 1
+#        for i in range(0, r_square):
+#            rr, cr = draw.line(
+#                    x_square+i, y_square, x_square+i, y_square+r_square)
+#            image[rr, cr] = 1
 
     image = np.reshape(image, (500, 500, 1))
     return image
@@ -252,4 +253,5 @@ if __name__ == '__main__':
     print 'max_iteration:', max_iteration
     print 'learning_rate:', learning_rate
     print 'batch_size:', batch_size
-    print 'num_train', num_train
+    print 'num_train', train_size
+    print 'num_valid', valid_size
