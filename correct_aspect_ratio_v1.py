@@ -11,7 +11,7 @@ from chainer import cuda, optimizers, Chain, serializers
 import chainer.functions as F
 import chainer.links as L
 import matplotlib.pyplot as plt
-from skimage import io, transform, draw
+from skimage import transform, draw
 import time
 import copy
 import tqdm
@@ -57,16 +57,19 @@ class Convnet(Chain):
     def lossfun(self, X, t, test):
         y = self.forward(X, test)
         loss = F.sigmoid_cross_entropy(y, t)
-        return loss
+        accuracy = F.binary_accuracy(y, t)
+        return loss, accuracy
 
     def loss_ave(self, image_list, num_batches, test):
         losses = []
+        accuracies = []
         total_data = np.arange(len(image_list))
         for indexes in np.array_split(total_data, num_batches):
             X_batch, T_batch = read_images_and_T(image_list, indexes)
-            loss = self.lossfun(X_batch, T_batch, test)
+            loss, accuracy = self.lossfun(X_batch, T_batch, test)
             losses.append(cuda.to_cpu(loss.data))
-        return np.mean(losses)
+            accuracies.append(cuda.to_cpu(accuracy.data))
+        return np.mean(losses), np.mean(accuracies)
 
 
 def random_aspect_ratio_and_square_image(image):
@@ -146,27 +149,21 @@ def create_image():
     x_square = np.random.randint(0, 300)
     y_square = np.random.randint(0, 300)
     r_square = np.random.randint(50, 200)
-    rr, cc = draw.circle(x_circle, y_circle, r_circle)
-    image[rr, cc] = 1
-    for i in range(0, r_square):
-        rr, cr = draw.line(
-                x_square+i, y_square, x_square+i, y_square+r_square)
-        image[rr, cr] = 1
-#    if rand > 0.7:  # 半々の確率で
-#        rr, cc = draw.circle(x_circle, y_circle, r_circle)
-#        image[rr, cc] = 1
-#    elif rand > 0.3:
-#        for i in range(0, r_square):
-#            rr, cr = draw.line(
-#                    x_square+i, y_square, x_square+i, y_square+r_square)
-#            image[rr, cr] = 1
-#    else:
-#        rr, cc = draw.circle(x_circle, y_circle, r_circle)
-#        image[rr, cc] = 1
-#        for i in range(0, r_square):
-#            rr, cr = draw.line(
-#                    x_square+i, y_square, x_square+i, y_square+r_square)
-#            image[rr, cr] = 1
+    if rand > 0.7:  # 半々の確率で
+        rr, cc = draw.circle(x_circle, y_circle, r_circle)
+        image[rr, cc] = 1
+    elif rand > 0.3:
+        for i in range(0, r_square):
+            rr, cr = draw.line(
+                    x_square+i, y_square, x_square+i, y_square+r_square)
+            image[rr, cr] = 1
+    else:
+        rr, cc = draw.circle(x_circle, y_circle, r_circle)
+        image[rr, cc] = 1
+        for i in range(0, r_square):
+            rr, cr = draw.line(
+                    x_square+i, y_square, x_square+i, y_square+r_square)
+            image[rr, cr] = 1
 
     image = np.reshape(image, (500, 500, 1))
     return image
@@ -188,6 +185,8 @@ if __name__ == '__main__':
     image_list = []
     epoch_loss = []
     epoch_valid_loss = []
+    epoch_accuracy = []
+    epoch_valid_accuracy = []
     loss_valid_best = np.inf
 
     f = open(r"file_list.txt", "r")
@@ -208,25 +207,30 @@ if __name__ == '__main__':
             time_begin = time.time()
             permu = range(num_train)
             losses = []
+            accuracies = []
             for indexes in tqdm.tqdm(np.array_split(permu, num_batches)):
                 X_batch, T_batch = read_images_and_T(train_image_list, indexes)
                 # 勾配を初期化
                 optimizer.zero_grads()
                 # 順伝播を計算し、誤差と精度を取得
-                loss = model.lossfun(X_batch, T_batch, False)
+                loss, accuracy = model.lossfun(X_batch, T_batch, False)
                 # 逆伝搬を計算
                 loss.backward()
                 optimizer.update()
                 losses.append(cuda.to_cpu(loss.data))
+                accuracies.append(cuda.to_cpu(accuracy.data))
 
             time_end = time.time()
             epoch_time = time_end - time_begin
             total_time = time_end - time_origin
             epoch_loss.append(np.mean(losses))
+            epoch_accuracy.append(np.mean(accuracies))
 
-            loss_valid = model.loss_ave(valid_image_list, num_batches, False)
+            loss_valid, accuracy_valid = model.loss_ave(valid_image_list,
+                                                        num_batches, False)
 
             epoch_valid_loss.append(loss_valid)
+            epoch_valid_accuracy.append(accuracy_valid)
 
             if loss_valid < loss_valid_best:
                 loss_valid_best = loss_valid
@@ -239,16 +243,20 @@ if __name__ == '__main__':
             print "loss[train]:", epoch_loss[epoch]
             print "loss[valid]:", loss_valid
             print "loss[valid_best]:", loss_valid_best
+            print "accuracy[train]:", epoch_accuracy[epoch]
+            print "accuracy[valid]:", accuracy_valid
 
             plt.plot(epoch_loss)
-            plt.title("loss_train")
-            plt.legend(["loss"], loc="upper right")
+            plt.plot(epoch_valid_loss)
+            plt.title("loss")
+            plt.legend(["train", "valid"], loc="upper right")
             plt.grid()
             plt.show()
 
-            plt.plot(epoch_valid_loss)
-            plt.title("loss_valid")
-            plt.legend(["loss"], loc="upper right")
+            plt.plot(epoch_accuracy)
+            plt.plot(epoch_valid_accuracy)
+            plt.title("accuracy")
+            plt.legend(["train", "valid"], loc="lower right")
             plt.grid()
             plt.show()
 
