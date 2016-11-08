@@ -11,7 +11,7 @@ from chainer import cuda, optimizers, Chain, serializers
 import chainer.functions as F
 import chainer.links as L
 import matplotlib.pyplot as plt
-from skimage import transform, draw
+from skimage import io, transform, draw
 import time
 import copy
 import tqdm
@@ -21,7 +21,7 @@ import tqdm
 class Convnet(Chain):
     def __init__(self):
         super(Convnet, self).__init__(
-            conv1=L.Convolution2D(1, 64, 3, stride=2, pad=1),
+            conv1=L.Convolution2D(3, 64, 3, stride=2, pad=1),
             norm1=L.BatchNormalization(64),
             conv2=L.Convolution2D(64, 64, 3, stride=2, pad=1),
             norm2=L.BatchNormalization(64),
@@ -78,7 +78,7 @@ def random_aspect_ratio_and_square_image(image):
 
     while True:
         aspect_ratio = np.random.rand() * 4  # 0.5~2の乱数を生成
-        if aspect_ratio > 0.2 and aspect_ratio < 0.5:
+        if aspect_ratio > 0.25 and aspect_ratio < 0.5:
             break
         elif aspect_ratio > 2.0 and aspect_ratio < 4.0:
             break
@@ -90,33 +90,29 @@ def random_aspect_ratio_and_square_image(image):
         T = 1
 
     if h_image >= w_image:
-        w_image = int(w_image * (224.0 / h_image))
-        if (w_image % 2) == 1:
-            w_image = w_image + 1
-        h_image = 224
+        h_image = int(h_image * (224.0 / w_image))
+        if (h_image % 2) == 1:
+            h_image = h_image + 1
+        w_image = 224
         resize_image = transform.resize(image, (h_image, w_image))
         diff = h_image - w_image
         margin = int(diff / 2)
         if margin == 0:
             square_image = resize_image
         else:
-            square_image[:, :margin] = 0
-            square_image[:, margin:-margin] = resize_image
-            square_image[:, -margin:] = 0
+            square_image = resize_image[margin:-margin, :]
     else:
-        h_image = int(h_image * (224.0 / w_image))
-        if (h_image % 2) == 1:
-            h_image = h_image + 1
-        w_image = 224
+        w_image = int(w_image * (224.0 / h_image))
+        if (w_image % 2) == 1:
+            w_image = w_image + 1
+        h_image = 224
         resize_image = transform.resize(image, (h_image, w_image))
         diff = w_image - h_image
         margin = int(diff / 2)
         if margin == 0:
             square_image = resize_image
         else:
-            square_image[:margin, :] = 0
-            square_image[margin:-margin, :] = resize_image
-            square_image[-margin:, :] = 0
+            square_image = resize_image[:, margin:-margin]
 
     return square_image, T
 
@@ -171,7 +167,7 @@ def create_image():
 
 if __name__ == '__main__':
     # 超パラメータ
-    max_iteration = 1000  # 繰り返し回数
+    max_iteration = 50  # 繰り返し回数
     batch_size = 25  # ミニバッチサイズ
     train_size = 1000
     valid_size = 1000
