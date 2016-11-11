@@ -65,61 +65,11 @@ class Convnet(Chain):
         losses = []
         accuracies = []
         for i in range(num_batches):
-            X_batch, T_batch, end = queue.get()
+            X_batch, T_batch = queue.get()
             loss, accuracy = self.lossfun(X_batch, T_batch, test)
             losses.append(cuda.to_cpu(loss.data))
             accuracies.append(cuda.to_cpu(accuracy.data))
         return np.mean(losses), np.mean(accuracies)
-
-
-def random_aspect_ratio_and_square_image(image):
-    h_image, w_image = image.shape[:2]
-    T = 0
-    min_ratio = 2.0 / 3.0
-    max_ratio = 3.0 / 2.0
-
-#    aspect_ratio = 0.66666666666
-#    if np.random.rand() > 0.5:  # 半々の確率で
-#        aspect_ratio = 1.5
-    while True:
-        aspect_ratio = np.random.rand() * 1.5  # 0.5~2の乱数を生成
-        if aspect_ratio >= min_ratio and aspect_ratio < 1.0:
-            break
-        elif aspect_ratio > 1.0 and aspect_ratio <= max_ratio:
-            break
-
-    square_image = transform.resize(image, (224, 224))
-
-    if np.random.rand() > 0.5:  # 半々の確率で
-        w_image = w_image * aspect_ratio
-        T = 1
-
-    if h_image >= w_image:
-        h_image = int(h_image * (224.0 / w_image))
-        if (h_image % 2) == 1:
-            h_image = h_image + 1
-        w_image = 224
-        resize_image = transform.resize(image, (h_image, w_image))
-        diff = h_image - w_image
-        margin = int(diff / 2)
-        if margin == 0:
-            square_image = resize_image
-        else:
-            square_image = resize_image[margin:-margin, :]
-    else:
-        w_image = int(w_image * (224.0 / h_image))
-        if (w_image % 2) == 1:
-            w_image = w_image + 1
-        h_image = 224
-        resize_image = transform.resize(image, (h_image, w_image))
-        diff = w_image - h_image
-        margin = int(diff / 2)
-        if margin == 0:
-            square_image = resize_image
-        else:
-            square_image = resize_image[:, margin:-margin]
-
-    return square_image, T
 
 
 def random_crop_and_flip(image):
@@ -156,8 +106,7 @@ def mini_batch_train(queue, batch_size, file_path):
             images = []
             image_batch = image_features[indexes.tolist()]
             T = cuda.to_gpu(targets[indexes.tolist()]).astype(np.int32)
-            end = False
-            for i in indexes:
+            for i in range(len(indexes)):
                 image = np.transpose(image_batch[i], (1, 2, 0))
                 image = random_crop_and_flip(image)
                 image = transform.resize(image, (224, 224))
@@ -166,10 +115,7 @@ def mini_batch_train(queue, batch_size, file_path):
             X = np.transpose(X, (0, 3, 1, 2))
             X = X.astype(np.float32)
             X = cuda.to_gpu(X)
-
-            if indexes[-1] == data[-1]:
-                end = True
-            queue.put((X, T, end))
+            queue.put((X, T))
 
 
 def mini_batch_test(queue, batch_size, file_path):
@@ -188,8 +134,7 @@ def mini_batch_test(queue, batch_size, file_path):
             images = []
             image_batch = image_features[indexes.tolist()]
             T = cuda.to_gpu(targets[indexes.tolist()]).astype(np.int32)
-            end = False
-            for i in indexes:
+            for i in range(len(indexes)):
                 image = np.transpose(image_batch[i], (1, 2, 0))
                 image = random_crop_and_flip(image)
                 image = transform.resize(image, (224, 224))
@@ -198,10 +143,7 @@ def mini_batch_test(queue, batch_size, file_path):
             X = np.transpose(X, (0, 3, 1, 2))
             X = X.astype(np.float32)
             X = cuda.to_gpu(X)
-
-            if indexes[-1] == data[-1]:
-                end = True
-            queue.put((X, T, end))
+            queue.put((X, T))
 
 
 if __name__ == '__main__':
@@ -211,7 +153,7 @@ if __name__ == '__main__':
     learning_rate = 0.001
     num_train = 10000
     num_valid = 10000
-    file_path = r'E:\stanford_Dogs_Dataset\binary\raw_dataset_max_aspect_ratio_1.5\raw_dataset_max_aspect_ratio_1.5.hdf5'
+    file_path = r'E:\stanford_Dogs_Dataset\raw_dataset_binary\max_aspect_ratio_1.5\max_aspect_ratio_1.5.hdf5'
 
     queue_train = Queue(10)
     process_train = Process(target=mini_batch_train,
@@ -244,7 +186,7 @@ if __name__ == '__main__':
             losses = []
             accuracies = []
             for i in tqdm.tqdm(range(num_batches)):
-                X_batch, T_batch, end = queue_train.get()
+                X_batch, T_batch = queue_train.get()
                 # 勾配を初期化
                 optimizer.zero_grads()
                 # 順伝播を計算し、誤差と精度を取得
