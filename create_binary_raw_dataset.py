@@ -127,7 +127,7 @@ def output_hdf5(path_list, data_chw, output_root_dir, min_ratio, max_ratio):
 
 def main(data_location, output_location, output_size, min_ratio, max_ratio):
     dataset_root_dir = r'stanford_Dogs_Dataset\Images'
-    output_dir_name = 'raw_dataset_max_aspect_ratio_' + str(max_ratio)
+    output_dir_name = 'max_aspect_ratio_' + str(max_ratio)
     output_root_dir = os.path.join(output_location, output_dir_name)
     data_chw = (3, output_size, output_size)
 
@@ -145,7 +145,7 @@ def main(data_location, output_location, output_size, min_ratio, max_ratio):
 
 if __name__ == '__main__':
     data_location = r'E:'
-    output_location = r'E:\stanford_Dogs_Dataset\binary'
+    output_location = r'E:\stanford_Dogs_Dataset\raw_dataset_binary'
     output_size = 224
     min_ratio = 2.0 / 3.0
     max_ratio = 3.0 / 2.0
