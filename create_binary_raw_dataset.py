@@ -99,7 +99,7 @@ def output_hdf5(path_list, data_chw, output_root_dir, min_ratio, max_ratio):
     image_features = f.create_dataset('image_features',
                                       (num_data, channel, height, width),
                                       dtype='uint8')
-    targets = f.create_dataset('targets', (num_data,), dtype='uint8')
+    targets = f.create_dataset('targets', (num_data, 1), dtype='uint8')
 
     image_features.dims[0].label = 'batch'
     image_features.dims[1].label = 'height'
