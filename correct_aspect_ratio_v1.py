@@ -21,7 +21,7 @@ import tqdm
 class Convnet(Chain):
     def __init__(self):
         super(Convnet, self).__init__(
-            conv1=L.Convolution2D(3, 64, 3, stride=2, pad=1),
+            conv1=L.Convolution2D(1, 64, 3, stride=2, pad=1),
             norm1=L.BatchNormalization(64),
             conv2=L.Convolution2D(64, 64, 3, stride=2, pad=1),
             norm2=L.BatchNormalization(64),
@@ -60,12 +60,12 @@ class Convnet(Chain):
         accuracy = F.binary_accuracy(y, t)
         return loss, accuracy
 
-    def loss_ave(self, image_list, num_batches, test):
+    def loss_ave(self, num_data, num_batches, test):
         losses = []
         accuracies = []
-        total_data = np.arange(len(image_list))
+        total_data = np.arange(num_data)
         for indexes in np.array_split(total_data, num_batches):
-            X_batch, T_batch = read_images_and_T(image_list, indexes)
+            X_batch, T_batch = read_images_and_T(indexes)
             loss, accuracy = self.lossfun(X_batch, T_batch, test)
             losses.append(cuda.to_cpu(loss.data))
             accuracies.append(cuda.to_cpu(accuracy.data))
@@ -117,7 +117,7 @@ def random_aspect_ratio_and_square_image(image):
     return square_image, T
 
 
-def read_images_and_T(image_list, indexes):
+def read_images_and_T(indexes):
     images = []
     count = 0
     T = np.zeros((len(indexes), 1))
@@ -185,27 +185,19 @@ if __name__ == '__main__':
     epoch_valid_accuracy = []
     loss_valid_best = np.inf
 
-    f = open(r"file_list.txt", "r")
-    for path in f:
-        path = path.strip()
-        image_list.append(path)
-    f.close()
-
-    train_image_list = image_list[:train_size]
-    valid_image_list = image_list[-valid_size:]
-
-    num_train = len(train_image_list)
-    num_batches = num_train / batch_size
+    num_train = 1000
+    num_valid = 1000
+    num_batches = train_size / batch_size
 
     time_origin = time.time()
     try:
         for epoch in range(max_iteration):
             time_begin = time.time()
-            permu = range(num_train)
+            permu = range(train_size)
             losses = []
             accuracies = []
             for indexes in tqdm.tqdm(np.array_split(permu, num_batches)):
-                X_batch, T_batch = read_images_and_T(train_image_list, indexes)
+                X_batch, T_batch = read_images_and_T(indexes)
                 # 勾配を初期化
                 optimizer.zero_grads()
                 # 順伝播を計算し、誤差と精度を取得
@@ -222,7 +214,7 @@ if __name__ == '__main__':
             epoch_loss.append(np.mean(losses))
             epoch_accuracy.append(np.mean(accuracies))
 
-            loss_valid, accuracy_valid = model.loss_ave(valid_image_list,
+            loss_valid, accuracy_valid = model.loss_ave(valid_size,
                                                         num_batches, False)
 
             epoch_valid_loss.append(loss_valid)
