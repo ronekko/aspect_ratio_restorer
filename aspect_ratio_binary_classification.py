@@ -150,7 +150,7 @@ if __name__ == '__main__':
     # 超パラメータ
     max_iteration = 1000  # 繰り返し回数
     batch_size = 100  # ミニバッチサイズ
-    learning_rate = 0.001
+    learning_rate = 0.01
     num_train = 10000
     num_valid = 10000
     file_path = r'E:\stanford_Dogs_Dataset\raw_dataset_binary\max_aspect_ratio_1.5\max_aspect_ratio_1.5.hdf5'
