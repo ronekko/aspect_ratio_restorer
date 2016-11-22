@@ -15,6 +15,7 @@ from skimage import io, transform, draw
 import time
 import copy
 import tqdm
+import cv2
 
 
 # ネットワークの定義
@@ -102,8 +103,9 @@ class RandomCircleSquareDataset(object):
                     r = 1
                 image = change_aspect_ratio(image, r)
                 square_image = crop_center(image)
-                resize_image = transform.resize(
+                resize_image = cv2.resize(
                     square_image, (self.output_size, self.output_size))
+                resize_image = resize_image[..., None]
                 images.append(resize_image)
                 ts.append(t)
             X = np.stack(images, axis=0)
@@ -181,10 +183,12 @@ def change_aspect_ratio(image, aspect_ratio):
     r = aspect_ratio
 
     if r > 1:
+        r = 1 / r
         w_image = int(w_image * r)
     else:
+        r = 1 / r
         h_image = int(h_image / float(r))
-    resize_image = transform.resize(image, (h_image, w_image))
+    resize_image = cv2.resize(image, (h_image, w_image))[..., None]
     return resize_image
 
 
