@@ -90,28 +90,27 @@ class RandomCircleSquareDataset(object):
         self.ar_min = aspect_ratio_min
 
     def read_images_and_T(self, batch_size):
-        for b in range(10):
-            images = []
-            ts = []
+        images = []
+        ts = []
 
-            for i in range(batch_size):
-                image = self.create_image()
-                t = np.random.choice(2)
-                if t == 1:
-                    r = sample_random_aspect_ratio(self.ar_max, self.ar_min)
-                else:
-                    r = 1
-                image = change_aspect_ratio(image, r)
-                square_image = crop_center(image)
-                resize_image = cv2.resize(
-                    square_image, (self.output_size, self.output_size))
-                resize_image = resize_image[..., None]
-                images.append(resize_image)
-                ts.append(t)
-            X = np.stack(images, axis=0)
-            X = np.transpose(X, (0, 3, 1, 2))
-            X = X.astype(np.float32)
-            T = np.array(ts, dtype=np.int32).reshape(-1, 1)
+        for i in range(batch_size):
+            image = self.create_image()
+            t = np.random.choice(2)
+            if t == 1:
+                r = sample_random_aspect_ratio(self.ar_max, self.ar_min)
+            else:
+                r = 1
+            image = change_aspect_ratio(image, r)
+            square_image = crop_center(image)
+            resize_image = cv2.resize(
+                square_image, (self.output_size, self.output_size))
+            resize_image = resize_image[..., None]
+            images.append(resize_image)
+            ts.append(t)
+        X = np.stack(images, axis=0)
+        X = np.transpose(X, (0, 3, 1, 2))
+        X = X.astype(np.float32)
+        T = np.array(ts, dtype=np.int32).reshape(-1, 1)
 
         return X, T
 
@@ -172,7 +171,7 @@ size_max:{}
 p:{}
 output_size:{}
 aspect_ratio_min:{}
-aspect_ratio_max:[]"""
+aspect_ratio_max:{}"""
         return template.format(self.image_size, self.cr_min, self.cr_max,
                                self.size_min, self.size_max, self.p,
                                self.output_size, self.ar_min, self.ar_max)
@@ -182,11 +181,11 @@ def change_aspect_ratio(image, aspect_ratio):
     h_image, w_image = image.shape[:2]
     r = aspect_ratio
 
-    if r > 1:
-        r = 1 / r
+    if r == 1:
+        return image
+    elif r > 1:
         w_image = int(w_image * r)
     else:
-        r = 1 / r
         h_image = int(h_image / float(r))
     resize_image = cv2.resize(image, (h_image, w_image))[..., None]
     return resize_image
@@ -237,9 +236,21 @@ if __name__ == '__main__':
     num_train = 1000
     num_valid = 100
     learning_rate = 0.0001
+    image_size = 500
+    circle_r_min = 50
+    circle_r_max = 150
+    size_min = 50
+    size_max = 200
+    p = [0.3, 0.3, 0.4]
+    output_size = 224
+    aspect_ratio_max = 4
+    aspect_ratio_min = 2
 
     model = Convnet().to_gpu()
-    dataset = RandomCircleSquareDataset()
+    dataset = RandomCircleSquareDataset(
+        image_size=500, circle_r_min=50, circle_r_max=150, size_min=50,
+        size_max=200, p=[0.3, 0.3, 0.4], output_size=224, aspect_ratio_max=4,
+        aspect_ratio_min=2)
     # Optimizerの設定
     optimizer = optimizers.AdaDelta(learning_rate)
     optimizer.setup(model)
