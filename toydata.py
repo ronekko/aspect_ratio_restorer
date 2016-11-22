@@ -63,9 +63,9 @@ class Convnet(Chain):
     def loss_ave(self, num_data, num_batches, test):
         losses = []
         accuracies = []
-        total_data = np.arange(num_data)
-        for indexes in np.array_split(total_data, num_batches):
-            X_batch, T_batch = read_images_and_T(indexes)
+        num_batches = num_data / batch_size
+        for i in range(num_batches):
+            X_batch, T_batch = read_images_and_T(batch_size)
             loss, accuracy = self.lossfun(X_batch, T_batch, test)
             losses.append(cuda.to_cpu(loss.data))
             accuracies.append(cuda.to_cpu(accuracy.data))
@@ -117,21 +117,19 @@ def random_aspect_ratio_and_square_image(image):
     return square_image, T
 
 
-def read_images_and_T(indexes):
+def read_images_and_T(batch_size):
     images = []
-    count = 0
-    T = np.zeros((len(indexes), 1))
+    ts = []
 
-    for i in indexes:
+    for i in range(batch_size):
         image = create_image()
         resize_image, t = random_aspect_ratio_and_square_image(image)
         images.append(resize_image)
-        T[count] = t
-        count = count + 1
+        ts.append(t)
     X = np.stack(images, axis=0)
     X = np.transpose(X, (0, 3, 1, 2))
     X = X.astype(np.float32)
-    T = T.astype(np.int32)
+    T = np.array(ts, dtype=np.int32).reshape(-1, 1)
 
     return cuda.to_gpu(X), cuda.to_gpu(T)
 
@@ -220,8 +218,8 @@ if __name__ == '__main__':
             permu = range(train_size)
             losses = []
             accuracies = []
-            for indexes in tqdm.tqdm(np.array_split(permu, num_batches)):
-                X_batch, T_batch = read_images_and_T(indexes)
+            for i in tqdm.tqdm(range(num_batches)):
+                X_batch, T_batch = read_images_and_T(batch_size)
                 # 勾配を初期化
                 optimizer.zero_grads()
                 # 順伝播を計算し、誤差と精度を取得
@@ -239,7 +237,7 @@ if __name__ == '__main__':
             epoch_accuracy.append(np.mean(accuracies))
 
             loss_valid, accuracy_valid = model.loss_ave(valid_size,
-                                                        num_batches, False)
+                                                        batch_size, False)
 
             epoch_valid_loss.append(loss_valid)
             epoch_valid_accuracy.append(accuracy_valid)
