@@ -137,33 +137,57 @@ def read_images_and_T(indexes):
 
 
 def create_image():
-    image = np.zeros((500, 500), dtype=np.float64)
-    rand = np.random.rand()
-    x_circle = np.random.randint(150, 350)
-    y_circle = np.random.randint(150, 350)
-    r_circle = np.random.randint(50, 150)
-    x_square = np.random.randint(0, 300)
-    y_square = np.random.randint(0, 300)
-    r_square = np.random.randint(50, 200)
-    if rand > 0.7:  # 半々の確率で
-        rr, cc = draw.circle(x_circle, y_circle, r_circle)
-        image[rr, cc] = 1
-    elif rand > 0.3:
-        for i in range(0, r_square):
-            rr, cr = draw.line(
-                    x_square+i, y_square, x_square+i, y_square+r_square)
-            image[rr, cr] = 1
+    image_size = 500
+    r_min = 50
+    r_max = 150
+    size_min = 50
+    size_max = 200
+    p = [0.3, 0.3, 0.4]
+    case = np.random.choice(3, p=p)
+    if case == 0:
+        image = draw_random_circle(image_size, r_min, r_max)
+    elif case == 1:
+        image = draw_random_square(image_size, size_min, size_max)
     else:
-        rr, cc = draw.circle(x_circle, y_circle, r_circle)
-        image[rr, cc] = 1
-        for i in range(0, r_square):
-            rr, cr = draw.line(
-                    x_square+i, y_square, x_square+i, y_square+r_square)
-            image[rr, cr] = 1
+        image = draw_random_circle_square(
+            image_size, r_min, r_max, size_min, size_max)
 
-    image = np.reshape(image, (500, 500, 1))
     return image
 
+
+def draw_random_circle(image_size, r_min, r_max):
+    image = np.zeros((image_size, image_size), dtype=np.float64)
+    r = np.random.randint(r_min, r_max)
+    x = np.random.randint(r-1, image_size - r + 1)
+    y = np.random.randint(r-1, image_size - r + 1)
+
+    rr, cc = draw.circle(x, y, r)
+    image[rr, cc] = 1
+
+    image = np.reshape(image, (image_size, image_size, 1))
+    return image
+
+
+def draw_random_square(image_size, size_min, size_max):
+    image = np.zeros((image_size, image_size), dtype=np.float64)
+    size = np.random.randint(size_min, size_max)
+    x = np.random.randint(0, image_size-size+1)
+    y = np.random.randint(0, image_size-size+1)
+
+    for i in range(0, size):
+        rr, cr = draw.line(y, x+i, y+size-1, x+i)
+        image[rr, cr] = 1
+
+    image = np.reshape(image, (image_size, image_size, 1))
+    return image
+
+
+def draw_random_circle_square(image_size, r_min, r_max, size_min, size_max):
+    image_circle = draw_random_circle(image_size, r_min, r_max)
+    image_square = draw_random_square(image_size, size_min, size_max)
+    image = np.logical_or(image_circle, image_square)
+    image = image.astype(np.float64)
+    return image
 
 if __name__ == '__main__':
     # 超パラメータ
