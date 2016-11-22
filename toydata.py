@@ -75,28 +75,41 @@ class Convnet(Chain):
 
 
 class RandomCircleSquareDataset(object):
-    def __init__(self, image_size=500, r_min=50, r_max=150,
-                 size_min=50, size_max=200, p=[0.3, 0.3, 0.4]):
+    def __init__(self, image_size=500, circle_r_min=50, circle_r_max=150,
+                 size_min=50, size_max=200, p=[0.3, 0.3, 0.4], output_size=224,
+                 aspect_ratio_max=4, aspect_ratio_min=1):
         self.image_size = image_size
-        self.r_min = r_min
-        self.r_max = r_max
+        self.cr_min = circle_r_min
+        self.cr_max = circle_r_max
         self.size_min = size_min
         self.size_max = size_max
         self.p = p
+        self.output_size = output_size
+        self.ar_max = aspect_ratio_max
+        self.ar_min = aspect_ratio_min
 
     def read_images_and_T(self, batch_size):
-        images = []
-        ts = []
+        for b in range(10):
+            images = []
+            ts = []
 
-        for i in range(batch_size):
-            image = self.create_image()
-            resize_image, t = random_aspect_ratio_and_square_image(image)
-            images.append(resize_image)
-            ts.append(t)
-        X = np.stack(images, axis=0)
-        X = np.transpose(X, (0, 3, 1, 2))
-        X = X.astype(np.float32)
-        T = np.array(ts, dtype=np.int32).reshape(-1, 1)
+            for i in range(batch_size):
+                image = self.create_image()
+                t = np.random.choice(2)
+                if t == 1:
+                    r = sample_random_aspect_ratio(self.ar_max, self.ar_min)
+                else:
+                    r = 1
+                image = change_aspect_ratio(image, r)
+                square_image = crop_center(image)
+                resize_image = transform.resize(
+                    square_image, (self.output_size, self.output_size))
+                images.append(resize_image)
+                ts.append(t)
+            X = np.stack(images, axis=0)
+            X = np.transpose(X, (0, 3, 1, 2))
+            X = X.astype(np.float32)
+            T = np.array(ts, dtype=np.int32).reshape(-1, 1)
 
         return X, T
 
@@ -104,13 +117,13 @@ class RandomCircleSquareDataset(object):
         case = np.random.choice(3, p=self.p)
         if case == 0:
             image = self.create_random_circle(
-                self.image_size, self.r_min, self.r_max)
+                self.image_size, self.cr_min, self.cr_max)
         elif case == 1:
             image = self.create_random_square(
                 self.image_size, self.size_min, self.size_max)
         else:
             image = self.create_random_circle_square(
-                self.image_size, self.r_min, self.r_max,
+                self.image_size, self.cr_min, self.cr_max,
                 self.size_min, self.size_max)
 
         return image
@@ -149,61 +162,69 @@ class RandomCircleSquareDataset(object):
         return image
 
     def __repr__(self):
-        template = """
-image_size:{}
-r_min:{}
-r_max:{}
+        template = """image_size:{}
+circle_min:{}
+circle_max:{}
 size_min:{}
 size_max:{}
-p:{}"""
-        return template.format(self.image_size, self.r_min, self.r_max,
-                               self.size_min, self.size_max, self.p)
+p:{}
+output_size:{}
+aspect_ratio_min:{}
+aspect_ratio_max:[]"""
+        return template.format(self.image_size, self.cr_min, self.cr_max,
+                               self.size_min, self.size_max, self.p,
+                               self.output_size, self.ar_min, self.ar_max)
 
 
-def random_aspect_ratio_and_square_image(image):
+def change_aspect_ratio(image, aspect_ratio):
     h_image, w_image = image.shape[:2]
-    T = 0
+    r = aspect_ratio
 
-    while True:
-        aspect_ratio = np.random.rand() * 4  # 0.5~2の乱数を生成
-        if aspect_ratio > 0.25 and aspect_ratio < 0.5:
-            break
-        elif aspect_ratio > 2.0 and aspect_ratio < 4.0:
-            break
-
-    square_image = transform.resize(image, (224, 224))
-
-    if np.random.rand() > 0.5:  # 半々の確率で
-        w_image = w_image * aspect_ratio
-        T = 1
-
-    if h_image >= w_image:
-        h_image = int(h_image * (224.0 / w_image))
-        if (h_image % 2) == 1:
-            h_image = h_image + 1
-        w_image = 224
-        resize_image = transform.resize(image, (h_image, w_image))
-        diff = h_image - w_image
-        margin = int(diff / 2)
-        if margin == 0:
-            square_image = resize_image
-        else:
-            square_image = resize_image[margin:-margin, :]
+    if r > 1:
+        w_image = int(w_image * r)
     else:
-        w_image = int(w_image * (224.0 / h_image))
-        if (w_image % 2) == 1:
-            w_image = w_image + 1
-        h_image = 224
-        resize_image = transform.resize(image, (h_image, w_image))
-        diff = w_image - h_image
-        margin = int(diff / 2)
-        if margin == 0:
-            square_image = resize_image
-        else:
-            square_image = resize_image[:, margin:-margin]
+        h_image = int(h_image / float(r))
+    resize_image = transform.resize(image, (h_image, w_image))
+    return resize_image
 
-    return square_image, T
 
+def crop_center(image):
+    height, width = image.shape[:2]
+    left = 0
+    right = width
+    top = 0
+    bottom = height
+
+    if height >= width:  # 縦長の場合
+        output_size = width
+        margin = int((height - width) / 2)
+        top = margin
+        bottom = top + output_size
+    else:  # 横長の場合
+        output_size = height
+        margin = int((width - height) / 2)
+        left = margin
+        right = left + output_size
+
+    square_image = image[top:bottom, left:right]
+
+    return square_image
+
+
+def transpose(image):
+    if image.ndim == 2:
+        image = image.T
+    else:
+        image = np.transpose(image, (1, 0, 2))
+    return image
+
+
+def sample_random_aspect_ratio(r_max, r_min=1):
+    # アスペクト比rをランダム生成する
+    r = np.random.uniform(r_min, r_max)
+    if np.random.rand() > 0.5:
+        r = 1 / r
+    return r
 
 if __name__ == '__main__':
     # 超パラメータ
