@@ -60,12 +60,14 @@ class Convnet(Chain):
         accuracy = F.binary_accuracy(y, t)
         return loss, accuracy
 
-    def loss_ave(self, num_data, num_batches, test):
+    def loss_ave(self, X, T, batch_size, test):
         losses = []
         accuracies = []
+        num_data = len(X)
         num_batches = num_data / batch_size
-        for i in range(num_batches):
-            X_batch, T_batch = read_images_and_T(batch_size)
+        for indexes in np.array_split(range(num_data), num_batches):
+            X_batch = cuda.to_gpu(X[indexes])
+            T_batch = cuda.to_gpu(T[indexes])
             loss, accuracy = self.lossfun(X_batch, T_batch, test)
             losses.append(cuda.to_cpu(loss.data))
             accuracies.append(cuda.to_cpu(accuracy.data))
@@ -131,7 +133,7 @@ def read_images_and_T(batch_size):
     X = X.astype(np.float32)
     T = np.array(ts, dtype=np.int32).reshape(-1, 1)
 
-    return cuda.to_gpu(X), cuda.to_gpu(T)
+    return X, T
 
 
 def create_image():
@@ -217,6 +219,8 @@ if __name__ == '__main__':
             accuracies = []
             for i in tqdm.tqdm(range(num_batches)):
                 X_batch, T_batch = read_images_and_T(batch_size)
+                X_batch = cuda.to_gpu(X_batch)
+                T_batch = cuda.to_gpu(T_batch)
                 # 勾配を初期化
                 optimizer.zero_grads()
                 # 順伝播を計算し、誤差と精度を取得
@@ -233,9 +237,9 @@ if __name__ == '__main__':
             epoch_loss.append(np.mean(losses))
             epoch_accuracy.append(np.mean(accuracies))
 
-
-            loss_valid, accuracy_valid = model.loss_ave(num_valid,
-                                                        batch_size, False)
+            X_valid, T_valid = read_images_and_T(num_valid)
+            loss_valid, accuracy_valid = model.loss_ave(
+                X_valid, T_valid, batch_size, True)
 
             epoch_valid_loss.append(loss_valid)
             epoch_valid_accuracy.append(accuracy_valid)
