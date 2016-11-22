@@ -148,6 +148,17 @@ class RandomCircleSquareDataset(object):
         image = image.astype(np.float64)
         return image
 
+    def __repr__(self):
+        template = """
+image_size:{}
+r_min:{}
+r_max:{}
+size_min:{}
+size_max:{}
+p:{}"""
+        return template.format(self.image_size, self.r_min, self.r_max,
+                               self.size_min, self.size_max, self.p)
+
 
 def random_aspect_ratio_and_square_image(image):
     h_image, w_image = image.shape[:2]
@@ -289,3 +300,4 @@ if __name__ == '__main__':
     print 'batch_size:', batch_size
     print 'train_size', num_train
     print 'valid_size', num_valid
+    print dataset
