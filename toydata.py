@@ -191,8 +191,8 @@ if __name__ == '__main__':
     # 超パラメータ
     max_iteration = 50  # 繰り返し回数
     batch_size = 25  # ミニバッチサイズ
-    train_size = 1000
-    valid_size = 1000
+    num_train = 1000
+    num_valid = 100
     learning_rate = 0.0001
 
     model = Convnet().to_gpu()
@@ -200,22 +200,19 @@ if __name__ == '__main__':
     optimizer = optimizers.AdaDelta(learning_rate)
     optimizer.setup(model)
 
-    image_list = []
     epoch_loss = []
     epoch_valid_loss = []
     epoch_accuracy = []
     epoch_valid_accuracy = []
     loss_valid_best = np.inf
 
-    num_train = 1000
-    num_valid = 1000
-    num_batches = train_size / batch_size
+    num_batches = num_train / batch_size
 
     time_origin = time.time()
     try:
         for epoch in range(max_iteration):
             time_begin = time.time()
-            permu = range(train_size)
+            permu = range(num_train)
             losses = []
             accuracies = []
             for i in tqdm.tqdm(range(num_batches)):
@@ -236,7 +233,8 @@ if __name__ == '__main__':
             epoch_loss.append(np.mean(losses))
             epoch_accuracy.append(np.mean(accuracies))
 
-            loss_valid, accuracy_valid = model.loss_ave(valid_size,
+
+            loss_valid, accuracy_valid = model.loss_ave(num_valid,
                                                         batch_size, False)
 
             epoch_valid_loss.append(loss_valid)
@@ -279,5 +277,5 @@ if __name__ == '__main__':
     print 'max_iteration:', max_iteration
     print 'learning_rate:', learning_rate
     print 'batch_size:', batch_size
-    print 'num_train', train_size
-    print 'num_valid', valid_size
+    print 'train_size', num_train
+    print 'valid_size', num_valid
