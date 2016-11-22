@@ -74,6 +74,81 @@ class Convnet(Chain):
         return np.mean(losses), np.mean(accuracies)
 
 
+class RandomCircleSquareDataset(object):
+    def __init__(self, image_size=500, r_min=50, r_max=150,
+                 size_min=50, size_max=200, p=[0.3, 0.3, 0.4]):
+        self.image_size = image_size
+        self.r_min = r_min
+        self.r_max = r_max
+        self.size_min = size_min
+        self.size_max = size_max
+        self.p = p
+
+    def read_images_and_T(self, batch_size):
+        images = []
+        ts = []
+
+        for i in range(batch_size):
+            image = self.create_image()
+            resize_image, t = random_aspect_ratio_and_square_image(image)
+            images.append(resize_image)
+            ts.append(t)
+        X = np.stack(images, axis=0)
+        X = np.transpose(X, (0, 3, 1, 2))
+        X = X.astype(np.float32)
+        T = np.array(ts, dtype=np.int32).reshape(-1, 1)
+
+        return X, T
+
+    def create_image(self):
+        case = np.random.choice(3, p=self.p)
+        if case == 0:
+            image = self.create_random_circle(
+                self.image_size, self.r_min, self.r_max)
+        elif case == 1:
+            image = self.create_random_square(
+                self.image_size, self.size_min, self.size_max)
+        else:
+            image = self.create_random_circle_square(
+                self.image_size, self.r_min, self.r_max,
+                self.size_min, self.size_max)
+
+        return image
+
+    def create_random_circle(self, image_size, r_min, r_max):
+        image = np.zeros((image_size, image_size), dtype=np.float64)
+        r = np.random.randint(r_min, r_max)
+        x = np.random.randint(r-1, image_size - r + 1)
+        y = np.random.randint(r-1, image_size - r + 1)
+
+        rr, cc = draw.circle(x, y, r)
+        image[rr, cc] = 1
+
+        image = np.reshape(image, (image_size, image_size, 1))
+        return image
+
+    def create_random_square(self, image_size, size_min, size_max):
+        image = np.zeros((image_size, image_size), dtype=np.float64)
+        size = np.random.randint(size_min, size_max)
+        x = np.random.randint(0, image_size-size+1)
+        y = np.random.randint(0, image_size-size+1)
+
+        for i in range(0, size):
+            rr, cr = draw.line(y, x+i, y+size-1, x+i)
+            image[rr, cr] = 1
+
+        image = np.reshape(image, (image_size, image_size, 1))
+        return image
+
+    def create_random_circle_square(
+            self, image_size, r_min, r_max, size_min, size_max):
+        circle = self.create_random_circle(image_size, r_min, r_max)
+        square = self.create_random_square(image_size, size_min, size_max)
+        image = np.logical_or(circle, square)
+        image = image.astype(np.float64)
+        return image
+
+
 def random_aspect_ratio_and_square_image(image):
     h_image, w_image = image.shape[:2]
     T = 0
@@ -119,76 +194,6 @@ def random_aspect_ratio_and_square_image(image):
     return square_image, T
 
 
-def read_images_and_T(batch_size):
-    images = []
-    ts = []
-
-    for i in range(batch_size):
-        image = create_image()
-        resize_image, t = random_aspect_ratio_and_square_image(image)
-        images.append(resize_image)
-        ts.append(t)
-    X = np.stack(images, axis=0)
-    X = np.transpose(X, (0, 3, 1, 2))
-    X = X.astype(np.float32)
-    T = np.array(ts, dtype=np.int32).reshape(-1, 1)
-
-    return X, T
-
-
-def create_image():
-    image_size = 500
-    r_min = 50
-    r_max = 150
-    size_min = 50
-    size_max = 200
-    p = [0.3, 0.3, 0.4]
-    case = np.random.choice(3, p=p)
-    if case == 0:
-        image = draw_random_circle(image_size, r_min, r_max)
-    elif case == 1:
-        image = draw_random_square(image_size, size_min, size_max)
-    else:
-        image = draw_random_circle_square(
-            image_size, r_min, r_max, size_min, size_max)
-
-    return image
-
-
-def draw_random_circle(image_size, r_min, r_max):
-    image = np.zeros((image_size, image_size), dtype=np.float64)
-    r = np.random.randint(r_min, r_max)
-    x = np.random.randint(r-1, image_size - r + 1)
-    y = np.random.randint(r-1, image_size - r + 1)
-
-    rr, cc = draw.circle(x, y, r)
-    image[rr, cc] = 1
-
-    image = np.reshape(image, (image_size, image_size, 1))
-    return image
-
-
-def draw_random_square(image_size, size_min, size_max):
-    image = np.zeros((image_size, image_size), dtype=np.float64)
-    size = np.random.randint(size_min, size_max)
-    x = np.random.randint(0, image_size-size+1)
-    y = np.random.randint(0, image_size-size+1)
-
-    for i in range(0, size):
-        rr, cr = draw.line(y, x+i, y+size-1, x+i)
-        image[rr, cr] = 1
-
-    image = np.reshape(image, (image_size, image_size, 1))
-    return image
-
-
-def draw_random_circle_square(image_size, r_min, r_max, size_min, size_max):
-    image_circle = draw_random_circle(image_size, r_min, r_max)
-    image_square = draw_random_square(image_size, size_min, size_max)
-    image = np.logical_or(image_circle, image_square)
-    image = image.astype(np.float64)
-    return image
-
 if __name__ == '__main__':
     # 超パラメータ
     max_iteration = 50  # 繰り返し回数
@@ -198,6 +203,7 @@ if __name__ == '__main__':
     learning_rate = 0.0001
 
     model = Convnet().to_gpu()
+    dataset = RandomCircleSquareDataset()
     # Optimizerの設定
     optimizer = optimizers.AdaDelta(learning_rate)
     optimizer.setup(model)
@@ -218,7 +224,7 @@ if __name__ == '__main__':
             losses = []
             accuracies = []
             for i in tqdm.tqdm(range(num_batches)):
-                X_batch, T_batch = read_images_and_T(batch_size)
+                X_batch, T_batch = dataset.read_images_and_T(batch_size)
                 X_batch = cuda.to_gpu(X_batch)
                 T_batch = cuda.to_gpu(T_batch)
                 # 勾配を初期化
@@ -237,7 +243,7 @@ if __name__ == '__main__':
             epoch_loss.append(np.mean(losses))
             epoch_accuracy.append(np.mean(accuracies))
 
-            X_valid, T_valid = read_images_and_T(num_valid)
+            X_valid, T_valid = dataset.read_images_and_T(num_valid)
             loss_valid, accuracy_valid = model.loss_ave(
                 X_valid, T_valid, batch_size, True)
 
