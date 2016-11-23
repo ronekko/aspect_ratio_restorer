@@ -14,28 +14,27 @@ from skimage import io, transform, draw
 import time
 import copy
 import tqdm
+import cv2
 
 
 # ネットワークの定義
 class Convnet(Chain):
     def __init__(self):
         super(Convnet, self).__init__(
-            conv1=L.Convolution2D(1, 64, 3, stride=2, pad=1),
-            norm1=L.BatchNormalization(64),
-            conv2=L.Convolution2D(64, 64, 3, stride=2, pad=1),
-            norm2=L.BatchNormalization(64),
-            conv3=L.Convolution2D(64, 128, 3, stride=2, pad=1),
-            norm3=L.BatchNormalization(128),
-            conv4=L.Convolution2D(128, 128, 3, stride=2, pad=1),
-            norm4=L.BatchNormalization(128),
-            conv5=L.Convolution2D(128, 256, 3, stride=2, pad=1),
-            norm5=L.BatchNormalization(256),
-            conv6=L.Convolution2D(256, 256, 3, stride=2, pad=1),
-            norm6=L.BatchNormalization(256),
+            conv1=L.Convolution2D(1, 8, 3, stride=2, pad=1),
+            norm1=L.BatchNormalization(8),
+            conv2=L.Convolution2D(8, 8, 3, stride=2, pad=1),
+            norm2=L.BatchNormalization(8),
+            conv3=L.Convolution2D(8, 16, 3, stride=2, pad=1),
+            norm3=L.BatchNormalization(16),
+            conv4=L.Convolution2D(16, 16, 3, stride=2, pad=1),
+            norm4=L.BatchNormalization(16),
+            conv5=L.Convolution2D(16, 32, 3, stride=2, pad=1),
+            norm5=L.BatchNormalization(32),
 
-            l1=L.Linear(4096, 1000),
-            norm7=L.BatchNormalization(1000),
-            l2=L.Linear(1000, 1),
+            l1=L.Linear(1568, 500),
+            norm7=L.BatchNormalization(500),
+            l2=L.Linear(500, 1),
         )
 
     def network(self, X, test):
@@ -44,7 +43,6 @@ class Convnet(Chain):
         h = F.relu(self.norm3(self.conv3(h), test=test))
         h = F.relu(self.norm4(self.conv4(h), test=test))
         h = F.relu(self.norm5(self.conv5(h), test=test))
-        h = F.relu(self.norm6(self.conv6(h), test=test))
         h = F.relu(self.norm7(self.l1(h), test=test))
         y = self.l2(h)
         return y
@@ -59,144 +57,244 @@ class Convnet(Chain):
         accuracy = F.binary_accuracy(y, t)
         return loss, accuracy
 
-    def loss_ave(self, num_data, num_batches, test):
+    def loss_ave(self, X, T, batch_size, test):
         losses = []
         accuracies = []
-        total_data = np.arange(num_data)
-        for indexes in np.array_split(total_data, num_batches):
-            X_batch, T_batch = read_images_and_T(indexes)
+        num_data = len(X)
+        num_batches = num_data / batch_size
+        for indexes in np.array_split(range(num_data), num_batches):
+            X_batch = cuda.to_gpu(X[indexes])
+            T_batch = cuda.to_gpu(T[indexes])
             loss, accuracy = self.lossfun(X_batch, T_batch, test)
             losses.append(cuda.to_cpu(loss.data))
             accuracies.append(cuda.to_cpu(accuracy.data))
         return np.mean(losses), np.mean(accuracies)
 
 
-def random_aspect_ratio_and_square_image(image):
+class RandomCircleSquareDataset(object):
+    def __init__(self, image_size=500, circle_r_min=50, circle_r_max=150,
+                 size_min=50, size_max=200, p=[0.3, 0.3, 0.4], output_size=224,
+                 aspect_ratio_max=4, aspect_ratio_min=1):
+        self.image_size = image_size
+        self.cr_min = circle_r_min
+        self.cr_max = circle_r_max
+        self.size_min = size_min
+        self.size_max = size_max
+        self.p = p
+        self.output_size = output_size
+        self.ar_max = aspect_ratio_max
+        self.ar_min = aspect_ratio_min
+
+    def read_images_and_T(self, batch_size):
+        images = []
+        ts = []
+
+        for i in range(batch_size):
+            image = self.create_image()
+            t = np.random.choice(2)
+            if t == 1:
+                r = sample_random_aspect_ratio(self.ar_max, self.ar_min)
+            else:
+                r = 1
+            image = change_aspect_ratio(image, r)
+            square_image = padding_image(image)
+            resize_image = cv2.resize(
+                square_image, (self.output_size, self.output_size))
+            resize_image = resize_image[..., None]
+            images.append(resize_image)
+            ts.append(t)
+        X = np.stack(images, axis=0)
+        X = np.transpose(X, (0, 3, 1, 2))
+        X = X.astype(np.float32)
+        T = np.array(ts, dtype=np.int32).reshape(-1, 1)
+
+        return X, T
+
+    def create_image(self):
+        case = np.random.choice(3, p=self.p)
+        if case == 0:
+            image = self.create_random_circle(
+                self.image_size, self.cr_min, self.cr_max)
+        elif case == 1:
+            image = self.create_random_square(
+                self.image_size, self.size_min, self.size_max)
+        else:
+            image = self.create_random_circle_square(
+                self.image_size, self.cr_min, self.cr_max,
+                self.size_min, self.size_max)
+
+        return image
+
+    def create_random_circle(self, image_size, r_min, r_max):
+        image = np.zeros((image_size, image_size), dtype=np.float64)
+        r = np.random.randint(r_min, r_max)
+        x = np.random.randint(r-1, image_size - r + 1)
+        y = np.random.randint(r-1, image_size - r + 1)
+
+        rr, cc = draw.circle(x, y, r)
+        image[rr, cc] = 1
+
+        image = np.reshape(image, (image_size, image_size, 1))
+        return image
+
+    def create_random_square(self, image_size, size_min, size_max):
+        image = np.zeros((image_size, image_size), dtype=np.float64)
+        size = np.random.randint(size_min, size_max)
+        x = np.random.randint(0, image_size-size+1)
+        y = np.random.randint(0, image_size-size+1)
+
+        for i in range(0, size):
+            rr, cr = draw.line(y, x+i, y+size-1, x+i)
+            image[rr, cr] = 1
+
+        image = np.reshape(image, (image_size, image_size, 1))
+        return image
+
+    def create_random_circle_square(
+            self, image_size, r_min, r_max, size_min, size_max):
+        circle = self.create_random_circle(image_size, r_min, r_max)
+        square = self.create_random_square(image_size, size_min, size_max)
+        image = np.logical_or(circle, square)
+        image = image.astype(np.float64)
+        return image
+
+    def __repr__(self):
+        template = """image_size:{}
+circle_min:{}
+circle_max:{}
+size_min:{}
+size_max:{}
+p:{}
+output_size:{}
+aspect_ratio_min:{}
+aspect_ratio_max:{}"""
+        return template.format(self.image_size, self.cr_min, self.cr_max,
+                               self.size_min, self.size_max, self.p,
+                               self.output_size, self.ar_min, self.ar_max)
+
+
+def change_aspect_ratio(image, aspect_ratio):
     h_image, w_image = image.shape[:2]
-    T = 0
+    r = aspect_ratio
 
-    while True:
-        aspect_ratio = np.random.rand() * 4  # 0.5~2の乱数を生成
-        if aspect_ratio > 0.25 and aspect_ratio < 0.5:
-            break
-        elif aspect_ratio > 2.0 and aspect_ratio < 4.0:
-            break
-
-    square_image = transform.resize(image, (224, 224))
-
-    if np.random.rand() > 0.5:  # 半々の確率で
-        w_image = w_image * aspect_ratio
-        T = 1
-
-    if h_image >= w_image:
-        h_image = int(h_image * (224.0 / w_image))
-        if (h_image % 2) == 1:
-            h_image = h_image + 1
-        w_image = 224
-        resize_image = transform.resize(image, (h_image, w_image))
-        diff = h_image - w_image
-        margin = int(diff / 2)
-        if margin == 0:
-            square_image = resize_image
-        else:
-            square_image = resize_image[margin:-margin, :]
+    if r == 1:
+        return image
+    elif r > 1:
+        w_image = int(w_image * r)
     else:
-        w_image = int(w_image * (224.0 / h_image))
-        if (w_image % 2) == 1:
-            w_image = w_image + 1
-        h_image = 224
-        resize_image = transform.resize(image, (h_image, w_image))
-        diff = w_image - h_image
-        margin = int(diff / 2)
-        if margin == 0:
-            square_image = resize_image
-        else:
-            square_image = resize_image[:, margin:-margin]
-
-    return square_image, T
+        h_image = int(h_image / float(r))
+    # cv2.resizeは引数が（image, (w, h))の順
+    # transform.resizeは引数が(image, (h, w))の順
+    resize_image = cv2.resize(image, (w_image, h_image))[..., None]
+    return resize_image
 
 
-def read_images_and_T(indexes):
-    images = []
-    count = 0
-    T = np.zeros((len(indexes), 1))
+def crop_center(image):
+    height, width = image.shape[:2]
+    left = 0
+    right = width
+    top = 0
+    bottom = height
 
-    for i in indexes:
-        image = create_image()
-        resize_image, t = random_aspect_ratio_and_square_image(image)
-        images.append(resize_image)
-        T[count] = t
-        count = count + 1
-    X = np.stack(images, axis=0)
-    X = np.transpose(X, (0, 3, 1, 2))
-    X = X.astype(np.float32)
-    T = T.astype(np.int32)
+    if height >= width:  # 縦長の場合
+        output_size = width
+        margin = int((height - width) / 2)
+        top = margin
+        bottom = top + output_size
+    else:  # 横長の場合
+        output_size = height
+        margin = int((width - height) / 2)
+        left = margin
+        right = left + output_size
 
-    return cuda.to_gpu(X), cuda.to_gpu(T)
+    square_image = image[top:bottom, left:right]
+
+    return square_image
 
 
-def create_image():
-    image = np.zeros((500, 500), dtype=np.float64)
-    rand = np.random.rand()
-    x_circle = np.random.randint(150, 350)
-    y_circle = np.random.randint(150, 350)
-    r_circle = np.random.randint(50, 150)
-    x_square = np.random.randint(0, 300)
-    y_square = np.random.randint(0, 300)
-    r_square = np.random.randint(50, 200)
-    if rand > 0.7:  # 半々の確率で
-        rr, cc = draw.circle(x_circle, y_circle, r_circle)
-        image[rr, cc] = 1
-    elif rand > 0.3:
-        for i in range(0, r_square):
-            rr, cr = draw.line(
-                    x_square+i, y_square, x_square+i, y_square+r_square)
-            image[rr, cr] = 1
+def padding_image(image):
+    height, width = image.shape[:2]
+    left = 0
+    right = width
+    top = 0
+    bottom = height
+
+    if height >= width:  # 縦長の場合
+        output_size = height
+        margin = int((height - width) / 2)
+        left = margin
+        right = left + width
+    else:  # 横長の場合
+        output_size = width
+        margin = int((width - height) / 2)
+        top = margin
+        bottom = top + height
+
+    square_image = np.zeros((output_size, output_size, 1))
+    square_image[top:bottom, left:right] = image
+
+    return square_image
+
+
+def transpose(image):
+    if image.ndim == 2:
+        image = image.T
     else:
-        rr, cc = draw.circle(x_circle, y_circle, r_circle)
-        image[rr, cc] = 1
-        for i in range(0, r_square):
-            rr, cr = draw.line(
-                    x_square+i, y_square, x_square+i, y_square+r_square)
-            image[rr, cr] = 1
-
-    image = np.reshape(image, (500, 500, 1))
+        image = np.transpose(image, (1, 0, 2))
     return image
 
+
+def sample_random_aspect_ratio(r_max, r_min=1):
+    # アスペクト比rをランダム生成する
+    r = np.random.uniform(r_min, r_max)
+    if np.random.rand() > 0.5:
+        r = 1 / r
+    return r
 
 if __name__ == '__main__':
     # 超パラメータ
     max_iteration = 50  # 繰り返し回数
     batch_size = 25  # ミニバッチサイズ
-    train_size = 1000
-    valid_size = 1000
+    num_train = 1000
+    num_valid = 100
     learning_rate = 0.0001
+    image_size = 500
+    circle_r_min = 50
+    circle_r_max = 150
+    size_min = 50
+    size_max = 200
+    p = [0.3, 0.3, 0.4]
+    output_size = 224
+    aspect_ratio_max = 4
+    aspect_ratio_min = 2
 
     model = Convnet().to_gpu()
+    dataset = RandomCircleSquareDataset(
+        image_size, circle_r_min, circle_r_max, size_min, size_max, p,
+        output_size, aspect_ratio_max, aspect_ratio_min)
     # Optimizerの設定
     optimizer = optimizers.AdaDelta(learning_rate)
     optimizer.setup(model)
 
-    image_list = []
     epoch_loss = []
     epoch_valid_loss = []
     epoch_accuracy = []
     epoch_valid_accuracy = []
     loss_valid_best = np.inf
 
-    num_train = 1000
-    num_valid = 1000
-    num_batches = train_size / batch_size
+    num_batches = num_train / batch_size
 
     time_origin = time.time()
     try:
         for epoch in range(max_iteration):
             time_begin = time.time()
-            permu = range(train_size)
+            permu = range(num_train)
             losses = []
             accuracies = []
-            for indexes in tqdm.tqdm(np.array_split(permu, num_batches)):
-                X_batch, T_batch = read_images_and_T(indexes)
+            for i in tqdm.tqdm(range(num_batches)):
+                X_batch, T_batch = dataset.read_images_and_T(batch_size)
+                X_batch = cuda.to_gpu(X_batch)
+                T_batch = cuda.to_gpu(T_batch)
                 # 勾配を初期化
                 optimizer.zero_grads()
                 # 順伝播を計算し、誤差と精度を取得
@@ -213,8 +311,9 @@ if __name__ == '__main__':
             epoch_loss.append(np.mean(losses))
             epoch_accuracy.append(np.mean(accuracies))
 
-            loss_valid, accuracy_valid = model.loss_ave(valid_size,
-                                                        num_batches, False)
+            X_valid, T_valid = dataset.read_images_and_T(num_valid)
+            loss_valid, accuracy_valid = model.loss_ave(
+                X_valid, T_valid, batch_size, True)
 
             epoch_valid_loss.append(loss_valid)
             epoch_valid_accuracy.append(accuracy_valid)
@@ -256,5 +355,6 @@ if __name__ == '__main__':
     print 'max_iteration:', max_iteration
     print 'learning_rate:', learning_rate
     print 'batch_size:', batch_size
-    print 'num_train', train_size
-    print 'num_valid', valid_size
+    print 'train_size', num_train
+    print 'valid_size', num_valid
+    print dataset
