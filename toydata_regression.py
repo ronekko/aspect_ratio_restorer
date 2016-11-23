@@ -100,8 +100,8 @@ class RandomCircleSquareDataset(object):
             r = sample_random_aspect_ratio(self.ar_max, self.ar_min)
             image = change_aspect_ratio(image, r)
             square_image = padding_image(image)
-            # cv2.resizeは引数が（image, (w, h))の順
-            # transform.resizeは引数が(image, (h, w))の順
+            # cv2.resize:(image, (w, h))
+            # transform.resize:(image, (h, w))
             resize_image = cv2.resize(
                 square_image, (self.output_size, self.output_size))
             resize_image = resize_image[..., None]
@@ -188,8 +188,8 @@ def change_aspect_ratio(image, aspect_ratio):
         w_image = int(w_image * r)
     else:
         h_image = int(h_image / float(r))
-    # cv2.resizeは引数が（image, (w, h))の順
-    # transform.resizeは引数が(image, (h, w))の順
+    # cv2.resize:（image, (w, h))
+    # transform.resize:(image, (h, w))
     resize_image = cv2.resize(image, (w_image, h_image))[..., None]
     return resize_image
 
@@ -258,13 +258,12 @@ def sample_random_aspect_ratio(r_max, r_min=1):
 
 
 def fix_image(image, aspect_ratio):
+    image_size = image.shape[2]
     r = 1 / aspect_ratio
-    image = image.reshape(-1, 224, 224)
+    image = image.reshape(-1, image_size, image_size)
     image = np.transpose(image, (1, 2, 0))
     fix_image = change_aspect_ratio(image, r)
     fix_image = crop_center(fix_image)
-    fix_image = cv2.resize(fix_image, (500, 500))
-    fix_image = fix_image[..., None]
     fix_image = np.transpose(fix_image, (2, 0, 1))
     return fix_image
 
@@ -274,7 +273,7 @@ if __name__ == '__main__':
     batch_size = 100  # ミニバッチサイズ
     num_train = 5000
     num_valid = 100
-    learning_rate = 0.0001
+    learning_rate = 0.001
     image_size = 500
     circle_r_min = 50
     circle_r_max = 150
@@ -287,9 +286,8 @@ if __name__ == '__main__':
 
     model = Convnet().to_gpu()
     dataset = RandomCircleSquareDataset(
-        image_size=500, circle_r_min=50, circle_r_max=150, size_min=50,
-        size_max=200, p=[0.3, 0.3, 0.4], output_size=224, aspect_ratio_max=4,
-        aspect_ratio_min=2)
+        image_size, circle_r_min, circle_r_max, size_min, size_max, p,
+        output_size, aspect_ratio_max, aspect_ratio_min)
     # Optimizerの設定
     optimizer = optimizers.Adam(learning_rate)
     optimizer.setup(model)
@@ -305,7 +303,6 @@ if __name__ == '__main__':
     try:
         for epoch in range(max_iteration):
             time_begin = time.time()
-            permu = range(num_train)
             losses = []
             for i in tqdm.tqdm(range(num_batches)):
                 X_batch, T_batch = dataset.read_images_and_T(batch_size)
@@ -344,7 +341,6 @@ if __name__ == '__main__':
 
             if loss_valid < loss_valid_best:
                 loss_valid_best = loss_valid
-                epoch_best = epoch
                 model_best = copy.deepcopy(model)
 
             # 訓練データでの結果を表示
@@ -368,12 +364,15 @@ if __name__ == '__main__':
             plt.grid()
             plt.show()
 
-            plt.subplot(121)
-            plt.title("target_image")
-            plt.imshow(original_image[0])
-            plt.subplot(122)
+            plt.subplot(131)
+            plt.title("input_image")
+            plt.imshow(X_test[0][0])
+            plt.subplot(132)
             plt.title("fix_image")
             plt.imshow(predict_image[0])
+            plt.subplot(133)
+            plt.title("target_image")
+            plt.imshow(original_image[0])
             plt.show()
 
     except KeyboardInterrupt:
