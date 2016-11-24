@@ -154,6 +154,7 @@ if __name__ == '__main__':
                 model_best = copy.deepcopy(model)
 
             # 訓練データでの結果を表示
+            print "toydata_regression.py"
             print "epoch:", epoch
             print "time", epoch_time, "(", total_time, ")"
             print "loss[train]:", epoch_loss[epoch]
@@ -164,6 +165,7 @@ if __name__ == '__main__':
 
             plt.plot(epoch_loss)
             plt.plot(epoch_valid_loss)
+            plt.ylim(0, 1)
             plt.title("loss")
             plt.legend(["train", "valid"], loc="upper right")
             plt.grid()
