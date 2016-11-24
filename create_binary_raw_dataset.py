@@ -12,6 +12,7 @@ import h5py
 from fuel.datasets.hdf5 import H5PYDataset
 from skimage import io, color, transform
 import tqdm
+import cv2
 
 
 def create_path_list(data_location, dataset_root_dir):
@@ -45,7 +46,7 @@ def output_hdf5(path_list, data_chw, output_root_dir):
     num_data = len(path_list)
 
     channel, height, width = data_chw
-    output_size = float(height)
+    output_size = height
 
     dirs = output_root_dir.split('\\')
     file_name = dirs[-1] + '.hdf5'
@@ -53,7 +54,7 @@ def output_hdf5(path_list, data_chw, output_root_dir):
 
     f = h5py.File(output_root_dir, mode='w')
     image_features = f.create_dataset('image_features',
-                                      (num_data, channel, height, width),
+                                      (num_data, height, width, channel),
                                       dtype='uint8')
 
     image_features.dims[0].label = 'batch'
@@ -64,10 +65,9 @@ def output_hdf5(path_list, data_chw, output_root_dir):
     try:
         for i in tqdm.tqdm(range(num_data)):
             image = io.imread(path_list[i])
-            image = square_image(image, output_size)
-            image = np.transpose(image, (2, 0, 1))
-            image = np.reshape(image, (1, channel, height, width))
-            image = image * 256
+            image = crop_center(image)
+            image = cv2.resize(image, (output_size, output_size))
+            image = image.reshape(1, height, width, channel)
             image_features[i] = image
 
     except KeyboardInterrupt:
@@ -77,35 +77,25 @@ def output_hdf5(path_list, data_chw, output_root_dir):
     f.close()
 
 
-def square_image(image, output_size):
-    h_image, w_image = image.shape[:2]
+def crop_center(image):
+    height, width = image.shape[:2]
+    left = 0
+    right = width
+    top = 0
+    bottom = height
 
-    square_image = transform.resize(image, (output_size, output_size))
+    if height >= width:  # 縦長の場合
+        output_size = width
+        margin = int((height - width) / 2)
+        top = margin
+        bottom = top + output_size
+    else:  # 横長の場合
+        output_size = height
+        margin = int((width - height) / 2)
+        left = margin
+        right = left + output_size
 
-    if h_image >= w_image:
-        h_image = int(h_image * (output_size / w_image))
-        if (h_image % 2) == 1:
-            h_image = h_image + 1
-        w_image = output_size
-        resize_image = transform.resize(image, (h_image, w_image))
-        diff = h_image - w_image
-        margin = int(diff / 2)
-        if margin == 0:
-            square_image = resize_image
-        else:
-            square_image = resize_image[margin:-margin, :]
-    else:
-        w_image = int(w_image * (output_size / h_image))
-        if (w_image % 2) == 1:
-            w_image = w_image + 1
-        h_image = output_size
-        resize_image = transform.resize(image, (h_image, w_image))
-        diff = w_image - h_image
-        margin = int(diff / 2)
-        if margin == 0:
-            square_image = resize_image
-        else:
-            square_image = resize_image[:, margin:-margin]
+    square_image = image[top:bottom, left:right]
 
     return square_image
 
@@ -131,6 +121,6 @@ def main(data_location, output_location, output_size):
 if __name__ == '__main__':
     data_location = r'E:'
     output_location = r'E:\stanford_Dogs_Dataset\raw_dataset_binary'
-    output_size = 256
+    output_size = 500
 
     main(data_location, output_location, output_size)
