@@ -74,7 +74,7 @@ class Convnet(Chain):
         return np.mean(losses), np.mean(accuracies)
 
 
-def create_mini_batch(queue, data, batch_size=100, file_path, min_ratio=1,
+def create_mini_batch(queue, file_path, data, batch_size=100, min_ratio=1,
                       max_ratio=4, crop_size=224, output_size=256):
     dataset = h5py.File(file_path)
     image_features = dataset['image_features']
@@ -129,15 +129,15 @@ if __name__ == '__main__':
 
     queue_train = Queue(10)
     process_train = Process(target=create_mini_batch,
-                            args=(queue_train, train_data, batch_size,
-                                  file_path, aspect_ratio_min,
+                            args=(queue_train, file_path, train_data,
+                                  batch_size, aspect_ratio_min,
                                   aspect_ratio_max, crop_size, output_size))
     process_train.start()
     queue_test = Queue(10)
     process_test = Process(target=create_mini_batch,
-                           args=(queue_test, test_data, batch_size,
-                                 file_path, aspect_ratio_min, aspect_ratio_max,
-                                 crop_size, output_size))
+                           args=(queue_test, file_path, test_data,
+                                 batch_size, aspect_ratio_min,
+                                 aspect_ratio_max, crop_size, output_size))
     process_test.start()
 
     model = Convnet().to_gpu()
