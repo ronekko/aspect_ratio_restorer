@@ -89,7 +89,7 @@ class RandomCircleSquareDataset(object):
         self.ar_max = aspect_ratio_max
         self.ar_min = aspect_ratio_min
 
-    def read_images_and_T(self, batch_size):
+    def minibatch_binary_classification(self, batch_size):
         images = []
         ts = []
 
@@ -111,6 +111,30 @@ class RandomCircleSquareDataset(object):
         X = np.transpose(X, (0, 3, 1, 2))
         X = X.astype(np.float32)
         T = np.array(ts, dtype=np.int32).reshape(-1, 1)
+
+        return X, T
+
+    def minibatch_regression(self, batch_size):
+        images = []
+        ts = []
+
+        for i in range(batch_size):
+            image = self.create_image()
+            r = sample_random_aspect_ratio(self.ar_max, self.ar_min)
+            image = change_aspect_ratio(image, r)
+            square_image = padding_image(image)
+            # cv2.resize:(image, (w, h))
+            # transform.resize:(image, (h, w))
+            resize_image = cv2.resize(
+                square_image, (self.output_size, self.output_size))
+            resize_image = resize_image[..., None]
+            images.append(resize_image)
+            t = np.log(r)
+            ts.append(t)
+        X = np.stack(images, axis=0)
+        X = np.transpose(X, (0, 3, 1, 2))
+        X = X.astype(np.float32)
+        T = np.array(ts, dtype=np.float32).reshape(-1, 1)
 
         return X, T
 
@@ -164,17 +188,17 @@ class RandomCircleSquareDataset(object):
 
     def __repr__(self):
         template = """image_size:{}
+output_size:{}
 circle_min:{}
 circle_max:{}
 size_min:{}
 size_max:{}
 p:{}
-output_size:{}
 aspect_ratio_min:{}
 aspect_ratio_max:{}"""
-        return template.format(self.image_size, self.cr_min, self.cr_max,
-                               self.size_min, self.size_max, self.p,
-                               self.output_size, self.ar_min, self.ar_max)
+        return template.format(self.image_size, self.output_size, self.cr_min,
+                               self.cr_max, self.size_min, self.size_max,
+                               self.p, self.ar_min, self.ar_max)
 
 
 def change_aspect_ratio(image, aspect_ratio):
@@ -187,6 +211,8 @@ def change_aspect_ratio(image, aspect_ratio):
         w_image = int(w_image * r)
     else:
         h_image = int(h_image / float(r))
+    # cv2.resize:（image, (w, h))
+    # transform.resize:(image, (h, w))
     resize_image = cv2.resize(image, (h_image, w_image))[..., None]
     return resize_image
 
@@ -214,6 +240,30 @@ def crop_center(image):
     return square_image
 
 
+def padding_image(image):
+    height, width = image.shape[:2]
+    left = 0
+    right = width
+    top = 0
+    bottom = height
+
+    if height >= width:  # 縦長の場合
+        output_size = height
+        margin = int((height - width) / 2)
+        left = margin
+        right = left + width
+    else:  # 横長の場合
+        output_size = width
+        margin = int((width - height) / 2)
+        top = margin
+        bottom = top + height
+
+    square_image = np.zeros((output_size, output_size, 1))
+    square_image[top:bottom, left:right] = image
+
+    return square_image
+
+
 def transpose(image):
     if image.ndim == 2:
         image = image.T
@@ -228,6 +278,18 @@ def sample_random_aspect_ratio(r_max, r_min=1):
     if np.random.rand() > 0.5:
         r = 1 / r
     return r
+
+
+def fix_image(image, aspect_ratio):
+    image_size = image.shape[2]
+    r = 1 / aspect_ratio
+    image = image.reshape(-1, image_size, image_size)
+    image = np.transpose(image, (1, 2, 0))
+    fix_image = change_aspect_ratio(image, r)
+    fix_image = crop_center(fix_image)
+    fix_image = np.transpose(fix_image, (2, 0, 1))
+    return fix_image
+
 
 if __name__ == '__main__':
     # 超パラメータ
@@ -271,7 +333,8 @@ if __name__ == '__main__':
             losses = []
             accuracies = []
             for i in tqdm.tqdm(range(num_batches)):
-                X_batch, T_batch = dataset.read_images_and_T(batch_size)
+                X_batch, T_batch = dataset.minibatch_binary_classification(
+                    batch_size)
                 X_batch = cuda.to_gpu(X_batch)
                 T_batch = cuda.to_gpu(T_batch)
                 # 勾配を初期化
@@ -290,7 +353,8 @@ if __name__ == '__main__':
             epoch_loss.append(np.mean(losses))
             epoch_accuracy.append(np.mean(accuracies))
 
-            X_valid, T_valid = dataset.read_images_and_T(num_valid)
+            X_valid, T_valid = dataset.minibatch_binary_classification(
+                num_valid)
             loss_valid, accuracy_valid = model.loss_ave(
                 X_valid, T_valid, batch_size, True)
 
