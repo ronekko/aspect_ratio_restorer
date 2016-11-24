@@ -268,8 +268,8 @@ if __name__ == '__main__':
     learning_rate = 0.0001
     output_size = 256
     crop_size = 224
-    aspect_ratio_max = 4
-    aspect_ratio_min = 2
+    aspect_ratio_max = 3
+    aspect_ratio_min = 1.5
     file_path = r'E:\stanford_Dogs_Dataset\raw_dataset_binary\output_size_500\output_size_500.hdf5'
 
     queue_train = Queue(10)
@@ -375,3 +375,7 @@ if __name__ == '__main__':
     print 'batch_size:', batch_size
     print 'train_size', num_train
     print 'valid_size', num_test
+    print 'output_size', output_size
+    print 'crop_size', crop_size
+    print 'aspect_ratio_min', aspect_ratio_min
+    print 'aspect_ratio_max', aspect_ratio_max
