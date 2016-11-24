@@ -16,6 +16,7 @@ from multiprocessing import Process, Queue
 from chainer import cuda, optimizers, Chain, serializers
 import chainer.functions as F
 import chainer.links as L
+import cv2
 
 
 # ネットワークの定義
@@ -66,62 +67,156 @@ class Convnet(Chain):
         accuracies = []
         for i in range(num_batches):
             X_batch, T_batch = queue.get()
+            X_batch = cuda.to_gpu(X_batch)
+            T_batch = cuda.to_gpu(T_batch)
             loss, accuracy = self.lossfun(X_batch, T_batch, test)
             losses.append(cuda.to_cpu(loss.data))
             accuracies.append(cuda.to_cpu(accuracy.data))
         return np.mean(losses), np.mean(accuracies)
 
 
-def random_aspect_ratio_and_square_image(image, min_ratio, max_ratio):
-    h_image, w_image = image.shape[:2]
-    size = h_image
-    T = 0
+def mini_batch_train(queue, num_train, batch_size, file_path, min_ratio,
+                     max_ratio, crop_size, output_size):
+    dataset = h5py.File(file_path)
+    image_features = dataset['image_features']
+    r_min = min_ratio
+    r_max = max_ratio
+
+    data = range(0, num_train)
+    num_batches = num_train / batch_size
 
     while True:
-        aspect_ratio = np.random.rand() * 3.0  # 0.5~2の乱数を生成
-        if aspect_ratio >= min_ratio and aspect_ratio < 0.5:
-            break
-        elif aspect_ratio > 2.0 and aspect_ratio <= max_ratio:
-            break
+        for indexes in np.array_split(data, num_batches):
+            images = []
+            ts = []
+            image_batch = image_features[indexes.tolist()]
+            for i in range(len(indexes)):
+                image = image_batch[i]
+                t = np.random.choice(2)
+                if t == 1:
+                    r = sample_random_aspect_ratio(r_max, r_min)
+                else:
+                    r = 1
+                image = change_aspect_ratio(image, r)
+                square_image = crop_center(image)
+                resize_image = cv2.resize(square_image,
+                                          (output_size, output_size))
+                resize_image = random_crop_and_flip(resize_image, crop_size)
+                images.append(resize_image)
+                ts.append(t)
+            X = np.stack(images, axis=0)
+            X = np.transpose(X, (0, 3, 1, 2))
+            X = X.astype(np.float32)
+            T = np.array(ts, dtype=np.int32).reshape(-1, 1)
 
-    square_image = image
-
-    if np.random.rand() > 0.5:  # 半々の確率で
-        w_image = w_image * aspect_ratio
-        T = 1
-
-        if h_image >= w_image:
-            h_image = int(h_image * (float(size) / w_image))
-            if (h_image % 2) == 1:
-                h_image = h_image + 1
-            w_image = size
-            resize_image = transform.resize(image, (h_image, w_image))
-            diff = h_image - w_image
-            margin = int(diff / 2)
-            if margin == 0:
-                square_image = resize_image
-            else:
-                square_image = resize_image[margin:-margin, :]
-        else:
-            w_image = int(w_image * (float(size) / h_image))
-            if (w_image % 2) == 1:
-                w_image = w_image + 1
-            h_image = size
-            resize_image = transform.resize(image, (h_image, w_image))
-            diff = w_image - h_image
-            margin = int(diff / 2)
-            if margin == 0:
-                square_image = resize_image
-            else:
-                square_image = resize_image[:, margin:-margin]
-
-    return square_image, T
+            queue.put((X, T))
 
 
-def random_crop_and_flip(image):
+def mini_batch_test(queue, num_test, batch_size, file_path, min_ratio,
+                    max_ratio, crop_size, output_size):
+    dataset = h5py.File(file_path)
+    image_features = dataset['image_features']
+    r_min = min_ratio
+    r_max = max_ratio
+
+    end = image_features.shape[0]
+    data = range(end - num_test, end)
+    num_batches = num_test / batch_size
+
+    while True:
+        for indexes in np.array_split(data, num_batches):
+            images = []
+            ts = []
+            image_batch = image_features[indexes.tolist()]
+            for i in range(len(indexes)):
+                image = image_batch[i]
+                t = np.random.choice(2)
+                if t == 1:
+                    r = sample_random_aspect_ratio(r_max, r_min)
+                else:
+                    r = 1
+                image = change_aspect_ratio(image, r)
+                square_image = crop_center(image)
+                resize_image = cv2.resize(square_image,
+                                          (output_size, output_size))
+                resize_image = random_crop_and_flip(resize_image, crop_size)
+                images.append(resize_image)
+                ts.append(t)
+            X = np.stack(images, axis=0)
+            X = np.transpose(X, (0, 3, 1, 2))
+            X = X.astype(np.float32)
+            T = np.array(ts, dtype=np.int32).reshape(-1, 1)
+
+            queue.put((X, T))
+
+
+def change_aspect_ratio(image, aspect_ratio):
     h_image, w_image = image.shape[:2]
-    h_crop = 224
-    w_crop = 224
+    r = aspect_ratio
+
+    if r == 1:
+        return image
+    elif r > 1:
+        w_image = int(w_image * r)
+    else:
+        h_image = int(h_image / float(r))
+    # cv2.resize:（image, (w, h))
+    # transform.resize:(image, (h, w))
+    resize_image = cv2.resize(image, (h_image, w_image))
+    return resize_image
+
+
+def crop_center(image):
+    height, width = image.shape[:2]
+    left = 0
+    right = width
+    top = 0
+    bottom = height
+
+    if height >= width:  # 縦長の場合
+        output_size = width
+        margin = int((height - width) / 2)
+        top = margin
+        bottom = top + output_size
+    else:  # 横長の場合
+        output_size = height
+        margin = int((width - height) / 2)
+        left = margin
+        right = left + output_size
+
+    square_image = image[top:bottom, left:right]
+
+    return square_image
+
+
+def padding_image(image):
+    height, width = image.shape[:2]
+    left = 0
+    right = width
+    top = 0
+    bottom = height
+
+    if height >= width:  # 縦長の場合
+        output_size = height
+        margin = int((height - width) / 2)
+        left = margin
+        right = left + width
+    else:  # 横長の場合
+        output_size = width
+        margin = int((width - height) / 2)
+        top = margin
+        bottom = top + height
+
+    square_image = np.zeros((output_size, output_size, 1))
+    square_image[top:bottom, left:right] = image
+
+    return square_image
+
+
+def random_crop_and_flip(image, crop_size):
+    h_image, w_image = image.shape[:2]
+    h_crop = crop_size
+    w_crop = crop_size
 
     # 0以上 h_image - h_crop以下の整数乱数
     top = np.random.randint(0, h_image - h_crop + 1)
@@ -137,94 +232,62 @@ def random_crop_and_flip(image):
     return image
 
 
-def mini_batch_train(queue, batch_size, file_path, min_ratio, max_ratio):
-    dataset = h5py.File(file_path)
-    image_features = dataset['image_features']
-
-    num_train = 10000
-
-    data = range(0, num_train)
-    num_batches = num_train / batch_size
-
-    while True:
-        for indexes in np.array_split(data, num_batches):
-            images = []
-            count = 0
-            T = np.zeros((len(indexes), 1))
-            image_batch = image_features[indexes.tolist()]
-            for i in range(len(indexes)):
-                image = np.transpose(image_batch[i], (1, 2, 0))
-                image, t = random_aspect_ratio_and_square_image(image, min_ratio, max_ratio)
-                image = random_crop_and_flip(image)
-                images.append(image)
-                T[count] = t
-                count = count + 1
-            X = np.stack(images, axis=0)
-            X = np.transpose(X, (0, 3, 1, 2))
-            X = X.astype(np.float32)
-            T = T.astype(np.int32)
-            X = cuda.to_gpu(X)
-            T = cuda.to_gpu(T)
-
-            queue.put((X, T))
+def transpose(image):
+    if image.ndim == 2:
+        image = image.T
+    else:
+        image = np.transpose(image, (1, 0, 2))
+    return image
 
 
-def mini_batch_test(queue, batch_size, file_path, min_ratio, max_ratio):
-    dataset = h5py.File(file_path)
-    image_features = dataset['image_features']
+def sample_random_aspect_ratio(r_max, r_min=1):
+    # アスペクト比rをランダム生成する
+    r = np.random.uniform(r_min, r_max)
+    if np.random.rand() > 0.5:
+        r = 1 / r
+    return r
 
-    num_train = 10000
-    num_valid = 10000
 
-    data = range(num_train, num_train + num_valid)
-    num_batches = num_train / batch_size
-
-    while True:
-        for indexes in np.array_split(data, num_batches):
-            images = []
-            count = 0
-            T = np.zeros((len(indexes), 1))
-            image_batch = image_features[indexes.tolist()]
-            for i in range(len(indexes)):
-                image = np.transpose(image_batch[i], (1, 2, 0))
-                image, t = random_aspect_ratio_and_square_image(image, min_ratio, max_ratio)
-                image = random_crop_and_flip(image)
-                images.append(image)
-                T[count] = t
-                count = count + 1
-            X = np.stack(images, axis=0)
-            X = np.transpose(X, (0, 3, 1, 2))
-            X = X.astype(np.float32)
-            T = T.astype(np.int32)
-            X = cuda.to_gpu(X)
-            T = cuda.to_gpu(T)
-
-            queue.put((X, T))
+def fix_image(image, aspect_ratio):
+    image_size = image.shape[2]
+    r = 1 / aspect_ratio
+    image = image.reshape(-1, image_size, image_size)
+    image = np.transpose(image, (1, 2, 0))
+    fix_image = change_aspect_ratio(image, r)
+    fix_image = crop_center(fix_image)
+    fix_image = np.transpose(fix_image, (2, 0, 1))
+    return fix_image
 
 
 if __name__ == '__main__':
     # 超パラメータ
-    max_iteration = 1000  # 繰り返し回数
+    max_iteration = 50  # 繰り返し回数
     batch_size = 100  # ミニバッチサイズ
-    learning_rate = 0.01
-    num_train = 10000
-    num_valid = 10000
-    min_ratio = 1 / 3
-    max_ratio = 3.0
-    file_path = r'E:\stanford_Dogs_Dataset\raw_dataset_binary\output_size_256\output_size_256.hdf5'
+    num_train = 20000
+    num_test = 100
+    learning_rate = 0.0001
+    output_size = 256
+    crop_size = 224
+    aspect_ratio_max = 4
+    aspect_ratio_min = 2
+    file_path = r'E:\stanford_Dogs_Dataset\raw_dataset_binary\output_size_500\output_size_500.hdf5'
 
     queue_train = Queue(10)
     process_train = Process(target=mini_batch_train,
-                            args=(queue_train, batch_size, file_path, min_ratio, max_ratio))
+                            args=(queue_train, num_train, batch_size,
+                                  file_path, aspect_ratio_min,
+                                  aspect_ratio_max, crop_size, output_size))
     process_train.start()
     queue_test = Queue(10)
     process_test = Process(target=mini_batch_test,
-                           args=(queue_test, batch_size, file_path, min_ratio, max_ratio))
+                           args=(queue_test, num_test, batch_size,
+                                 file_path, aspect_ratio_min, aspect_ratio_max,
+                                 crop_size, output_size))
     process_test.start()
 
     model = Convnet().to_gpu()
     # Optimizerの設定
-    optimizer = optimizers.AdaDelta(learning_rate)
+    optimizer = optimizers.Adam(learning_rate)
     optimizer.setup(model)
 
     image_list = []
@@ -235,7 +298,8 @@ if __name__ == '__main__':
     loss_valid_best = np.inf
     accuracy_valid_best = 0
 
-    num_batches = num_train / batch_size
+    num_batches_train = num_train / batch_size
+    num_batches_test = num_test / batch_size
 
     time_origin = time.time()
     try:
@@ -243,8 +307,10 @@ if __name__ == '__main__':
             time_begin = time.time()
             losses = []
             accuracies = []
-            for i in tqdm.tqdm(range(num_batches)):
+            for i in tqdm.tqdm(range(num_batches_train)):
                 X_batch, T_batch = queue_train.get()
+                X_batch = cuda.to_gpu(X_batch)
+                T_batch = cuda.to_gpu(T_batch)
                 # 勾配を初期化
                 optimizer.zero_grads()
                 # 順伝播を計算し、誤差と精度を取得
@@ -262,8 +328,8 @@ if __name__ == '__main__':
             epoch_accuracy.append(np.mean(accuracies))
 
             loss_valid, accuracy_valid = model.loss_ave(queue_test,
-                                                        num_batches,
-                                                        False)
+                                                        num_batches_test,
+                                                        True)
 
             epoch_valid_loss.append(loss_valid)
             epoch_valid_accuracy.append(accuracy_valid)
@@ -307,4 +373,5 @@ if __name__ == '__main__':
     print 'max_iteration:', max_iteration
     print 'learning_rate:', learning_rate
     print 'batch_size:', batch_size
-    print 'total_time', total_time
+    print 'train_size', num_train
+    print 'valid_size', num_test
