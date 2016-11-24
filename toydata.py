@@ -114,6 +114,30 @@ class RandomCircleSquareDataset(object):
 
         return X, T
 
+    def minibatch_regression(self, batch_size):
+        images = []
+        ts = []
+
+        for i in range(batch_size):
+            image = self.create_image()
+            r = sample_random_aspect_ratio(self.ar_max, self.ar_min)
+            image = change_aspect_ratio(image, r)
+            square_image = padding_image(image)
+            # cv2.resize:(image, (w, h))
+            # transform.resize:(image, (h, w))
+            resize_image = cv2.resize(
+                square_image, (self.output_size, self.output_size))
+            resize_image = resize_image[..., None]
+            images.append(resize_image)
+            t = np.log(r)
+            ts.append(t)
+        X = np.stack(images, axis=0)
+        X = np.transpose(X, (0, 3, 1, 2))
+        X = X.astype(np.float32)
+        T = np.array(ts, dtype=np.float32).reshape(-1, 1)
+
+        return X, T
+
     def create_image(self):
         case = np.random.choice(3, p=self.p)
         if case == 0:
