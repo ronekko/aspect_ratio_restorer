@@ -89,7 +89,7 @@ class RandomCircleSquareDataset(object):
         self.ar_max = aspect_ratio_max
         self.ar_min = aspect_ratio_min
 
-    def read_images_and_T(self, batch_size):
+    def minibatch_binary_classification(self, batch_size):
         images = []
         ts = []
 
@@ -188,17 +188,17 @@ class RandomCircleSquareDataset(object):
 
     def __repr__(self):
         template = """image_size:{}
+output_size:{}
 circle_min:{}
 circle_max:{}
 size_min:{}
 size_max:{}
 p:{}
-output_size:{}
 aspect_ratio_min:{}
 aspect_ratio_max:{}"""
-        return template.format(self.image_size, self.cr_min, self.cr_max,
-                               self.size_min, self.size_max, self.p,
-                               self.output_size, self.ar_min, self.ar_max)
+        return template.format(self.image_size, self.output_size, self.cr_min,
+                               self.cr_max, self.size_min, self.size_max,
+                               self.p, self.ar_min, self.ar_max)
 
 
 def change_aspect_ratio(image, aspect_ratio):
@@ -211,6 +211,8 @@ def change_aspect_ratio(image, aspect_ratio):
         w_image = int(w_image * r)
     else:
         h_image = int(h_image / float(r))
+    # cv2.resize:（image, (w, h))
+    # transform.resize:(image, (h, w))
     resize_image = cv2.resize(image, (h_image, w_image))[..., None]
     return resize_image
 
@@ -331,7 +333,8 @@ if __name__ == '__main__':
             losses = []
             accuracies = []
             for i in tqdm.tqdm(range(num_batches)):
-                X_batch, T_batch = dataset.read_images_and_T(batch_size)
+                X_batch, T_batch = dataset.minibatch_binary_classification(
+                    batch_size)
                 X_batch = cuda.to_gpu(X_batch)
                 T_batch = cuda.to_gpu(T_batch)
                 # 勾配を初期化
@@ -350,7 +353,8 @@ if __name__ == '__main__':
             epoch_loss.append(np.mean(losses))
             epoch_accuracy.append(np.mean(accuracies))
 
-            X_valid, T_valid = dataset.read_images_and_T(num_valid)
+            X_valid, T_valid = dataset.minibatch_binary_classification(
+                num_valid)
             loss_valid, accuracy_valid = model.loss_ave(
                 X_valid, T_valid, batch_size, True)
 
