@@ -197,6 +197,7 @@ if __name__ == '__main__':
                 epoch_accuracy_best = epoch
 
             # 訓練データでの結果を表示
+            print "dog_data.py"
             print "epoch:", epoch
             print "time", epoch_time, "(", total_time, ")"
             print "loss[train]:", epoch_loss[epoch]
