@@ -253,6 +253,18 @@ def sample_random_aspect_ratio(r_max, r_min=1):
         r = 1 / r
     return r
 
+
+def fix_image(image, aspect_ratio):
+    image_size = image.shape[2]
+    r = 1 / aspect_ratio
+    image = image.reshape(-1, image_size, image_size)
+    image = np.transpose(image, (1, 2, 0))
+    fix_image = change_aspect_ratio(image, r)
+    fix_image = crop_center(fix_image)
+    fix_image = np.transpose(fix_image, (2, 0, 1))
+    return fix_image
+
+
 if __name__ == '__main__':
     # 超パラメータ
     max_iteration = 50  # 繰り返し回数
