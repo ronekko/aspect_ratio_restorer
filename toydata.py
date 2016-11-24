@@ -213,7 +213,11 @@ def change_aspect_ratio(image, aspect_ratio):
         h_image = int(h_image / float(r))
     # cv2.resize:（image, (w, h))
     # transform.resize:(image, (h, w))
-    resize_image = cv2.resize(image, (h_image, w_image))[..., None]
+    if image.shape[2] == 1:
+        resize_image = cv2.resize(image, (h_image, w_image))[..., None]
+    else:
+        resize_image = cv2.resize(image, (h_image, w_image))
+
     return resize_image
 
 
@@ -289,6 +293,25 @@ def fix_image(image, aspect_ratio):
     fix_image = crop_center(fix_image)
     fix_image = np.transpose(fix_image, (2, 0, 1))
     return fix_image
+
+
+def random_crop_and_flip(image, crop_size):
+    h_image, w_image = image.shape[:2]
+    h_crop = crop_size
+    w_crop = crop_size
+
+    # 0以上 h_image - h_crop以下の整数乱数
+    top = np.random.randint(0, h_image - h_crop + 1)
+    left = np.random.randint(0, w_image - w_crop + 1)
+    bottom = top + h_crop
+    right = left + w_crop
+
+    image = image[top:bottom, left:right]
+
+    if np.random.rand() > 0.5:  # 半々の確率で
+        image = image[:, ::-1]  # 左右反転
+
+    return image
 
 
 if __name__ == '__main__':
