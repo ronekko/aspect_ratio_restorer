@@ -74,8 +74,8 @@ class Convnet(Chain):
         return np.mean(losses), np.mean(accuracies)
 
 
-def create_mini_batch(queue, data, batch_size, file_path, min_ratio,
-                      max_ratio, crop_size, output_size):
+def create_mini_batch(queue, data, batch_size=100, file_path, min_ratio=1,
+                      max_ratio=4, crop_size=224, output_size=256):
     dataset = h5py.File(file_path)
     image_features = dataset['image_features']
     r_min = min_ratio
