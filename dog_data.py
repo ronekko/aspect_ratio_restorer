@@ -22,22 +22,20 @@ import cv2
 class Convnet(Chain):
     def __init__(self):
         super(Convnet, self).__init__(
-            conv1=L.Convolution2D(3, 64, 3, stride=2, pad=1),
-            norm1=L.BatchNormalization(64),
-            conv2=L.Convolution2D(64, 64, 3, stride=2, pad=1),
-            norm2=L.BatchNormalization(64),
-            conv3=L.Convolution2D(64, 128, 3, stride=2, pad=1),
-            norm3=L.BatchNormalization(128),
-            conv4=L.Convolution2D(128, 128, 3, stride=2, pad=1),
-            norm4=L.BatchNormalization(128),
-            conv5=L.Convolution2D(128, 256, 3, stride=2, pad=1),
-            norm5=L.BatchNormalization(256),
-            conv6=L.Convolution2D(256, 256, 3, stride=2, pad=1),
-            norm6=L.BatchNormalization(256),
+            conv1=L.Convolution2D(3, 16, 3, stride=2, pad=1),
+            norm1=L.BatchNormalization(16),
+            conv2=L.Convolution2D(16, 32, 3, stride=2, pad=1),
+            norm2=L.BatchNormalization(32),
+            conv3=L.Convolution2D(32, 32, 3, stride=2, pad=1),
+            norm3=L.BatchNormalization(32),
+            conv4=L.Convolution2D(32, 64, 3, stride=2, pad=1),
+            norm4=L.BatchNormalization(64),
+            conv5=L.Convolution2D(64, 128, 3, stride=2, pad=1),
+            norm5=L.BatchNormalization(128),
 
-            l1=L.Linear(1024, 500),
-            norm7=L.BatchNormalization(500),
-            l2=L.Linear(500, 1),
+            l1=L.Linear(2048, 1000),
+            norm7=L.BatchNormalization(1000),
+            l2=L.Linear(1000, 1),
         )
 
     def network(self, X, test):
@@ -46,7 +44,6 @@ class Convnet(Chain):
         h = F.relu(self.norm3(self.conv3(h), test=test))
         h = F.relu(self.norm4(self.conv4(h), test=test))
         h = F.relu(self.norm5(self.conv5(h), test=test))
-        h = F.relu(self.norm6(self.conv6(h), test=test))
         h = F.relu(self.norm7(self.l1(h), test=test))
         y = self.l2(h)
         return y
