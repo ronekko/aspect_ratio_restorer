@@ -19,13 +19,11 @@ import tqdm
 # ネットワークの定義
 class Convnet(Chain):
     def __init__(self, conv1_out_channel=4, conv2_out_channel=4,
-                 conv3_out_channel=8, conv4_out_channel=8,
-                 conv5_out_channel=16):
+                 conv3_out_channel=8, conv4_out_channel=8):
         self.oc1 = conv1_out_channel
         self.oc2 = conv2_out_channel
         self.oc3 = conv3_out_channel
         self.oc4 = conv4_out_channel
-        self.oc5 = conv5_out_channel
 
         super(Convnet, self).__init__(
             conv1=L.Convolution2D(1, self.oc1, 3, stride=2, pad=1),
@@ -36,10 +34,8 @@ class Convnet(Chain):
             norm3=L.BatchNormalization(self.oc3),
             conv4=L.Convolution2D(self.oc3, self.oc4, 3, stride=2, pad=1),
             norm4=L.BatchNormalization(self.oc4),
-            conv5=L.Convolution2D(self.oc4, self.oc5, 3, stride=2, pad=1),
-            norm5=L.BatchNormalization(self.oc5),
 
-            l1=L.Linear(256, 100),
+            l1=L.Linear(392, 100),
             norml=L.BatchNormalization(100),
             l2=L.Linear(100, 1),
         )
@@ -49,7 +45,6 @@ class Convnet(Chain):
         h = F.relu(self.norm2(self.conv2(h), test=test))
         h = F.relu(self.norm3(self.conv3(h), test=test))
         h = F.relu(self.norm4(self.conv4(h), test=test))
-        h = F.relu(self.norm5(self.conv5(h), test=test))
         h = F.relu(self.norml(self.l1(h), test=test))
         y = self.l2(h)
         return y
