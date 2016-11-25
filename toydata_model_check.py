@@ -18,24 +18,24 @@ import tqdm
 
 # ネットワークの定義
 class Convnet(Chain):
-    def __init__(self, conv1_out_channel=4, conv2_out_channel=4,
-                 conv3_out_channel=8, conv4_out_channel=8):
+    def __init__(self, conv1_out_channel=10, conv2_out_channel=15,
+                 conv3_out_channel=20, conv4_out_channel=25):
         self.oc1 = conv1_out_channel
         self.oc2 = conv2_out_channel
         self.oc3 = conv3_out_channel
         self.oc4 = conv4_out_channel
 
         super(Convnet, self).__init__(
-            conv1=L.Convolution2D(1, self.oc1, 3, stride=2, pad=1),
+            conv1=L.Convolution2D(1, self.oc1, 5, stride=2),
             norm1=L.BatchNormalization(self.oc1),
-            conv2=L.Convolution2D(self.oc1, self.oc2, 3, stride=2, pad=1),
+            conv2=L.Convolution2D(self.oc1, self.oc2, 5, stride=2),
             norm2=L.BatchNormalization(self.oc2),
-            conv3=L.Convolution2D(self.oc2, self.oc3, 3, stride=2, pad=1),
+            conv3=L.Convolution2D(self.oc2, self.oc3, 5, stride=2),
             norm3=L.BatchNormalization(self.oc3),
-            conv4=L.Convolution2D(self.oc3, self.oc4, 3, stride=2, pad=1),
+            conv4=L.Convolution2D(self.oc3, self.oc4, 5, stride=2),
             norm4=L.BatchNormalization(self.oc4),
 
-            l1=L.Linear(392, 100),
+            l1=L.Linear(400, 100),
             norml=L.BatchNormalization(100),
             l2=L.Linear(100, 1),
         )
@@ -76,9 +76,8 @@ class Convnet(Chain):
         template = """conv1_out_channel:{}
 conv2_out_channel:{}
 conv3_out_channel:{}
-conv4_out_channel:{}
-conv5_out_channel:{}"""
-        return template.format(self.oc1, self.oc2, self.oc3, self.oc4, self.oc5)
+conv4_out_channel:{}"""
+        return template.format(self.oc1, self.oc2, self.oc3, self.oc4)
 
 
 if __name__ == '__main__':
@@ -154,6 +153,9 @@ if __name__ == '__main__':
                 loss_valid_best = loss_valid
                 epoch_best = epoch
                 model_best = copy.deepcopy(model)
+
+            X_test, T_test = dataset.minibatch_binary_classification(1)
+            X_test = cuda.to_gpu(X_test)
 
             # 訓練データでの結果を表示
             print "toydata_model_check.py"
