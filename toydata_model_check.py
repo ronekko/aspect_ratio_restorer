@@ -39,9 +39,9 @@ class Convnet(Chain):
             conv5=L.Convolution2D(self.oc4, self.oc5, 3, stride=2, pad=1),
             norm5=L.BatchNormalization(self.oc5),
 
-            l1=L.Linear(784, 300),
-            norml=L.BatchNormalization(300),
-            l2=L.Linear(300, 1),
+            l1=L.Linear(256, 100),
+            norml=L.BatchNormalization(100),
+            l2=L.Linear(100, 1),
         )
 
     def network(self, X, test):
@@ -99,7 +99,7 @@ if __name__ == '__main__':
     size_min = 50
     size_max = 200
     p = [0.3, 0.3, 0.4]
-    output_size = 224
+    output_size = 112
     aspect_ratio_max = 4
     aspect_ratio_min = 2
 
