@@ -89,7 +89,7 @@ conv5_out_channel:{}"""
 if __name__ == '__main__':
     # 超パラメータ
     max_iteration = 100  # 繰り返し回数
-    batch_size = 25  # ミニバッチサイズ
+    batch_size = 100  # ミニバッチサイズ
     num_train = 1000
     num_valid = 100
     learning_rate = 0.0001
