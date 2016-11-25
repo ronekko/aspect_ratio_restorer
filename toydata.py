@@ -214,9 +214,9 @@ def change_aspect_ratio(image, aspect_ratio):
     # cv2.resize:（image, (w, h))
     # transform.resize:(image, (h, w))
     if image.shape[2] == 1:
-        resize_image = cv2.resize(image, (h_image, w_image))[..., None]
+        resize_image = cv2.resize(image, (w_image, h_image))[..., None]
     else:
-        resize_image = cv2.resize(image, (h_image, w_image))
+        resize_image = cv2.resize(image, (w_image, h_image))
 
     return resize_image
 
@@ -290,7 +290,6 @@ def fix_image(image, aspect_ratio):
     image = image.reshape(-1, image_size, image_size)
     image = np.transpose(image, (1, 2, 0))
     fix_image = change_aspect_ratio(image, r)
-    fix_image = crop_center(fix_image)
     fix_image = np.transpose(fix_image, (2, 0, 1))
     return fix_image
 
