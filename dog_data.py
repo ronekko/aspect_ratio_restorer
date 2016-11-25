@@ -35,9 +35,9 @@ class Convnet(Chain):
             conv6=L.Convolution2D(256, 256, 3, stride=2, pad=1),
             norm6=L.BatchNormalization(256),
 
-            l1=L.Linear(4096, 1000),
-            norm7=L.BatchNormalization(1000),
-            l2=L.Linear(1000, 1),
+            l1=L.Linear(1024, 500),
+            norm7=L.BatchNormalization(500),
+            l2=L.Linear(500, 1),
         )
 
     def network(self, X, test):
@@ -118,8 +118,8 @@ if __name__ == '__main__':
     num_train = 20000
     num_test = 100
     learning_rate = 0.0001
-    output_size = 256
-    crop_size = 224
+    output_size = 128
+    crop_size = 112
     aspect_ratio_max = 3
     aspect_ratio_min = 1.5
     file_path = r'E:\stanford_Dogs_Dataset\raw_dataset_binary\output_size_500\output_size_500.hdf5'
