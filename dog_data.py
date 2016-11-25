@@ -115,8 +115,8 @@ if __name__ == '__main__':
     num_train = 20000
     num_test = 100
     learning_rate = 0.0001
-    output_size = 128
-    crop_size = 112
+    output_size = 256
+    crop_size = 224
     aspect_ratio_max = 3
     aspect_ratio_min = 1.5
     file_path = r'E:\stanford_Dogs_Dataset\raw_dataset_binary\output_size_500\output_size_500.hdf5'
