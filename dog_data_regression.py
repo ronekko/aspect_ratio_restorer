@@ -112,9 +112,9 @@ def create_mini_batch(queue, file_path, data, batch_size=100, min_ratio=1,
 
 if __name__ == '__main__':
     # 超パラメータ
-    max_iteration = 50  # 繰り返し回数
+    max_iteration = 100  # 繰り返し回数
     batch_size = 100  # ミニバッチサイズ
-    num_train = 2000
+    num_train = 20000
     num_test = 100
     learning_rate = 0.0001
     output_size = 256
@@ -197,7 +197,7 @@ if __name__ == '__main__':
             target_r = np.exp(target_t)
             predict_image = toydata.fix_image(X_test, predict_r)
             original_image = toydata.fix_image(X_test, target_r)
-            input_image = np.transpose(X_test[0], (1, 2, 0))
+            debased_image = np.transpose(X_test[0], (1, 2, 0))
             predict_image = np.transpose(predict_image, (1, 2, 0))
             original_image = np.transpose(original_image, (1, 2, 0))
             r_dis = np.absolute(predict_r - target_r)
@@ -226,8 +226,8 @@ if __name__ == '__main__':
             plt.show()
 
             plt.subplot(131)
-            plt.title("input_image")
-            plt.imshow(input_image/256.0)
+            plt.title("debased_image")
+            plt.imshow(debased_image/256.0)
             plt.subplot(132)
             plt.title("fix_image")
             plt.imshow(predict_image/256.0)
