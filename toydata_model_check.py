@@ -88,7 +88,7 @@ conv5_out_channel:{}"""
 
 if __name__ == '__main__':
     # 超パラメータ
-    max_iteration = 50  # 繰り返し回数
+    max_iteration = 100  # 繰り返し回数
     batch_size = 25  # ミニバッチサイズ
     num_train = 1000
     num_valid = 100
@@ -161,7 +161,7 @@ if __name__ == '__main__':
                 model_best = copy.deepcopy(model)
 
             # 訓練データでの結果を表示
-            print "toydata_model_check"
+            print "toydata_model_check.py"
             print "epoch:", epoch
             print "time", epoch_time, "(", total_time, ")"
             print "loss[train]:", epoch_loss[epoch]
