@@ -10,9 +10,10 @@ import numpy as np
 import time
 import tqdm
 import h5py
+import copy
 import matplotlib.pyplot as plt
 from multiprocessing import Process, Queue
-from chainer import cuda, optimizers, Chain
+from chainer import cuda, optimizers, Chain, serializers
 import chainer.functions as F
 import chainer.links as L
 import cv2
@@ -112,7 +113,7 @@ def create_mini_batch(queue, file_path, data, batch_size=100, min_ratio=1,
 
 if __name__ == '__main__':
     # 超パラメータ
-    max_iteration = 100  # 繰り返し回数
+    max_iteration = 150  # 繰り返し回数
     batch_size = 100  # ミニバッチサイズ
     num_train = 20000
     num_test = 100
@@ -120,7 +121,7 @@ if __name__ == '__main__':
     output_size = 256
     crop_size = 224
     aspect_ratio_max = 3
-    aspect_ratio_min = 1.5
+    aspect_ratio_min = 1.0
     file_path = r'E:\stanford_Dogs_Dataset\raw_dataset_binary\output_size_500\output_size_500.hdf5'
 
     train_data = range(0, num_train)
@@ -188,6 +189,7 @@ if __name__ == '__main__':
             if loss_valid < loss_valid_best:
                 loss_valid_best = loss_valid
                 epoch__loss_best = epoch
+                model_best = copy.deepcopy(model)
 
             # テスト用のデータを取得
             X_test, T_test = queue_test.get()
@@ -238,6 +240,9 @@ if __name__ == '__main__':
 
     except KeyboardInterrupt:
         print "割り込み停止が実行されました"
+
+    model_filename = 'model' + str(time.time()) + '.npz'
+    serializers.save_npz(model_filename, model_best)
 
     process_train.terminate()
     process_test.terminate()
