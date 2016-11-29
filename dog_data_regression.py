@@ -121,7 +121,7 @@ if __name__ == '__main__':
     output_size = 256
     crop_size = 224
     aspect_ratio_max = 3
-    aspect_ratio_min = 1.0
+    aspect_ratio_min = 1.5
     file_path = r'E:\stanford_Dogs_Dataset\raw_dataset_binary\output_size_500\output_size_500.hdf5'
 
     train_data = range(0, num_train)
@@ -241,7 +241,7 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print "割り込み停止が実行されました"
 
-    model_filename = 'model' + str(time.time()) + '.npz'
+    model_filename = 'model' + str(time.time())+ 'dog' + str(aspect_ratio_min) + '.npz'
     serializers.save_npz(model_filename, model_best)
 
     process_train.terminate()
