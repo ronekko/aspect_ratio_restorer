@@ -190,8 +190,8 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print "割り込み停止が実行されました"
 
-#    model_filename = 'model' + str(time.time()) + '.npz'
-#    serializers.save_npz(model_filename, model_best)
+    model_filename = 'model' + str(time.time()) + 'toydata' + str(aspect_ratio_min) + '.npz'
+    serializers.save_npz(model_filename, model_best)
 
     print 'max_iteration:', max_iteration
     print 'learning_rate:', learning_rate
