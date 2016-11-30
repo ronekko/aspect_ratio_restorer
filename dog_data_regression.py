@@ -117,7 +117,7 @@ if __name__ == '__main__':
     batch_size = 100  # ミニバッチサイズ
     num_train = 20000
     num_test = 100
-    learning_rate = 0.0001
+    learning_rate = 0.001
     output_size = 256
     crop_size = 224
     aspect_ratio_max = 3
