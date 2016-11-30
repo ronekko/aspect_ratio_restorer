@@ -6,152 +6,93 @@ Created on Fri Oct 21 16:12:33 2016
 """
 
 
+import toydata
 import numpy as np
-from chainer import cuda, optimizers, Chain, serializers
+import time
+import tqdm
+import h5py
+import copy
+import matplotlib.pyplot as plt
+from multiprocessing import Process, Queue
+from chainer import cuda, optimizers, Chain, serializers,Variable
 import chainer.functions as F
 import chainer.links as L
-import matplotlib.pyplot as plt
-from skimage import io, transform
-import time
-import copy
-import tqdm
-
-
-def random_aspect_ratio_and_resize_image(image):
-    h_image, w_image = image.shape[:2]
-
-    aspect_ratio = np.random.rand() * 2  # 0~2の乱数を生成
-    while True:
-        aspect_ratio = np.random.rand() * 2
-        if aspect_ratio > 0:
-            break
-
-    w_image = w_image * aspect_ratio
-
-    square_image = transform.resize(image, (500, 500))
-
-    if h_image >= w_image:
-        w_image = int(w_image * (500.0 / h_image))
-        if (w_image % 2) == 1:
-            w_image = w_image + 1
-        h_image = 500
-        resize_image = transform.resize(image, (h_image, w_image))
-        diff = h_image - w_image
-        margin = int(diff / 2)
-        square_image[:, :margin] = 0
-        square_image[:, margin:-margin] = resize_image
-        square_image[:, -margin:] = 0
-    else:
-        h_image = int(h_image * (500.0 / w_image))
-        if (h_image % 2) == 1:
-            h_image = h_image + 1
-        w_image = 500
-        resize_image = transform.resize(image, (h_image, w_image))
-        diff = w_image - h_image
-        margin = int(diff / 2)
-        square_image[:margin, :] = 0
-        square_image[margin:-margin, :] = resize_image
-        square_image[-margin:, :] = 0
-
-    if np.random.rand() > 0.5:  # 半々の確率で
-        resize_image = resize_image[:, ::-1]  # 左右反転
-
-    return square_image, aspect_ratio
-
-
-def read_images_and_T(image_list, indexes):
-    images = []
-    ratios = []
-    T = []
-
-    for i in indexes:
-        image = io.imread(image_list[i])
-        resize_image, t = random_aspect_ratio_and_resize_image(image)
-        images.append(resize_image)
-        ratios.append(t)
-    X = np.stack(images, axis=0)
-    T.append(ratios)
-
-    return cuda.to_gpu(X), cuda.to_gpu(T)
+import cv2
+from dog_data_regression import Convnet
 
 
 if __name__ == '__main__':
     # 超パラメータ
-    max_iteration = 1000  # 繰り返し回数
+    max_iteration = 150  # 繰り返し回数
     batch_size = 100  # ミニバッチサイズ
-    valid_size = 20000
+    num_train = 20000
+    num_test = 100
+    learning_rate = 0.001
+    output_size = 256
+    crop_size = 224
+    aspect_ratio_max = 3
+    aspect_ratio_min = 1.0
+    file_path = r'E:\stanford_Dogs_Dataset\raw_dataset_binary\output_size_500\output_size_500.hdf5'
+    train_data = range(0, num_train)
+    test_data = range(num_train, num_train + num_test)
+    model = Convnet().to_gpu()
+    serializers.load_npz('model1480445096.37dog1.5.npz',model)
 
-    image_list = []
-    images = []
-    ratios = []
-    T = []
+    dataset = h5py.File(file_path)
+    image_features = dataset['image_features']
+    r_min = aspect_ratio_min
+    r_max = aspect_ratio_max
 
-    f = open(r"file_list.txt", "r")
-    for path in f:
-        path = path.strip()
-        image_list.append(path)
-    f.close()
+    num_batches = len(test_data) / 2
 
-    train_image_list = image_list[:-valid_size]
-    valid_image_list = image_list[-valid_size:]
+    for indexes in np.array_split(test_data, num_batches):
+        images = []
+        ts = []
+        image_batch = image_features[indexes.tolist()]
+        for i in range(len(indexes)):
+            image = image_batch[i]
+            r = toydata.sample_random_aspect_ratio(r_max, r_min)
+            image = toydata.change_aspect_ratio(image, r)
+            square_image = toydata.crop_center(image)
+            resize_image = cv2.resize(square_image,
+                                      (output_size, output_size))
+            resize_image = toydata.random_crop_and_flip(resize_image,
+                                                        crop_size)
+            images.append(resize_image)
+            t = np.log(r)
+            ts.append(t)
+        X = np.stack(images, axis=0)
+        X = np.transpose(X, (0, 3, 1, 2))
+        X = X.astype(np.float32)
+        T = np.array(ts, dtype=np.float32).reshape(-1, 1)
 
-    num_train = len(train_image_list)
-    num_batches = num_train / batch_size
+    # yを計算
+    X_gpu = Variable(cuda.to_gpu(X))
+    y = model.forward(X_gpu, True)
 
-    time_origin = time.time()
+    # 特徴マップを取得
+    a = y.creator.inputs[0]
+    l = []
+    while a.creator:
+        if a.creator.label == 'Convolution2DFunction':
+            l.append(cuda.to_cpu(a.data))
+        a = a.creator.inputs[0]
 
-    for epoch in range(max_iteration):
-        time_begin = time.time()
-        permu = range(num_train)
-        for indexes in tqdm.tqdm(np.array_split(permu, num_batches)):
-            for i in indexes:
-                image = io.imread(image_list[i])
-                h_image, w_image = image.shape[:2]
+    # 特徴マップを表示
+    for f in l[-1][0]:
+        plt.matshow(f, cmap=plt.cm.gray)
+        plt.show()
 
-                while True:
-                    aspect_ratio = np.random.rand() * 2  # 0.5~2の乱数を生成
-                    if aspect_ratio > 0.5:
-                        break
-
-                if np.random.rand() > 0.5:  # 半々の確率で
-                    w_image = w_image * aspect_ratio
-
-                square_image = transform.resize(image, (500, 500))
-
-                if h_image >= w_image:
-                    h_image = int(h_image * (500.0 / w_image))
-                    if (h_image % 2) == 1:
-                        h_image = h_image + 1
-                    w_image = 500
-                    resize_image = transform.resize(image, (h_image, w_image))
-                    diff = h_image - w_image
-                    margin = int(diff / 2)
-                    if margin == 0:
-                        square_image = resize_image
-                    else:
-                        square_image = resize_image[margin:-margin, :]
-                else:
-                    w_image = int(w_image * (500.0 / h_image))
-                    if (w_image % 2) == 1:
-                        w_image = w_image + 1
-                    h_image = 500
-                    resize_image = transform.resize(image, (h_image, w_image))
-                    diff = w_image - h_image
-                    margin = int(diff / 2)
-                    if margin == 0:
-                        square_image = resize_image
-                    else:
-                        square_image = resize_image[:, margin:-margin]
-
-                images.append(square_image)
-                ratios.append(aspect_ratio)
-            X = np.stack(images, axis=0)
-            T.append(ratios)
-
-        time_end = time.time()
-        epoch_time = time_end - time_begin
-        total_time = time_end - time_origin
-
-        # 訓練データでの結果を表示
-        print "epoch:", epoch
-        print "time", epoch_time, "(", total_time, ")"
+    # 出力に対する入力の勾配を可視化
+    y.grad = cuda.cupy.ones(y.data.shape, dtype=np.float32)
+    y.backward(retain_grad=True)
+    grad = X_gpu.grad
+    grad = cuda.to_cpu(grad)
+    for c in grad[1]:
+        plt.matshow(c, cmap=plt.cm.bwr)
+        plt.colorbar()
+        plt.show()
+    for c in X[1]:
+        plt.matshow(c, cmap=plt.cm.gray)
+        plt.colorbar()
+        plt.show()
