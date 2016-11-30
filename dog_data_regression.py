@@ -42,7 +42,9 @@ class Convnet(Chain):
         )
 
     def network(self, X, test):
-        h = F.relu(self.norm1(self.conv1(X), test=test))
+        h = self.conv1(X)
+        h = self.norm1(h, test=test)
+        h = F.relu(h)
         h = F.relu(self.norm2(self.conv2(h), test=test))
         h = F.relu(self.norm3(self.conv3(h), test=test))
         h = F.relu(self.norm4(self.conv4(h), test=test))
@@ -75,6 +77,40 @@ class Convnet(Chain):
         y = self.forward(X, test)
         y = cuda.to_cpu(y.data)
         return y
+
+    def test_output(self, X, T, r_loss):
+        predict_t = model.predict(X, True)
+        target_t = T
+        predict_r = np.exp(predict_t)
+        target_r = np.exp(target_t)
+        predict_image = toydata.fix_image(X_test, predict_r)
+        original_image = toydata.fix_image(X_test, target_r)
+        debased_image = np.transpose(X[0], (1, 2, 0))
+        predict_image = np.transpose(predict_image, (1, 2, 0))
+        original_image = np.transpose(original_image, (1, 2, 0))
+        r_dis = np.absolute(predict_r - target_r)
+        r_loss.append(r_dis[0])
+
+        print 'predict t:', predict_t, 'target t:', target_t
+        print 'predict r:', predict_r, 'target r:', target_r
+
+        plt.plot(r_loss)
+        plt.title("r_disdance")
+        plt.grid()
+        plt.show()
+
+        plt.subplot(131)
+        plt.title("debased_image")
+        plt.imshow(debased_image/256.0)
+        plt.subplot(132)
+        plt.title("fix_image")
+        plt.imshow(predict_image/256.0)
+        plt.subplot(133)
+        plt.title("target_image")
+        plt.imshow(original_image/256.0)
+        plt.show()
+        return r_loss
+
 
 
 def create_mini_batch(queue, file_path, data, batch_size=100, min_ratio=1,
@@ -191,20 +227,6 @@ if __name__ == '__main__':
                 epoch__loss_best = epoch
                 model_best = copy.deepcopy(model)
 
-            # テスト用のデータを取得
-            X_test, T_test = queue_test.get()
-            predict_t = model.predict(X_test, True)
-            target_t = T_test
-            predict_r = np.exp(predict_t)
-            target_r = np.exp(target_t)
-            predict_image = toydata.fix_image(X_test, predict_r)
-            original_image = toydata.fix_image(X_test, target_r)
-            debased_image = np.transpose(X_test[0], (1, 2, 0))
-            predict_image = np.transpose(predict_image, (1, 2, 0))
-            original_image = np.transpose(original_image, (1, 2, 0))
-            r_dis = np.absolute(predict_r - target_r)
-            r_loss.append(r_dis[0])
-
             # 訓練データでの結果を表示
             print "dog_data.py"
             print "epoch:", epoch
@@ -212,8 +234,6 @@ if __name__ == '__main__':
             print "loss[train]:", epoch_loss[epoch]
             print "loss[valid]:", loss_valid
             print "loss[valid_best]:", loss_valid_best
-            print 'predict t:', predict_t, 'target t:', target_t
-            print 'predict r:', predict_r, 'target r:', target_r
 
             plt.plot(epoch_loss)
             plt.plot(epoch_valid_loss)
@@ -223,21 +243,9 @@ if __name__ == '__main__':
             plt.grid()
             plt.show()
 
-            plt.plot(r_loss)
-            plt.title("r_disdance")
-            plt.grid()
-            plt.show()
-
-            plt.subplot(131)
-            plt.title("debased_image")
-            plt.imshow(debased_image/256.0)
-            plt.subplot(132)
-            plt.title("fix_image")
-            plt.imshow(predict_image/256.0)
-            plt.subplot(133)
-            plt.title("target_image")
-            plt.imshow(original_image/256.0)
-            plt.show()
+            # テスト用のデータを取得
+            X_test, T_test = queue_test.get()
+            r_loss = model.test_output(X_test, T_test, r_loss)
 
     except KeyboardInterrupt:
         print "割り込み停止が実行されました"
