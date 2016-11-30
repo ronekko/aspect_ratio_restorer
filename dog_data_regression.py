@@ -121,7 +121,7 @@ if __name__ == '__main__':
     output_size = 256
     crop_size = 224
     aspect_ratio_max = 3
-    aspect_ratio_min = 1.5
+    aspect_ratio_min = 1.0
     file_path = r'E:\stanford_Dogs_Dataset\raw_dataset_binary\output_size_500\output_size_500.hdf5'
 
     train_data = range(0, num_train)
@@ -217,6 +217,7 @@ if __name__ == '__main__':
 
             plt.plot(epoch_loss)
             plt.plot(epoch_valid_loss)
+            plt.ylim(0, 0.5)
             plt.title("loss")
             plt.legend(["train", "valid"], loc="upper right")
             plt.grid()
