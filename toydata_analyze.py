@@ -39,7 +39,7 @@ if __name__ == '__main__':
     aspect_ratio_min = 2
 
     model = toydata_regression.Convnet().to_gpu()
-    serializers.load_npz('model1480549145.49toydata2.npz',model)
+    serializers.load_npz('model1480557475.95toydata2.npz',model)
 
     dataset = toydata.RandomCircleSquareDataset(
         image_size, circle_r_min, circle_r_max, size_min, size_max, p,
