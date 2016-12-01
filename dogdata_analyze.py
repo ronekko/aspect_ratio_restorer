@@ -65,15 +65,76 @@ if __name__ == '__main__':
     # 特徴マップを取得
     a = y.creator.inputs[0]
     l = []
+    r = []
+    l1 = []
+    l2 = []
+    l3 = []
+    l4 = []
+    l5 = []
+    temp = []
     while a.creator:
         if a.creator.label == 'Convolution2DFunction':
             l.append(cuda.to_cpu(a.data))
+        if a.creator.label == 'ReLU':
+            r.append(cuda.to_cpu(a.data))
         a = a.creator.inputs[0]
 
     # 特徴マップを表示
-    for f in l[-1][0]:
+    for f in l[-1][1]:
         plt.matshow(f, cmap=plt.cm.gray)
         plt.show()
+
+    l5 = []
+    for c in range(68):
+        temp = []
+        for b in range(batch_size):
+            temp.append(np.sum(r[1][b][c]))
+        ave = np.average(temp)
+        l5.append(ave)
+    l4 = []
+    for c in range(32):
+        temp = []
+        for b in range(batch_size):
+            temp.append(np.sum(r[2][b][c]))
+        ave = np.average(temp)
+        l4.append(ave)
+    l3 = []
+    for c in range(32):
+        temp = []
+        for b in range(batch_size):
+            temp.append(np.sum(r[3][b][c]))
+        ave = np.average(temp)
+        l3.append(ave)
+    l2 = []
+    for c in range(16):
+        temp = []
+        for b in range(batch_size):
+            temp.append(np.sum(r[4][b][c]))
+        ave = np.average(temp)
+        l2.append(ave)
+    l1 = []
+    for c in range(16):
+        temp = []
+        for b in range(batch_size):
+            temp.append(np.sum(r[5][b][c]))
+        ave = np.average(temp)
+        l1.append(ave)
+
+    print 'layer1'
+    plt.plot(l1)
+    plt.show()
+    print 'layer2'
+    plt.plot(l2)
+    plt.show()
+    print 'layer3'
+    plt.plot(l3)
+    plt.show()
+    print 'layer4'
+    plt.plot(l4)
+    plt.show()
+    print 'layer5'
+    plt.plot(l5)
+    plt.show()
 
     # 出力に対する入力の勾配を可視化
     y.grad = cuda.cupy.ones(y.data.shape, dtype=np.float32)
