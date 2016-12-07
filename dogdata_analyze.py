@@ -15,17 +15,33 @@ import cv2
 from dog_data_regression import Convnet
 
 
+def generate_image(model, X, T, max_iteration, a):
+    print T[0], np.exp(T[0])
+    plt.imshow(X[0][0]/256.0)
+    plt.show()
+    X_data = Variable(cuda.to_gpu(X))
+    for epoch in range(max_iteration):
+        y = model.forward(X_data, True)
+        y.grad = cuda.cupy.ones(y.data.shape, dtype=np.float32)
+        y.backward(retain_grad=True)
+        X_data = Variable(X_data.data + a * X_data.grad)
+        X_new = cuda.to_cpu(X_data.data)
+        X_new = np.transpose(X_new, (0, 2, 3, 1))
+    print y.data[0], cuda.cupy.exp(y.data[0])
+    plt.imshow(X_new[0]/256.0)
+    plt.show()
+
 if __name__ == '__main__':
     # 超パラメータ
-    max_iteration = 150  # 繰り返し回数
-    batch_size = 10
+    max_iteration = 500  # 繰り返し回数
+    batch_size = 100
     num_train = 20000
     num_test = 100
     output_size = 256
     crop_size = 224
     aspect_ratio_max = 3
     aspect_ratio_min = 1.0
-    a = 0.1
+    a = 100
     file_path = r'E:\stanford_Dogs_Dataset\raw_dataset_binary\output_size_500\output_size_500.hdf5'
     model_name = 'model1480445096.37dog1.5.npz'
     test_data = range(num_train, num_train + num_test)
@@ -45,7 +61,7 @@ if __name__ == '__main__':
         image_batch = image_features[indexes.tolist()]
         for i in range(len(indexes)):
             image = image_batch[i]
-            r = 2.0
+            r = 1/2.0
             image = toydata.change_aspect_ratio(image, r)
             square_image = toydata.crop_center(image)
             resize_image = cv2.resize(square_image,
@@ -70,6 +86,7 @@ if __name__ == '__main__':
         X_data = Variable(X_data.data + a * X_data.grad)
         X_new = cuda.to_cpu(X_data.data)
         X_new = np.transpose(X_new, (0,2,3,1))
+        print y.data[0], cuda.cupy.exp(y.data[0])
         plt.imshow(X_new[0]/256.0)
         plt.show()
 
