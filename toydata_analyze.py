@@ -41,11 +41,11 @@ if __name__ == '__main__':
     image_size = 500
     circle_r_min = 50
     circle_r_max = 150
-    size_min = 50
+    size_min = 199
     size_max = 200
-    p = [0.3, 0.3, 0.4]
+    p = [0, 1, 0]
     output_size = 224
-    aspect_ratio_max = 4
+    aspect_ratio_max = 2
     aspect_ratio_min = 2
     step_size = 0.01
 
