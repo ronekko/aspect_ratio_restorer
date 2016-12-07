@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Created on Wed Nov 23 21:45:49 2016
+Created on Wed Dec 07 21:22:59 2016
 
 @author: yamane
 """
@@ -32,9 +32,8 @@ class Convnet(Chain):
             conv5=L.Convolution2D(32, 64, 3, stride=2, pad=1),
             norm5=L.BatchNormalization(64),
 
-            l1=L.Linear(3136, 1000),
-            norm7=L.BatchNormalization(1000),
-            l2=L.Linear(1000, 1),
+            norm7=L.BatchNormalization(64),
+            l2=L.Linear(256, 1),
         )
 
     def network(self, X, test):
@@ -43,7 +42,7 @@ class Convnet(Chain):
         h = F.relu(self.norm3(self.conv3(h), test=test))
         h = F.relu(self.norm4(self.conv4(h), test=test))
         h = F.relu(self.norm5(self.conv5(h), test=test))
-        h = F.tanh(self.norm7(self.l1(h), test=test))
+        h = F.relu(self.norm7(F.average_pooling_2d(h, 3), test=test))
         y = self.l2(h)
         return y
 
@@ -162,7 +161,7 @@ if __name__ == '__main__':
 
             plt.plot(epoch_loss)
             plt.plot(epoch_valid_loss)
-            plt.ylim(0, 1)
+            plt.ylim(0, 0.1)
             plt.title("loss")
             plt.legend(["train", "valid"], loc="upper right")
             plt.grid()
