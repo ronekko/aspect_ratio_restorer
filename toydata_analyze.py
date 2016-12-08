@@ -24,8 +24,8 @@ def generate_image(model, X, T, max_iteration, a):
         X_data = Variable(X_data.data + a * X_data.grad)
         X_new = cuda.to_cpu(X_data.data)
         X_new = X_new.reshape(-1, 224, 224)
-        print 'origin_T:', T[0], 'exp(origin_T):', np.exp(T[0])
-        print 'new_T:', y.data[0], 'exp(new_T):', cuda.cupy.exp(y.data[0])
+    print 'origin_T:', T[0], 'exp(origin_T):', np.exp(T[0])
+    print 'new_T:', y.data[0], 'exp(new_T):', cuda.cupy.exp(y.data[0])
     # 元のXを表示
 #        print 'origin_T:', T[0], 'exp(origin_T):', np.exp(T[0])
     plt.matshow(X[0][0], cmap=plt.cm.gray)
@@ -99,12 +99,13 @@ if __name__ == '__main__':
     output_size = 224
     aspect_ratio_max = 2
     aspect_ratio_min = 2
-    step_size = 0.0001
+    step_size = 0.00001
+    model_file= 'model1481172416.48toydata2.npz'
 
 #    model = toydata_regression.Convnet().to_gpu()
 #    serializers.load_npz('toydata_regression_min2.npz', model)
     model = toydata_regression.Convnet().to_gpu()
-    serializers.load_npz('model1481172416.48toydata2.npz', model)
+    serializers.load_npz(model_file, model)
 
     dataset = toydata.RandomCircleSquareDataset(
         image_size, circle_r_min, circle_r_max, size_min, size_max, p,
@@ -193,3 +194,12 @@ if __name__ == '__main__':
         plt.matshow(c, cmap=plt.cm.gray)
         plt.colorbar()
         plt.show()
+
+    print 'max_iteration', max_iteration
+    print 'batch_size', batch_size
+    print 'image_size', image_size
+    print 'output_size', output_size
+    print 'aspect_ratio_max', aspect_ratio_max
+    print 'aspect_ratio_min', aspect_ratio_min
+    print 'step_size', step_size
+    print 'model_file', model_file
