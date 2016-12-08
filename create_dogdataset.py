@@ -101,7 +101,7 @@ def crop_center(image):
 
 
 def main(data_location, output_location, output_size):
-    dataset_root_dir = r'stanford_Dogs_Dataset\Images'
+    dataset_root_dir = r'Images'
     output_dir_name = 'output_size_' + str(output_size)
     output_root_dir = os.path.join(output_location, output_dir_name)
     data_chw = (3, output_size, output_size)
@@ -119,7 +119,7 @@ def main(data_location, output_location, output_size):
 
 
 if __name__ == '__main__':
-    data_location = r'E:'
+    data_location = r'E:\stanford_Dogs_Dataset\'
     output_location = r'E:\stanford_Dogs_Dataset\raw_dataset_binary'
     output_size = 500
 
