@@ -119,8 +119,8 @@ def main(data_location, output_location, output_size):
 
 
 if __name__ == '__main__':
-    data_location = r'E:\stanford_Dogs_Dataset\'
-    output_location = r'E:\stanford_Dogs_Dataset\raw_dataset_binary'
+    data_location = r'E:\stanford_Dogs_Dataset'
+    output_location = r'E:\stanford_Dogs_Dataset\raw_dataset'
     output_size = 500
 
     main(data_location, output_location, output_size)
