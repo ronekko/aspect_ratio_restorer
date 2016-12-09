@@ -17,8 +17,10 @@ import dogdata2graydata
 
 def output(model, X_test, T_test):
     predict_t = model.predict(X_test, True)
+    print predict_t
     target_t = T_test
     predict_r = np.exp(predict_t)
+    print predict_r
     target_r = np.exp(target_t)
     predict_image = toydata.fix_image(X_test, predict_r)
     original_image = toydata.fix_image(X_test, target_r)
@@ -137,28 +139,30 @@ if __name__ == '__main__':
     dataset = toydata.RandomCircleSquareDataset(
         image_size, circle_r_min, circle_r_max, size_min, size_max, p,
         output_size, aspect_ratio_max, aspect_ratio_min)
+    X_test = np.ones((1,1,224,224),dtype=np.float32)
+    T_test = [[0]]
 #    # rをランダムでデータ取得
 #    X_test, T_test = dataset.minibatch_regression(1)
 #    # rを指定してデータを取得
 #    X_yoko, T_yoko = minibatch_regression(dataset, batch_size, 2)
 #    X_tate, T_tate = minibatch_regression(dataset, batch_size, 0.5)
     # 犬画像を取得
-    X_test, T_test = dogdata2graydata.create_minibatch(file_path, test_data,
-                                                       batch_size,
-                                                       aspect_ratio_min,
-                                                       aspect_ratio_max,
-                                                       crop_size, output_size)
-    X_test = dogdata2graydata.change_gray_minibatch(X_test)
+#    X_test, T_test = dogdata2graydata.create_minibatch(file_path, test_data,
+#                                                       batch_size,
+#                                                       aspect_ratio_min,
+#                                                       aspect_ratio_max,
+#                                                       crop_size, output_size)
+#    X_test = dogdata2graydata.change_gray_minibatch(X_test)
 
 #    # 復元結果を表示
-#    output(model, X_test, T_test)
+    output(model, X_test, T_test)
 
 #    # Rが大きくなるようにXを最適化する
 #    X_new = generate_image(model, X_test, T_test, max_iteration, step_size)
 #
     X_test_gpu = Variable(cuda.to_gpu(X_test))
 #    X_tate_gpu = Variable(cuda.to_gpu(X_tate))
-    # yを計算
+#    # yを計算
     y_test = model.forward(X_test_gpu, True)
 #    y_tate = model.forward(X_tate_gpu, True)
 #    # 特徴マップを取得
@@ -228,10 +232,10 @@ if __name__ == '__main__':
 #        plt.colorbar()
 #        plt.show()
     # 入力画像を表示
-    for c in X_test[0]:
-        plt.matshow(c, cmap=plt.cm.gray)
-        plt.colorbar()
-        plt.show()
+#    for c in X_test[0]:
+#        plt.matshow(c, cmap=plt.cm.gray)
+#        plt.colorbar()
+#        plt.show()
 #    for c in X_tate[0]:
 #        plt.matshow(c, cmap=plt.cm.gray)
 #        plt.colorbar()

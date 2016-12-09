@@ -5,63 +5,109 @@ Created on Fri Oct 21 16:12:33 2016
 @author: yamane
 """
 
-
-import toydata
+import os
 import numpy as np
-import h5py
 import matplotlib.pyplot as plt
-from chainer import cuda, serializers, Variable
 import cv2
-from dog_data_regression import Convnet
+import h5py
+from multiprocessing import Process, Queue
+from chainer import cuda, serializers, Variable
+import toydata
+import dog_data_regression
+import dog_data_regression_ave_pooling
+import gray2rgb
+import toydata_analyze
+
+
+def output(model, X, T):
+    predict_t = model.predict(X, True)
+    target_t = T
+    predict_r = np.exp(predict_t)
+    target_r = np.exp(target_t)
+    predict_image = toydata.fix_image(X, predict_r)
+    original_image = toydata.fix_image(X, target_r)
+    debased_image = np.transpose(X[0], (1, 2, 0))
+    predict_image = np.transpose(predict_image, (1, 2, 0))
+    original_image = np.transpose(original_image, (1, 2, 0))
+    print 'predict t:', predict_t, 'target t:', target_t
+    print 'predict r:', predict_r, 'target r:', target_r
+    plt.subplot(131)
+    plt.title("debased_image")
+    plt.imshow(debased_image/256.0)
+    plt.subplot(132)
+    plt.title("fix_image")
+    plt.imshow(predict_image/256.0)
+    plt.subplot(133)
+    plt.title("target_image")
+    plt.imshow(original_image/256.0)
+    plt.show()
 
 
 def generate_image(model, X, T, max_iteration, a):
-    print T[0], np.exp(T[0])
-    plt.imshow(X[0][0]/256.0)
-    plt.show()
     X_data = Variable(cuda.to_gpu(X))
     for epoch in range(max_iteration):
+        print epoch
         y = model.forward(X_data, True)
         y.grad = cuda.cupy.ones(y.data.shape, dtype=np.float32)
         y.backward(retain_grad=True)
         X_data = Variable(X_data.data + a * X_data.grad)
         X_new = cuda.to_cpu(X_data.data)
-        X_new = np.transpose(X_new, (0, 2, 3, 1))
-    print y.data[0], cuda.cupy.exp(y.data[0])
-    plt.imshow(X_new[0]/256.0)
+        X_new = X_new.reshape(-1, 224, 224)
+    print 'origin_T:', T[0], 'exp(origin_T):', np.exp(T[0])
+    print 'new_T:', y.data[0], 'exp(new_T):', cuda.cupy.exp(y.data[0])
+    # 元のXを表示
+#        print 'origin_T:', T[0], 'exp(origin_T):', np.exp(T[0])
+    X = np.transpose(X, (0, 2, 3, 1))
+    plt.imshow(X[0]/256.0, cmap=plt.cm.gray)
+    plt.title("origin_X")
+    plt.colorbar()
     plt.show()
+    # 最適化後のXを表示
+#        print 'new_T:', y.data[0], 'exp(new_T):', cuda.cupy.exp(y.data[0])
+    X_new = np.transpose(X_new, (1, 2, 0))
+    plt.imshow(X_new/256.0, cmap=plt.cm.gray)
+    plt.title("new_X")
+    plt.colorbar()
+    plt.show()
+    return X_new
 
-if __name__ == '__main__':
-    # 超パラメータ
-    max_iteration = 500  # 繰り返し回数
-    batch_size = 100
-    num_train = 20000
-    num_test = 100
-    output_size = 256
-    crop_size = 224
-    aspect_ratio_max = 3
-    aspect_ratio_min = 1.0
-    a = 100
-    file_path = r'E:\stanford_Dogs_Dataset\raw_dataset_binary\output_size_500\output_size_500.hdf5'
-    model_name = 'model1480445096.37dog1.5.npz'
-    test_data = range(num_train, num_train + num_test)
-    model = Convnet().to_gpu()
-    serializers.load_npz(model_name, model)
 
+def get_receptive_field(y):
+    # 特徴マップを取得
+    a = y.creator.inputs[0]
+    l = []
+    while a.creator:
+        if a.creator.label == 'ReLU':
+            l.append(cuda.to_cpu(a.data))
+        a = a.creator.inputs[0]
+    return l
+
+
+def check_use_channel(l, layer):
+    use_channel = []
+    layer = len(l) - layer
+    for c in range(l[layer].shape[1:2][0]):
+        t = []
+        for b in range(batch_size):
+            t.append(np.sum(l[layer][b][c]))
+        ave = np.average(t)
+        use_channel.append(ave)
+    return use_channel
+
+
+def minibatch_regression(file_path, data, batch_size, r, crop_size=224,
+                         output_size=256):
     dataset = h5py.File(file_path)
     image_features = dataset['image_features']
-    r_min = aspect_ratio_min
-    r_max = aspect_ratio_max
 
-    num_batches = len(test_data) / batch_size
+    num_batches = len(data) / batch_size
 
-    for indexes in np.array_split(test_data, num_batches):
+    for indexes in np.array_split(data, num_batches):
         images = []
         ts = []
         image_batch = image_features[indexes.tolist()]
         for i in range(len(indexes)):
             image = image_batch[i]
-            r = 1/2.0
             image = toydata.change_aspect_ratio(image, r)
             square_image = toydata.crop_center(image)
             resize_image = cv2.resize(square_image,
@@ -75,107 +121,137 @@ if __name__ == '__main__':
         X = np.transpose(X, (0, 3, 1, 2))
         X = X.astype(np.float32)
         T = np.array(ts, dtype=np.float32).reshape(-1, 1)
+        return X, T
 
-    # yを計算
-    X_gpu = Variable(cuda.to_gpu(X))
-    X_data = Variable(cuda.to_gpu(X))
-    for epoch in range(max_iteration):
-        y = model.forward(X_data, True)
-        y.grad = cuda.cupy.ones(y.data.shape, dtype=np.float32)
-        y.backward(retain_grad=True)
-        X_data = Variable(X_data.data + a * X_data.grad)
-        X_new = cuda.to_cpu(X_data.data)
-        X_new = np.transpose(X_new, (0,2,3,1))
-        print y.data[0], cuda.cupy.exp(y.data[0])
-        plt.imshow(X_new[0]/256.0)
-        plt.show()
 
-    y = model.forward(X_gpu, True)
+if __name__ == '__main__':
+    file_name = os.path.splitext(os.path.basename(__file__))[0]
+    # 超パラメータ
+    max_iteration = 1000  # 繰り返し回数
+    batch_size = 1
+    num_train = 20000
+    num_test = 1
+    output_size = 256
+    crop_size = 224
+    aspect_ratio_max = 3
+    aspect_ratio_min = 1.0
+    step_size = 0.1
+    file_path = r'E:\stanford_Dogs_Dataset\raw_dataset_binary\output_size_500\output_size_500.hdf5'
+    model_file = 'model_dog_reg1481285466.8.npz'
+    test_data = range(num_train, num_train + num_test)
 
-    # 特徴マップを取得
-    a = y.creator.inputs[0]
-    l = []
-    r = []
-    l1 = []
-    l2 = []
-    l3 = []
-    l4 = []
-    l5 = []
-    temp = []
-    while a.creator:
-        if a.creator.label == 'Convolution2DFunction':
-            l.append(cuda.to_cpu(a.data))
-        if a.creator.label == 'ReLU':
-            r.append(cuda.to_cpu(a.data))
-        a = a.creator.inputs[0]
+    model = dog_data_regression.Convnet().to_gpu()
+    serializers.load_npz(model_file, model)
 
-    # 特徴マップを表示
-    for f in l[-1][1]:
-        plt.matshow(f, cmap=plt.cm.gray)
-        plt.show()
+    queue_test = Queue(1)
+    process_test = Process(target=dog_data_regression.create_mini_batch,
+                           args=(queue_test, file_path, test_data,
+                                 1, aspect_ratio_min, aspect_ratio_max,
+                                 crop_size, output_size))
+    process_test.start()
 
-    l5 = []
-    for c in range(68):
-        temp = []
-        for b in range(batch_size):
-            temp.append(np.sum(r[1][b][c]))
-        ave = np.average(temp)
-        l5.append(ave)
-    l4 = []
-    for c in range(32):
-        temp = []
-        for b in range(batch_size):
-            temp.append(np.sum(r[2][b][c]))
-        ave = np.average(temp)
-        l4.append(ave)
-    l3 = []
-    for c in range(32):
-        temp = []
-        for b in range(batch_size):
-            temp.append(np.sum(r[3][b][c]))
-        ave = np.average(temp)
-        l3.append(ave)
-    l2 = []
-    for c in range(16):
-        temp = []
-        for b in range(batch_size):
-            temp.append(np.sum(r[4][b][c]))
-        ave = np.average(temp)
-        l2.append(ave)
-    l1 = []
-    for c in range(16):
-        temp = []
-        for b in range(batch_size):
-            temp.append(np.sum(r[5][b][c]))
-        ave = np.average(temp)
-        l1.append(ave)
+#    # テスト用のデータを取得
+    X_test, T_test = queue_test.get()
+    # rを指定してデータを取得
+#    X_yoko, T_yoko = minibatch_regression(file_path, test_data, batch_size, 2)
+#    X_tate, T_tate = minibatch_regression(file_path, test_data, batch_size, 0.5)
+    # 人工画像を取得
+#    X_test, T_test = gray2rgb.create_minibatch(1)
+#    X_test = gray2rgb.change_rgb_minibatch(X_test)
 
-    print 'layer1'
-    plt.plot(l1)
-    plt.show()
-    print 'layer2'
-    plt.plot(l2)
-    plt.show()
-    print 'layer3'
-    plt.plot(l3)
-    plt.show()
-    print 'layer4'
-    plt.plot(l4)
-    plt.show()
-    print 'layer5'
-    plt.plot(l5)
-    plt.show()
+#    # 復元結果を表示
+#    output(model, X_test, T_test)
 
+    # Rが大きくなるようにXを最適化する
+#    X_new = generate_image(model, X_test, T_test, max_iteration, step_size)
+
+    X_test_gpu = Variable(cuda.to_gpu(X_test))
+#    X_tate_gpu = Variable(cuda.to_gpu(X_tate))
+#    # yを計算
+    y_test = model.forward(X_test_gpu, True)
+#    y_tate = model.forward(X_tate_gpu, True)
+#    # 特徴マップを取得
+#    l_yoko = get_receptive_field(y_yoko)
+#    l_tate = get_receptive_field(y_tate)
+#    # 特徴マップを表示
+#    for f in l_yoko[-1][0]:
+#        plt.matshow(f, cmap=plt.cm.gray)
+#        plt.show()
+#    for f in l_tate[-1][0]:
+#        plt.matshow(f, cmap=plt.cm.gray)
+#        plt.show()
+#    # 特徴マップの使用率を取得
+#    l5_yoko = check_use_channel(l_yoko, 5)
+#    l4_yoko = check_use_channel(l_yoko, 4)
+#    l3_yoko = check_use_channel(l_yoko, 3)
+#    l2_yoko = check_use_channel(l_yoko, 2)
+#    l1_yoko = check_use_channel(l_yoko, 1)
+#    l5_tate = check_use_channel(l_tate, 5)
+#    l4_tate = check_use_channel(l_tate, 4)
+#    l3_tate = check_use_channel(l_tate, 3)
+#    l2_tate = check_use_channel(l_tate, 2)
+#    l1_tate = check_use_channel(l_tate, 1)
+#    # 特徴マップの使用率を表示
+#    plt.plot(l1_yoko)
+#    plt.plot(l1_tate)
+#    plt.title("layer1")
+#    plt.legend(["yoko", "tate"], loc="lower right")
+#    plt.show()
+#    plt.plot(l2_yoko)
+#    plt.plot(l2_tate)
+#    plt.title("layer2")
+#    plt.legend(["yoko", "tate"], loc="lower right")
+#    plt.show()
+#    plt.plot(l3_yoko)
+#    plt.plot(l3_tate)
+#    plt.title("layer3")
+#    plt.legend(["yoko", "tate"], loc="lower right")
+#    plt.show()
+#    plt.plot(l4_yoko)
+#    plt.plot(l4_tate)
+#    plt.title("layer4")
+#    plt.legend(["yoko", "tate"], loc="lower right")
+#    plt.show()
+#    plt.plot(l5_yoko)
+#    plt.plot(l5_tate)
+#    plt.title("layer5")
+#    plt.legend(["yoko", "tate"], loc="lower right")
+#    plt.show()
     # 出力に対する入力の勾配を可視化
-    y.grad = cuda.cupy.ones(y.data.shape, dtype=np.float32)
-    y.backward(retain_grad=True)
-    grad = X_gpu.grad
+    y_test.grad = cuda.cupy.ones(y_test.data.shape, dtype=np.float32)
+    y_test.backward(retain_grad=True)
+    grad = X_test_gpu.grad
     grad = cuda.to_cpu(grad)
-    for c in grad[1]:
-        plt.matshow(c, cmap=plt.cm.bwr)
+    for c in grad[0]:
+        plt.imshow(c, cmap=plt.cm.bwr)
+#        plt.title("yoko")
         plt.colorbar()
         plt.show()
-    for c in X[1]:
-        plt.matshow(c, cmap=plt.cm.gray)
-        plt.colorbar()
+#    y_tate.grad = cuda.cupy.ones(y_tate.data.shape, dtype=np.float32)
+#    y_tate.backward(retain_grad=True)
+#    grad = X_tate_gpu.grad
+#    grad = cuda.to_cpu(grad)
+#    for c in grad[0]:
+#        plt.matshow(c, cmap=plt.cm.bwr)
+#        plt.title("tate")
+#        plt.colorbar()
+#        plt.show()
+#     入力画像を表示
+    for c in X_test:
+        c = np.transpose(c, (1, 2, 0))
+        plt.imshow(c/256.0, cmap=plt.cm.gray)
+#        plt.colorbar()
         plt.show()
+#    for c in X_tate[0]:
+#        plt.matshow(c, cmap=plt.cm.gray)
+#        plt.colorbar()
+#        plt.show()
+
+    process_test.terminate()
+    print 'max_iteration', max_iteration
+    print 'batch_size', batch_size
+    print 'output_size', output_size
+    print 'aspect_ratio_max', aspect_ratio_max
+    print 'aspect_ratio_min', aspect_ratio_min
+    print 'step_size', step_size
+    print 'model_file', model_file
