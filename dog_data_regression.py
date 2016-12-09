@@ -33,8 +33,6 @@ class Convnet(Chain):
             norm4=L.BatchNormalization(32),
             conv5=L.Convolution2D(32, 68, 3, stride=2, pad=1),
             norm5=L.BatchNormalization(68),
-            conv6=L.Convolution2D(68, 68, 3, stride=2, pad=1),
-            norm6=L.BatchNormalization(68),
 
             l1=L.Linear(3332, 1000),
             norm7=L.BatchNormalization(1000),
@@ -78,39 +76,39 @@ class Convnet(Chain):
         y = cuda.to_cpu(y.data)
         return y
 
-    def test_output(self, X, T, r_loss):
-        predict_t = model.predict(X, True)
-        target_t = T
-        predict_r = np.exp(predict_t)
-        target_r = np.exp(target_t)
-        predict_image = toydata.fix_image(X_test, predict_r)
-        original_image = toydata.fix_image(X_test, target_r)
-        debased_image = np.transpose(X[0], (1, 2, 0))
-        predict_image = np.transpose(predict_image, (1, 2, 0))
-        original_image = np.transpose(original_image, (1, 2, 0))
-        r_dis = np.absolute(predict_r - target_r)
-        r_loss.append(r_dis[0])
 
-        print 'predict t:', predict_t, 'target t:', target_t
-        print 'predict r:', predict_r, 'target r:', target_r
+def test_output(model, X, T, r_loss):
+    predict_t = model.predict(X, True)
+    target_t = T
+    predict_r = np.exp(predict_t)
+    target_r = np.exp(target_t)
+    predict_image = toydata.fix_image(X_test, predict_r)
+    original_image = toydata.fix_image(X_test, target_r)
+    debased_image = np.transpose(X[0], (1, 2, 0))
+    predict_image = np.transpose(predict_image, (1, 2, 0))
+    original_image = np.transpose(original_image, (1, 2, 0))
+    r_dis = np.absolute(predict_r - target_r)
+    r_loss.append(r_dis[0])
 
-        plt.plot(r_loss)
-        plt.title("r_disdance")
-        plt.grid()
-        plt.show()
+    print 'predict t:', predict_t, 'target t:', target_t
+    print 'predict r:', predict_r, 'target r:', target_r
 
-        plt.subplot(131)
-        plt.title("debased_image")
-        plt.imshow(debased_image/256.0)
-        plt.subplot(132)
-        plt.title("fix_image")
-        plt.imshow(predict_image/256.0)
-        plt.subplot(133)
-        plt.title("target_image")
-        plt.imshow(original_image/256.0)
-        plt.show()
-        return r_loss
+    plt.plot(r_loss)
+    plt.title("r_disdance")
+    plt.grid()
+    plt.show()
 
+    plt.subplot(131)
+    plt.title("debased_image")
+    plt.imshow(debased_image/256.0)
+    plt.subplot(132)
+    plt.title("fix_image")
+    plt.imshow(predict_image/256.0)
+    plt.subplot(133)
+    plt.title("target_image")
+    plt.imshow(original_image/256.0)
+    plt.show()
+    return r_loss
 
 
 def create_mini_batch(queue, file_path, data, batch_size=100, min_ratio=1,
@@ -245,12 +243,12 @@ if __name__ == '__main__':
 
             # テスト用のデータを取得
             X_test, T_test = queue_test.get()
-            r_loss = model.test_output(X_test, T_test, r_loss)
+            r_loss = test_output(model_best, X_test, T_test, r_loss)
 
     except KeyboardInterrupt:
         print "割り込み停止が実行されました"
 
-    model_filename = 'model' + str(time.time())+ 'dog' + str(aspect_ratio_min) + '.npz'
+    model_filename = 'model_dog_reg' + str(time.time()) + '.npz'
     serializers.save_npz(model_filename, model_best)
 
     process_train.terminate()
