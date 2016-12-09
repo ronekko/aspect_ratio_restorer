@@ -16,5 +16,5 @@
 - create_dogdataset.py の以下のパラメータを自身の設定に変更する
     -  data_location : データセットを展開したディレクトリのルートパス
     -  output_location : HDF5ファイルを保存するディレクトリのルートパス
-    -  output_size : 保存したいデータセットの画像サイズ
+    -  output_size : hdf5ファイルに保存する画像サイズ(例：output_size=500の場合、保存される画像サイズは500 * 500)
 -  create_dogdataset.pyを実行
