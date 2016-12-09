@@ -5,18 +5,18 @@ Created on Fri Nov 25 18:37:28 2016
 @author: yamane
 """
 
-import toydata
 import numpy as np
 import time
 import tqdm
 import h5py
 import copy
+import cv2
 import matplotlib.pyplot as plt
 from multiprocessing import Process, Queue
 from chainer import cuda, optimizers, Chain, serializers
 import chainer.functions as F
 import chainer.links as L
-import cv2
+import toydata
 
 
 # ネットワークの定義
@@ -82,8 +82,8 @@ def test_output(model, X, T, r_loss):
     target_t = T
     predict_r = np.exp(predict_t)
     target_r = np.exp(target_t)
-    predict_image = toydata.fix_image(X_test, predict_r)
-    original_image = toydata.fix_image(X_test, target_r)
+    predict_image = toydata.fix_image(X, predict_r)
+    original_image = toydata.fix_image(X, target_r)
     debased_image = np.transpose(X[0], (1, 2, 0))
     predict_image = np.transpose(predict_image, (1, 2, 0))
     original_image = np.transpose(original_image, (1, 2, 0))
@@ -154,8 +154,8 @@ if __name__ == '__main__':
     learning_rate = 0.001
     output_size = 256
     crop_size = 224
-    aspect_ratio_max = 3
     aspect_ratio_min = 1.0
+    aspect_ratio_max = 3
     file_path = r'E:\stanford_Dogs_Dataset\raw_dataset_binary\output_size_500\output_size_500.hdf5'
 
     train_data = range(0, num_train)
