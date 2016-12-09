@@ -327,8 +327,8 @@ if __name__ == '__main__':
     size_max = 200
     p = [0.3, 0.3, 0.4]
     output_size = 224
-    aspect_ratio_max = 4
     aspect_ratio_min = 2
+    aspect_ratio_max = 4
 
     model = Convnet().to_gpu()
     dataset = RandomCircleSquareDataset(

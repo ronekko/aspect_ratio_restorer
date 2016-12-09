@@ -5,16 +5,15 @@ Created on Wed Dec 07 21:22:59 2016
 @author: yamane
 """
 
-import toydata
 import numpy as np
-from chainer import cuda, optimizers, Chain, serializers
-import chainer.functions as F
-import chainer.links as L
-import matplotlib.pyplot as plt
-from skimage import io, transform, draw
 import time
 import copy
 import tqdm
+import matplotlib.pyplot as plt
+from chainer import cuda, optimizers, Chain, serializers
+import chainer.functions as F
+import chainer.links as L
+import toydata
 
 
 # ネットワークの定義
@@ -87,8 +86,8 @@ if __name__ == '__main__':
     size_max = 200
     p = [0.3, 0.3, 0.4]
     output_size = 224
-    aspect_ratio_max = 4
-    aspect_ratio_min = 2
+    aspect_ratio_min = 1.0
+    aspect_ratio_max = 3.0
 
     model = Convnet().to_gpu()
     dataset = toydata.RandomCircleSquareDataset(
@@ -150,7 +149,7 @@ if __name__ == '__main__':
                 model_best = copy.deepcopy(model)
 
             # 訓練データでの結果を表示
-            print "toydata_regression.py"
+            print "toydata_regression_ave_pooling.py"
             print "epoch:", epoch
             print "time", epoch_time, "(", total_time, ")"
             print "loss[train]:", epoch_loss[epoch]
@@ -186,7 +185,7 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print "割り込み停止が実行されました"
 
-    model_filename = 'model' + str(time.time()) + 'toydata' + str(aspect_ratio_min) + '.npz'
+    model_filename = 'model_toy_reg_ave' + str(time.time()) + '.npz'
     serializers.save_npz(model_filename, model_best)
 
     print 'max_iteration:', max_iteration
