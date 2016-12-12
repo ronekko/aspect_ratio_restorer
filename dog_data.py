@@ -30,12 +30,10 @@ class Convnet(Chain):
             norm3=L.BatchNormalization(32),
             conv4=L.Convolution2D(32, 32, 3, stride=2, pad=1),
             norm4=L.BatchNormalization(32),
-            conv5=L.Convolution2D(32, 68, 3, stride=2, pad=1),
-            norm5=L.BatchNormalization(68),
-            conv6=L.Convolution2D(68, 68, 3, stride=2, pad=1),
-            norm6=L.BatchNormalization(68),
+            conv5=L.Convolution2D(32, 64, 3, stride=2, pad=1),
+            norm5=L.BatchNormalization(64),
 
-            l1=L.Linear(3332, 1000),
+            l1=L.Linear(3136, 1000),
             norm7=L.BatchNormalization(1000),
             l2=L.Linear(1000, 1),
         )

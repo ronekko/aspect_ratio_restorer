@@ -32,7 +32,7 @@ class Convnet(Chain):
             norm5=L.BatchNormalization(64),
 
             l1=L.Linear(3136, 1000),
-            norm7=L.BatchNormalization(1000),
+            norm6=L.BatchNormalization(1000),
             l2=L.Linear(1000, 1),
         )
 
@@ -42,7 +42,7 @@ class Convnet(Chain):
         h = F.relu(self.norm3(self.conv3(h), test=test))
         h = F.relu(self.norm4(self.conv4(h), test=test))
         h = F.relu(self.norm5(self.conv5(h), test=test))
-        h = F.tanh(self.norm7(self.l1(h), test=test))
+        h = F.tanh(self.norm6(self.l1(h), test=test))
         y = self.l2(h)
         return y
 
@@ -161,7 +161,7 @@ if __name__ == '__main__':
 
             plt.plot(epoch_loss)
             plt.plot(epoch_valid_loss)
-            plt.ylim(0, 1)
+            plt.ylim(0, 0.5)
             plt.title("loss")
             plt.legend(["train", "valid"], loc="upper right")
             plt.grid()
@@ -173,7 +173,7 @@ if __name__ == '__main__':
             plt.show()
 
             plt.subplot(131)
-            plt.title("input_image")
+            plt.title("debased_image")
             plt.imshow(X_test[0][0])
             plt.subplot(132)
             plt.title("fix_image")

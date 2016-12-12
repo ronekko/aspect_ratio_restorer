@@ -32,18 +32,18 @@ class Convnet(Chain):
             conv5=L.Convolution2D(32, 64, 3, stride=2, pad=1),
             norm5=L.BatchNormalization(64),
 
+            norm6=L.BatchNormalization(64),
             l1=L.Linear(64, 1)
         )
 
     def network(self, X, test):
-        h = self.conv1(X)
-        h = self.norm1(h, test=test)
-        h = F.relu(h)
+        h = F.relu(self.norm1(self.conv1(X), test=test))
         h = F.relu(self.norm2(self.conv2(h), test=test))
         h = F.relu(self.norm3(self.conv3(h), test=test))
         h = F.relu(self.norm4(self.conv4(h), test=test))
         h = F.relu(self.norm5(self.conv5(h), test=test))
-        y = self.l1(F.average_pooling_2d(h, 7))
+        h = F.relu(self.norm6(F.average_pooling_2d(h, 7), test=test))
+        y = self.l1(h)
         return y
 
     def forward(self, X, test):
