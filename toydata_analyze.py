@@ -12,6 +12,7 @@ from chainer import cuda, serializers, Variable
 import toydata
 import toydata_regression
 import toydata_regression_ave_pooling
+import toydata_regression_max_pooling
 import dogdata2graydata
 
 
@@ -124,25 +125,25 @@ if __name__ == '__main__':
     aspect_ratio_max = 3.0
     aspect_ratio_min = 1.0
     step_size = 0.001
-    model_file = 'model_toy_reg_ave1481277007.21.npz'
-    num_train = 20007
-    num_test = 100
+    model_file = 'model_toy_reg_max1481437085.9.npz'
+    num_train = 7
+    num_test = 1
     crop_size = 224
-    file_path = r'E:\stanford_Dogs_Dataset\raw_dataset_binary\output_size_500\output_size_500.hdf5'
+    file_path = r'E:\voc2012\raw_dataset\output_size_500\output_size_500.hdf5'
     test_data = range(num_train, num_train + num_test)
 
 #    model = toydata_regression.Convnet().to_gpu()
 #    serializers.load_npz('toydata_regression_min2.npz', model)
-    model = toydata_regression_ave_pooling.Convnet().to_gpu()
+    model = toydata_regression_max_pooling.Convnet().to_gpu()
     serializers.load_npz(model_file, model)
 
     dataset = toydata.RandomCircleSquareDataset(
         image_size, circle_r_min, circle_r_max, size_min, size_max, p,
         output_size, aspect_ratio_max, aspect_ratio_min)
-    X_test = np.ones((1,1,224,224),dtype=np.float32)
-    T_test = [[0]]
+#    X_test = np.ones((1,1,224,224),dtype=np.float32)
+#    T_test = [[0]]
 #    # rをランダムでデータ取得
-#    X_test, T_test = dataset.minibatch_regression(1)
+    X_test, T_test = dataset.minibatch_regression(1)
 #    # rを指定してデータを取得
 #    X_yoko, T_yoko = minibatch_regression(dataset, batch_size, 2)
 #    X_tate, T_tate = minibatch_regression(dataset, batch_size, 0.5)
@@ -232,10 +233,10 @@ if __name__ == '__main__':
 #        plt.colorbar()
 #        plt.show()
     # 入力画像を表示
-#    for c in X_test[0]:
-#        plt.matshow(c, cmap=plt.cm.gray)
-#        plt.colorbar()
-#        plt.show()
+    for c in X_test[0]:
+        plt.matshow(c, cmap=plt.cm.gray)
+        plt.colorbar()
+        plt.show()
 #    for c in X_tate[0]:
 #        plt.matshow(c, cmap=plt.cm.gray)
 #        plt.colorbar()

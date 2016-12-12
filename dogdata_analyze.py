@@ -15,6 +15,7 @@ from chainer import cuda, serializers, Variable
 import toydata
 import dog_data_regression
 import dog_data_regression_ave_pooling
+import dog_data_regression_max_pooling
 import gray2rgb
 import toydata_analyze
 
@@ -129,18 +130,18 @@ if __name__ == '__main__':
     # 超パラメータ
     max_iteration = 1000  # 繰り返し回数
     batch_size = 1
-    num_train = 20000
+    num_train = 0
     num_test = 1
     output_size = 256
     crop_size = 224
     aspect_ratio_max = 3
     aspect_ratio_min = 1.0
     step_size = 0.1
-    file_path = r'E:\stanford_Dogs_Dataset\raw_dataset_binary\output_size_500\output_size_500.hdf5'
-    model_file = 'model_dog_reg1481285466.8.npz'
+    file_path = r'E:\voc2012\raw_dataset\output_size_500\output_size_500.hdf5'
+    model_file = 'model_dog_reg_max1481452575.29.npz'
     test_data = range(num_train, num_train + num_test)
 
-    model = dog_data_regression.Convnet().to_gpu()
+    model = dog_data_regression__pooling.Convnet().to_gpu()
     serializers.load_npz(model_file, model)
 
     queue_test = Queue(1)
@@ -160,7 +161,7 @@ if __name__ == '__main__':
 #    X_test = gray2rgb.change_rgb_minibatch(X_test)
 
 #    # 復元結果を表示
-#    output(model, X_test, T_test)
+    output(model, X_test, T_test)
 
     # Rが大きくなるようにXを最適化する
 #    X_new = generate_image(model, X_test, T_test, max_iteration, step_size)
@@ -218,15 +219,15 @@ if __name__ == '__main__':
 #    plt.legend(["yoko", "tate"], loc="lower right")
 #    plt.show()
     # 出力に対する入力の勾配を可視化
-    y_test.grad = cuda.cupy.ones(y_test.data.shape, dtype=np.float32)
-    y_test.backward(retain_grad=True)
-    grad = X_test_gpu.grad
-    grad = cuda.to_cpu(grad)
-    for c in grad[0]:
-        plt.imshow(c, cmap=plt.cm.bwr)
-#        plt.title("yoko")
-        plt.colorbar()
-        plt.show()
+#    y_test.grad = cuda.cupy.ones(y_test.data.shape, dtype=np.float32)
+#    y_test.backward(retain_grad=True)
+#    grad = X_test_gpu.grad
+#    grad = cuda.to_cpu(grad)
+#    for c in grad[0]:
+#        plt.imshow(c, cmap=plt.cm.bwr)
+##        plt.title("yoko")
+#        plt.colorbar()
+#        plt.show()
 #    y_tate.grad = cuda.cupy.ones(y_tate.data.shape, dtype=np.float32)
 #    y_tate.backward(retain_grad=True)
 #    grad = X_tate_gpu.grad
