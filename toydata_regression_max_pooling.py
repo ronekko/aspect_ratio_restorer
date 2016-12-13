@@ -77,6 +77,7 @@ if __name__ == '__main__':
     file_name = os.path.splitext(os.path.basename(__file__))[0]
     output_location = 'C:\Users\yamane\Dropbox\correct_aspect_ratio'
     output_root_dir = os.path.join(output_location, file_name)
+    output_root_dir = os.path.join(output_root_dir, str(time.time()))
 
     if os.path.exists(output_root_dir):
         pass
