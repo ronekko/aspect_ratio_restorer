@@ -224,7 +224,7 @@ if __name__ == '__main__':
 #    grad = X_test_gpu.grad
 #    grad = cuda.to_cpu(grad)
 #    for c in grad[0]:
-#        plt.imshow(c, cmap=plt.cm.bwr)
+#        plt.imshow(c, vmin=0.035, vmax=-0.035, cmap=plt.cm.bwr)
 ##        plt.title("yoko")
 #        plt.colorbar()
 #        plt.show()

@@ -12,16 +12,13 @@ from chainer import cuda, serializers, Variable
 import toydata
 import toydata_regression
 import toydata_regression_ave_pooling
-import toydata_regression_max_pooling
 import dogdata2graydata
 
 
 def output(model, X_test, T_test):
     predict_t = model.predict(X_test, True)
-    print predict_t
     target_t = T_test
     predict_r = np.exp(predict_t)
-    print predict_r
     target_r = np.exp(target_t)
     predict_image = toydata.fix_image(X_test, predict_r)
     original_image = toydata.fix_image(X_test, target_r)
@@ -42,7 +39,7 @@ def output(model, X_test, T_test):
 def generate_image(model, X, T, max_iteration, a):
     X_data = Variable(cuda.to_gpu(X))
     for epoch in range(max_iteration):
-        print epoch
+#        print epoch
         y = model.forward(X_data, True)
         y.grad = cuda.cupy.ones(y.data.shape, dtype=np.float32)
         y.backward(retain_grad=True)
@@ -53,13 +50,13 @@ def generate_image(model, X, T, max_iteration, a):
     print 'new_T:', y.data[0], 'exp(new_T):', cuda.cupy.exp(y.data[0])
     # 元のXを表示
 #        print 'origin_T:', T[0], 'exp(origin_T):', np.exp(T[0])
-    plt.matshow(X[0][0], cmap=plt.cm.gray)
+    plt.matshow(X[0][0])
     plt.title("origin_X")
     plt.colorbar()
     plt.show()
     # 最適化後のXを表示
 #        print 'new_T:', y.data[0], 'exp(new_T):', cuda.cupy.exp(y.data[0])
-    plt.matshow(X_new[0], cmap=plt.cm.gray)
+    plt.matshow(X_new[0])
     plt.title("new_X")
     plt.colorbar()
     plt.show()
@@ -113,19 +110,19 @@ def minibatch_regression(dataset, batch_size, r):
 
 if __name__ == '__main__':
     # 超パラメータ
-    max_iteration = 500  # 繰り返し回数
+    max_iteration = 100000  # 繰り返し回数
     batch_size = 1
-    image_size = 500
+    image_size = 224
     circle_r_min = 50
     circle_r_max = 150
-    size_min = 199
-    size_max = 200
+    size_min = 99
+    size_max = 100
     p = [0, 1, 0]
     output_size = 224
-    aspect_ratio_max = 3.0
+    aspect_ratio_max = 1.0
     aspect_ratio_min = 1.0
-    step_size = 0.001
-    model_file = 'model_toy_reg_max1481437085.9.npz'
+    step_size = 0.0001
+    model_file = 'model_toy_reg_ave1481269684.1.npz'
     num_train = 7
     num_test = 1
     crop_size = 224
@@ -134,7 +131,7 @@ if __name__ == '__main__':
 
 #    model = toydata_regression.Convnet().to_gpu()
 #    serializers.load_npz('toydata_regression_min2.npz', model)
-    model = toydata_regression_max_pooling.Convnet().to_gpu()
+    model = toydata_regression_ave_pooling.Convnet().to_gpu()
     serializers.load_npz(model_file, model)
 
     dataset = toydata.RandomCircleSquareDataset(
@@ -214,15 +211,15 @@ if __name__ == '__main__':
 #    plt.legend(["yoko", "tate"], loc="lower right")
 #    plt.show()
     # 出力に対する入力の勾配を可視化
-    y_test.grad = cuda.cupy.ones(y_test.data.shape, dtype=np.float32)
-    y_test.backward(retain_grad=True)
-    grad = X_test_gpu.grad
-    grad = cuda.to_cpu(grad)
-    for c in grad[0]:
-        plt.matshow(c, cmap=plt.cm.bwr)
-        plt.title("yoko")
-        plt.colorbar()
-        plt.show()
+#    y_test.grad = cuda.cupy.ones(y_test.data.shape, dtype=np.float32)
+#    y_test.backward(retain_grad=True)
+#    grad = X_test_gpu.grad
+#    grad = cuda.to_cpu(grad)
+#    for c in grad[0]:
+#        plt.matshow(c, vmin=0.035, vmax=-0.035, cmap=plt.cm.bwr)
+#        plt.title("yoko")
+#        plt.colorbar()
+#        plt.show()
 #    y_tate.grad = cuda.cupy.ones(y_tate.data.shape, dtype=np.float32)
 #    y_tate.backward(retain_grad=True)
 #    grad = X_tate_gpu.grad
@@ -233,10 +230,10 @@ if __name__ == '__main__':
 #        plt.colorbar()
 #        plt.show()
     # 入力画像を表示
-    for c in X_test[0]:
-        plt.matshow(c, cmap=plt.cm.gray)
-        plt.colorbar()
-        plt.show()
+#    for c in X_test[0]:
+#        plt.matshow(c, cmap=plt.cm.gray)
+#        plt.colorbar()
+#        plt.show()
 #    for c in X_tate[0]:
 #        plt.matshow(c, cmap=plt.cm.gray)
 #        plt.colorbar()
