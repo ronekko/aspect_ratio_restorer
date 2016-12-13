@@ -197,8 +197,29 @@ if __name__ == '__main__':
         print "割り込み停止が実行されました"
 
     model_filename = str(file_name) + str(time.time()) + '.npz'
-    output_root_dir = os.path.join(output_root_dir, model_filename)
-    serializers.save_npz(output_root_dir, model_best)
+    loss_filename = 'epoch_loss' + str(time.time()) + '.png'
+    r_dis_filename = 'r_distance' + str(time.time()) + '.png'
+    model_filename = os.path.join(output_root_dir, model_filename)
+    loss_filename = os.path.join(output_root_dir, loss_filename)
+    r_dis_filename = os.path.join(output_root_dir, r_dis_filename)
+
+    plt.plot(epoch_loss)
+    plt.plot(epoch_valid_loss)
+    plt.ylim(0, 0.5)
+    plt.title("loss")
+    plt.legend(["train", "valid"], loc="upper right")
+    plt.grid()
+    plt.savefig(loss_filename)
+    plt.show()
+
+    plt.plot(r_loss)
+    plt.title("r_disdance")
+    plt.grid()
+    plt.savefig(r_dis_filename)
+    plt.show()
+
+    model_filename = os.path.join(output_root_dir, model_filename)
+    serializers.save_npz(model_filename, model_best)
 
     print 'max_iteration:', max_iteration
     print 'learning_rate:', learning_rate
