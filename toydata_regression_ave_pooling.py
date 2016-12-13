@@ -5,6 +5,7 @@ Created on Wed Dec 07 21:22:59 2016
 @author: yamane
 """
 
+import os
 import numpy as np
 import time
 import copy
@@ -73,6 +74,7 @@ class Convnet(Chain):
 
 
 if __name__ == '__main__':
+    file_name = os.path.splitext(os.path.basename(__file__))[0]
     # 超パラメータ
     max_iteration = 100  # 繰り返し回数
     batch_size = 100  # ミニバッチサイズ
