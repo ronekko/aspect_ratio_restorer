@@ -51,7 +51,7 @@ def generate_image(model, X, T, max_iteration, a):
         y = model.forward(X_data, True)
         y.grad = cuda.cupy.ones(y.data.shape, dtype=np.float32)
         y.backward(retain_grad=True)
-        X_data = Variable(X_data.data + a * X_data.grad)
+        X_data = Variable(cuda.cupy.clip((X_data.data + a * X_data.grad), 0, 1))
         X_new = cuda.to_cpu(X_data.data)
         X_new = X_new.reshape(-1, 224, 224)
     print 'origin_T:', T[0], 'exp(origin_T):', np.exp(T[0])
@@ -138,10 +138,10 @@ if __name__ == '__main__':
     aspect_ratio_min = 1.0
     step_size = 0.1
     file_path = r'E:\voc2012\raw_dataset\output_size_500\output_size_500.hdf5'
-    model_file = 'model_dog_reg_max1481452575.29.npz'
+    model_file = 'model_dog_reg1481285466.8.npz'
     test_data = range(num_train, num_train + num_test)
 
-    model = dog_data_regression__pooling.Convnet().to_gpu()
+    model = dog_data_regression.Convnet().to_gpu()
     serializers.load_npz(model_file, model)
 
     queue_test = Queue(1)

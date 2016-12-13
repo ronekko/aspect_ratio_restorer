@@ -46,7 +46,7 @@ def generate_image(model, X, T, max_iteration, a):
         y = model.forward(X_data, True)
         y.grad = cuda.cupy.ones(y.data.shape, dtype=np.float32)
         y.backward(retain_grad=True)
-        X_data = Variable(X_data.data + a * X_data.grad)
+        X_data = Variable(cuda.cupy.clip((X_data.data + a * X_data.grad), 0, 1))
         X_new = cuda.to_cpu(X_data.data)
         X_new = X_new.reshape(-1, 224, 224)
     print 'origin_T:', T[0], 'exp(origin_T):', np.exp(T[0])
@@ -159,7 +159,7 @@ if __name__ == '__main__':
     output(model, X_test, T_test)
 
 #    # Rが大きくなるようにXを最適化する
-#    X_new = generate_image(model, X_test, T_test, max_iteration, step_size)
+    X_new = generate_image(model, X_test, T_test, max_iteration, step_size)
 #
     X_test_gpu = Variable(cuda.to_gpu(X_test))
 #    X_tate_gpu = Variable(cuda.to_gpu(X_tate))
