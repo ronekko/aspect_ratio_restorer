@@ -154,8 +154,8 @@ if __name__ == '__main__':
             target_t = T_test
             predict_r = np.exp(predict_t)
             target_r = np.exp(target_t)
-            predict_image = toydata.fix_image(X_test, predict_r)
-            original_image = toydata.fix_image(X_test, target_r)
+            predict_image = utility.fix_image(X_test, predict_r)
+            original_image = utility.fix_image(X_test, target_r)
 
             r_dis = np.absolute(predict_r - target_r)
             r_loss.append(r_dis[0])

@@ -203,16 +203,6 @@ aspect_ratio_max:{}"""
                                self.p, self.ar_min, self.ar_max)
 
 
-def fix_image(image, aspect_ratio):
-    image_size = image.shape[2]
-    r = 1 / aspect_ratio
-    image = image.reshape(-1, image_size, image_size)
-    image = np.transpose(image, (1, 2, 0))
-    fix_image = utility.change_aspect_ratio(image, r)
-    fix_image = np.transpose(fix_image, (2, 0, 1))
-    return fix_image
-
-
 def random_crop_and_flip(image, crop_size):
     h_image, w_image = image.shape[:2]
     h_crop = crop_size

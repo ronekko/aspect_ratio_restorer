@@ -84,8 +84,8 @@ def test_output(model, X, T, r_loss):
     target_t = T
     predict_r = np.exp(predict_t)
     target_r = np.exp(target_t)
-    predict_image = toydata.fix_image(X, predict_r)
-    original_image = toydata.fix_image(X, target_r)
+    predict_image = utility.fix_image(X, predict_r)
+    original_image = utility.fix_image(X, target_r)
     debased_image = np.transpose(X[0], (1, 2, 0))
     predict_image = np.transpose(predict_image, (1, 2, 0))
     original_image = np.transpose(original_image, (1, 2, 0))
