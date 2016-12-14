@@ -5,6 +5,7 @@ Created on Fri Nov 25 18:37:28 2016
 @author: yamane
 """
 
+import os
 import numpy as np
 import time
 import tqdm
@@ -146,21 +147,46 @@ def create_mini_batch(queue, file_path, data, batch_size=100, min_ratio=1,
 
 
 if __name__ == '__main__':
+    file_name = os.path.splitext(os.path.basename(__file__))[0]
+    time_start = time.time()
+    image_list = []
+    epoch_loss = []
+    epoch_valid_loss = []
+    loss_valid_best = np.inf
+    r_loss = []
+
     # 超パラメータ
     max_iteration = 150  # 繰り返し回数
     batch_size = 100  # ミニバッチサイズ
-    num_train = 20000
-    num_test = 100
-    learning_rate = 0.001
-    output_size = 256
-    crop_size = 224
-    aspect_ratio_min = 1.0
-    aspect_ratio_max = 3
-    file_path = r'E:\stanford_Dogs_Dataset\raw_dataset_binary\output_size_500\output_size_500.hdf5'
-
+    num_train = 20000  # 学習データ数
+    num_test = 100  # 検証データ数
+    learning_rate = 0.001  # 学習率
+    output_size = 256  # 生成画像サイズ
+    crop_size = 224  # ネットワーク入力画像サイズ
+    aspect_ratio_min = 1.0  # 最小アスペクト比の誤り
+    aspect_ratio_max = 3  # 最大アスペクト比の誤り
+    file_path = r'E:\stanford_Dogs_Dataset\raw_dataset_binary\output_size_500\output_size_500.hdf5'  # データセットファイル保存場所
+    output_location = 'C:\Users\yamane\Dropbox\correct_aspect_ratio'  # 学習結果保存場所
+    # 学習結果保存フォルダ作成
+    output_root_dir = os.path.join(output_location, file_name)
+    output_root_dir = os.path.join(output_root_dir, str(time_start))
+    if os.path.exists(output_root_dir):
+        pass
+    else:
+        os.makedirs(output_root_dir)
+    # ファイル名を作成
+    model_filename = str(file_name) + str(time_start) + '.npz'
+    loss_filename = 'epoch_loss' + str(time_start) + '.png'
+    r_dis_filename = 'r_distance' + str(time_start) + '.png'
+    model_filename = os.path.join(output_root_dir, model_filename)
+    loss_filename = os.path.join(output_root_dir, loss_filename)
+    r_dis_filename = os.path.join(output_root_dir, r_dis_filename)
+    # バッチサイズ計算
     train_data = range(0, num_train)
     test_data = range(num_train, num_train + num_test)
-
+    num_batches_train = num_train / batch_size
+    num_batches_test = num_test / batch_size
+    # キューを作成、プロセススタート
     queue_train = Queue(10)
     process_train = Process(target=create_mini_batch,
                             args=(queue_train, file_path, train_data,
@@ -179,20 +205,11 @@ if __name__ == '__main__':
                                  1, aspect_ratio_min, aspect_ratio_max,
                                  crop_size, output_size))
     process_test.start()
-
+    # モデル読み込み
     model = Convnet().to_gpu()
     # Optimizerの設定
     optimizer = optimizers.Adam(learning_rate)
     optimizer.setup(model)
-
-    image_list = []
-    epoch_loss = []
-    epoch_valid_loss = []
-    loss_valid_best = np.inf
-    r_loss = []
-
-    num_batches_train = num_train / batch_size
-    num_batches_test = num_test / batch_size
 
     time_origin = time.time()
     try:
@@ -248,7 +265,22 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print "割り込み停止が実行されました"
 
-    model_filename = 'model_dog_reg' + str(time.time()) + '.npz'
+    plt.plot(epoch_loss)
+    plt.plot(epoch_valid_loss)
+    plt.ylim(0, 0.5)
+    plt.title("loss")
+    plt.legend(["train", "valid"], loc="upper right")
+    plt.grid()
+    plt.savefig(loss_filename)
+    plt.show()
+
+    plt.plot(r_loss)
+    plt.title("r_disdance")
+    plt.grid()
+    plt.savefig(r_dis_filename)
+    plt.show()
+
+    model_filename = os.path.join(output_root_dir, model_filename)
     serializers.save_npz(model_filename, model_best)
 
     process_train.terminate()

@@ -5,6 +5,7 @@ Created on Wed Dec 07 21:22:59 2016
 @author: yamane
 """
 
+import os
 import numpy as np
 import time
 import copy
@@ -73,6 +74,12 @@ class Convnet(Chain):
 
 
 if __name__ == '__main__':
+    file_name = os.path.splitext(os.path.basename(__file__))[0]
+    time_start = time.time()
+    epoch_loss = []
+    epoch_valid_loss = []
+    r_loss = []
+    loss_valid_best = np.inf
     # 超パラメータ
     max_iteration = 100  # 繰り返し回数
     batch_size = 100  # ミニバッチサイズ
@@ -88,6 +95,20 @@ if __name__ == '__main__':
     output_size = 224
     aspect_ratio_min = 1.0
     aspect_ratio_max = 3.0
+    output_location = 'C:\Users\yamane\Dropbox\correct_aspect_ratio'
+
+    output_root_dir = os.path.join(output_location, file_name)
+    output_root_dir = os.path.join(output_root_dir, str(time_start))
+    if os.path.exists(output_root_dir):
+        pass
+    else:
+        os.makedirs(output_root_dir)
+    model_filename = str(file_name) + str(time_start) + '.npz'
+    loss_filename = 'epoch_loss' + str(time_start) + '.png'
+    r_dis_filename = 'r_distance' + str(time_start) + '.png'
+    model_filename = os.path.join(output_root_dir, model_filename)
+    loss_filename = os.path.join(output_root_dir, loss_filename)
+    r_dis_filename = os.path.join(output_root_dir, r_dis_filename)
 
     model = Convnet().to_gpu()
     dataset = toydata.RandomCircleSquareDataset(
@@ -96,11 +117,6 @@ if __name__ == '__main__':
     # Optimizerの設定
     optimizer = optimizers.Adam(learning_rate)
     optimizer.setup(model)
-
-    epoch_loss = []
-    epoch_valid_loss = []
-    r_loss = []
-    loss_valid_best = np.inf
 
     num_batches = num_train / batch_size
 
@@ -185,7 +201,22 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print "割り込み停止が実行されました"
 
-    model_filename = 'model_toy_reg_ave' + str(time.time()) + '.npz'
+    plt.plot(epoch_loss)
+    plt.plot(epoch_valid_loss)
+    plt.ylim(0, 0.5)
+    plt.title("loss")
+    plt.legend(["train", "valid"], loc="upper right")
+    plt.grid()
+    plt.savefig(loss_filename)
+    plt.show()
+
+    plt.plot(r_loss)
+    plt.title("r_disdance")
+    plt.grid()
+    plt.savefig(r_dis_filename)
+    plt.show()
+
+    model_filename = os.path.join(output_root_dir, model_filename)
     serializers.save_npz(model_filename, model_best)
 
     print 'max_iteration:', max_iteration
