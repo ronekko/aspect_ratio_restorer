@@ -203,25 +203,6 @@ aspect_ratio_max:{}"""
                                self.p, self.ar_min, self.ar_max)
 
 
-def random_crop_and_flip(image, crop_size):
-    h_image, w_image = image.shape[:2]
-    h_crop = crop_size
-    w_crop = crop_size
-
-    # 0以上 h_image - h_crop以下の整数乱数
-    top = np.random.randint(0, h_image - h_crop + 1)
-    left = np.random.randint(0, w_image - w_crop + 1)
-    bottom = top + h_crop
-    right = left + w_crop
-
-    image = image[top:bottom, left:right]
-
-    if np.random.rand() > 0.5:  # 半々の確率で
-        image = image[:, ::-1]  # 左右反転
-
-    return image
-
-
 if __name__ == '__main__':
     # 超パラメータ
     max_iteration = 50  # 繰り返し回数

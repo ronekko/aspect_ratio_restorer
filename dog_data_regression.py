@@ -134,7 +134,7 @@ def create_mini_batch(queue, file_path, data, batch_size=100, min_ratio=1,
                 square_image = utility.crop_center(image)
                 resize_image = cv2.resize(square_image,
                                           (output_size, output_size))
-                resize_image = toydata.random_crop_and_flip(resize_image,
+                resize_image = utility.random_crop_and_flip(resize_image,
                                                             crop_size)
                 images.append(resize_image)
                 t = np.log(r)
