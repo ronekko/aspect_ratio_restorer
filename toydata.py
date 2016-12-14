@@ -202,29 +202,6 @@ aspect_ratio_max:{}"""
                                self.p, self.ar_min, self.ar_max)
 
 
-def crop_center(image):
-    height, width = image.shape[:2]
-    left = 0
-    right = width
-    top = 0
-    bottom = height
-
-    if height >= width:  # 縦長の場合
-        output_size = width
-        margin = int((height - width) / 2)
-        top = margin
-        bottom = top + output_size
-    else:  # 横長の場合
-        output_size = height
-        margin = int((width - height) / 2)
-        left = margin
-        right = left + output_size
-
-    square_image = image[top:bottom, left:right]
-
-    return square_image
-
-
 def padding_image(image):
     height, width = image.shape[:2]
     left = 0
