@@ -16,6 +16,7 @@ import time
 import copy
 import tqdm
 import cv2
+import utility
 
 
 # ネットワークの定義
@@ -100,7 +101,7 @@ class RandomCircleSquareDataset(object):
                 r = sample_random_aspect_ratio(self.ar_max, self.ar_min)
             else:
                 r = 1
-            image = change_aspect_ratio(image, r)
+            image = utility.change_aspect_ratio(image, r)
             square_image = crop_center(image)
             resize_image = cv2.resize(
                 square_image, (self.output_size, self.output_size))
@@ -121,7 +122,7 @@ class RandomCircleSquareDataset(object):
         for i in range(batch_size):
             image = self.create_image()
             r = sample_random_aspect_ratio(self.ar_max, self.ar_min)
-            image = change_aspect_ratio(image, r)
+            image = utility.change_aspect_ratio(image, r)
             square_image = padding_image(image)
             # cv2.resize:(image, (w, h))
             # transform.resize:(image, (h, w))
@@ -201,26 +202,6 @@ aspect_ratio_max:{}"""
                                self.p, self.ar_min, self.ar_max)
 
 
-def change_aspect_ratio(image, aspect_ratio):
-    h_image, w_image = image.shape[:2]
-    r = aspect_ratio
-
-    if r == 1:
-        return image
-    elif r > 1:
-        w_image = int(w_image * r)
-    else:
-        h_image = int(h_image / float(r))
-    # cv2.resize:（image, (w, h))
-    # transform.resize:(image, (h, w))
-    if image.shape[2] == 1:
-        resize_image = cv2.resize(image, (w_image, h_image))[..., None]
-    else:
-        resize_image = cv2.resize(image, (w_image, h_image))
-
-    return resize_image
-
-
 def crop_center(image):
     height, width = image.shape[:2]
     left = 0
@@ -289,7 +270,7 @@ def fix_image(image, aspect_ratio):
     r = 1 / aspect_ratio
     image = image.reshape(-1, image_size, image_size)
     image = np.transpose(image, (1, 2, 0))
-    fix_image = change_aspect_ratio(image, r)
+    fix_image = utility.change_aspect_ratio(image, r)
     fix_image = np.transpose(fix_image, (2, 0, 1))
     return fix_image
 

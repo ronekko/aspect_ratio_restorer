@@ -18,6 +18,7 @@ from chainer import cuda, optimizers, Chain, serializers
 import chainer.functions as F
 import chainer.links as L
 import toydata
+import utility
 
 
 # ネットワークの定義
@@ -129,7 +130,7 @@ def create_mini_batch(queue, file_path, data, batch_size=100, min_ratio=1,
             for i in range(len(indexes)):
                 image = image_batch[i]
                 r = toydata.sample_random_aspect_ratio(r_max, r_min)
-                image = toydata.change_aspect_ratio(image, r)
+                image = utility.change_aspect_ratio(image, r)
                 square_image = toydata.crop_center(image)
                 resize_image = cv2.resize(square_image,
                                           (output_size, output_size))
