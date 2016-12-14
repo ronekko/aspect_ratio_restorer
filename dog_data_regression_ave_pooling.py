@@ -36,7 +36,6 @@ class Convnet(Chain):
             conv5=L.Convolution2D(32, 64, 3, stride=2, pad=1),
             norm5=L.BatchNormalization(64),
 
-            norm7=L.BatchNormalization(64),
             l1=L.Linear(64, 1)
         )
 
@@ -46,8 +45,7 @@ class Convnet(Chain):
         h = F.relu(self.norm3(self.conv3(h), test=test))
         h = F.relu(self.norm4(self.conv4(h), test=test))
         h = F.relu(self.norm5(self.conv5(h), test=test))
-        h = F.relu(self.norm7(F.average_pooling_2d(h, 7), test=test))
-        y = self.l1(h)
+        y = self.l1(F.average_pooling_2d(h, 7))
         return y
 
     def forward(self, X, test):
