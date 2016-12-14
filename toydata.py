@@ -98,7 +98,8 @@ class RandomCircleSquareDataset(object):
             image = self.create_image()
             t = np.random.choice(2)
             if t == 1:
-                r = sample_random_aspect_ratio(self.ar_max, self.ar_min)
+                r = utility.sample_random_aspect_ratio(
+                    self.ar_max, self.ar_min)
             else:
                 r = 1
             image = utility.change_aspect_ratio(image, r)
@@ -121,7 +122,7 @@ class RandomCircleSquareDataset(object):
 
         for i in range(batch_size):
             image = self.create_image()
-            r = sample_random_aspect_ratio(self.ar_max, self.ar_min)
+            r = utility.sample_random_aspect_ratio(self.ar_max, self.ar_min)
             image = utility.change_aspect_ratio(image, r)
             square_image = utility.padding_image(image)
             # cv2.resize:(image, (w, h))

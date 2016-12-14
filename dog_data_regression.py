@@ -129,7 +129,7 @@ def create_mini_batch(queue, file_path, data, batch_size=100, min_ratio=1,
             image_batch = image_features[indexes.tolist()]
             for i in range(len(indexes)):
                 image = image_batch[i]
-                r = toydata.sample_random_aspect_ratio(r_max, r_min)
+                r = utility.sample_random_aspect_ratio(r_max, r_min)
                 image = utility.change_aspect_ratio(image, r)
                 square_image = utility.crop_center(image)
                 resize_image = cv2.resize(square_image,

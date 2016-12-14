@@ -90,7 +90,7 @@ def create_mini_batch(queue, file_path, data, batch_size=100, min_ratio=1,
                 image = image_batch[i]
                 t = np.random.choice(2)
                 if t == 1:
-                    r = toydata.sample_random_aspect_ratio(r_max, r_min)
+                    r = utility.sample_random_aspect_ratio(r_max, r_min)
                 else:
                     r = 1
                 image = utility.change_aspect_ratio(image, r)
