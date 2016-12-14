@@ -202,14 +202,6 @@ aspect_ratio_max:{}"""
                                self.p, self.ar_min, self.ar_max)
 
 
-def transpose(image):
-    if image.ndim == 2:
-        image = image.T
-    else:
-        image = np.transpose(image, (1, 0, 2))
-    return image
-
-
 def sample_random_aspect_ratio(r_max, r_min=1):
     # アスペクト比rをランダム生成する
     r = np.random.uniform(r_min, r_max)
