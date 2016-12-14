@@ -5,6 +5,7 @@ Created on Wed Dec 14 20:54:58 2016
 @author: yamane
 """
 
+import numpy as np
 import cv2
 
 
@@ -47,5 +48,29 @@ def crop_center(image):
         right = left + output_size
 
     square_image = image[top:bottom, left:right]
+
+    return square_image
+
+
+def padding_image(image):
+    height, width = image.shape[:2]
+    left = 0
+    right = width
+    top = 0
+    bottom = height
+
+    if height >= width:  # 縦長の場合
+        output_size = height
+        margin = int((height - width) / 2)
+        left = margin
+        right = left + width
+    else:  # 横長の場合
+        output_size = width
+        margin = int((width - height) / 2)
+        top = margin
+        bottom = top + height
+
+    square_image = np.zeros((output_size, output_size, 1))
+    square_image[top:bottom, left:right] = image
 
     return square_image
