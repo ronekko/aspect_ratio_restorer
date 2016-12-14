@@ -203,14 +203,6 @@ aspect_ratio_max:{}"""
                                self.p, self.ar_min, self.ar_max)
 
 
-def sample_random_aspect_ratio(r_max, r_min=1):
-    # アスペクト比rをランダム生成する
-    r = np.random.uniform(r_min, r_max)
-    if np.random.rand() > 0.5:
-        r = 1 / r
-    return r
-
-
 def fix_image(image, aspect_ratio):
     image_size = image.shape[2]
     r = 1 / aspect_ratio
