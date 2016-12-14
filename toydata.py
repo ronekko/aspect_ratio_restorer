@@ -202,30 +202,6 @@ aspect_ratio_max:{}"""
                                self.p, self.ar_min, self.ar_max)
 
 
-def padding_image(image):
-    height, width = image.shape[:2]
-    left = 0
-    right = width
-    top = 0
-    bottom = height
-
-    if height >= width:  # 縦長の場合
-        output_size = height
-        margin = int((height - width) / 2)
-        left = margin
-        right = left + width
-    else:  # 横長の場合
-        output_size = width
-        margin = int((width - height) / 2)
-        top = margin
-        bottom = top + height
-
-    square_image = np.zeros((output_size, output_size, 1))
-    square_image[top:bottom, left:right] = image
-
-    return square_image
-
-
 def transpose(image):
     if image.ndim == 2:
         image = image.T
