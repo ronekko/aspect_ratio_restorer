@@ -13,6 +13,7 @@ from fuel.datasets.hdf5 import H5PYDataset
 from skimage import io, color, transform
 import tqdm
 import cv2
+import utility
 
 
 def create_path_list(data_location, dataset_root_dir):
@@ -65,7 +66,7 @@ def output_hdf5(path_list, data_chw, output_root_dir):
     try:
         for i in tqdm.tqdm(range(num_data)):
             image = io.imread(path_list[i])
-            image = crop_center(image)
+            image = utility.crop_center(image)
             image = cv2.resize(image, (output_size, output_size))
             image = image.reshape(1, height, width, channel)
             image_features[i] = image
@@ -75,29 +76,6 @@ def output_hdf5(path_list, data_chw, output_root_dir):
 
     f.flush()
     f.close()
-
-
-def crop_center(image):
-    height, width = image.shape[:2]
-    left = 0
-    right = width
-    top = 0
-    bottom = height
-
-    if height >= width:  # 縦長の場合
-        output_size = width
-        margin = int((height - width) / 2)
-        top = margin
-        bottom = top + output_size
-    else:  # 横長の場合
-        output_size = height
-        margin = int((width - height) / 2)
-        left = margin
-        right = left + output_size
-
-    square_image = image[top:bottom, left:right]
-
-    return square_image
 
 
 def main(data_location, output_location, output_size):

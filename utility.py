@@ -26,3 +26,26 @@ def change_aspect_ratio(image, aspect_ratio):
         resize_image = cv2.resize(image, (w_image, h_image))
 
     return resize_image
+
+
+def crop_center(image):
+    height, width = image.shape[:2]
+    left = 0
+    right = width
+    top = 0
+    bottom = height
+
+    if height >= width:  # 縦長の場合
+        output_size = width
+        margin = int((height - width) / 2)
+        top = margin
+        bottom = top + output_size
+    else:  # 横長の場合
+        output_size = height
+        margin = int((width - height) / 2)
+        left = margin
+        right = left + output_size
+
+    square_image = image[top:bottom, left:right]
+
+    return square_image
