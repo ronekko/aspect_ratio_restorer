@@ -15,7 +15,7 @@ from chainer import cuda, optimizers, Chain, serializers
 import chainer.functions as F
 import chainer.links as L
 import toydata
-imoprt utility
+import utility
 
 
 # ネットワークの定義

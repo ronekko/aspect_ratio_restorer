@@ -17,7 +17,6 @@ from multiprocessing import Process, Queue
 from chainer import cuda, optimizers, Chain, serializers
 import chainer.functions as F
 import chainer.links as L
-import toydata
 import utility
 
 
