@@ -37,9 +37,14 @@ def load_dog_stream(hdf5_filepath, batch_size, train_size=20000,
     return stream_train, stream_test
 
 
-def load_toy_stream(draw_toy_image_class, batch_size):
+def load_toy_stream(randomcirclesquaredataset, batch_size):
+    """Parameters
+    ----------
+    randomcirclesquaredataset : RandomCircleSqureDatasetクラスインスタンス.
 
-    dataset = IterableDataset(batch_images(draw_toy_image_class, batch_size))
+    batch_size : バッチサイズ"""
+    dataset = IterableDataset(
+        batch_images(randomcirclesquaredataset, batch_size))
 
     stream_train = DataStream(dataset)
     stream_test = DataStream(dataset)
@@ -47,11 +52,11 @@ def load_toy_stream(draw_toy_image_class, batch_size):
     return stream_train, stream_test
 
 
-def batch_images(draw_toy_image_class, batch_size):
+def batch_images(randomcirclesquaredataset, batch_size):
     while True:
         images = []
         for i in range(batch_size):
-            image = draw_toy_image_class.create_image()
+            image = randomcirclesquaredataset.create_image()
             images.append(image)
         batch = np.stack(images, axis=0)
         yield batch
@@ -60,8 +65,9 @@ def batch_images(draw_toy_image_class, batch_size):
 if __name__ == '__main__':
     hdf5_filepath = r'E:\stanford_Dogs_Dataset\raw_dataset_binary\output_size_500\output_size_500.hdf5'
     batch_size = 100
+    p = [0.3, 0.3, 0.4]
 
-    draw_toy_image_class = RandomCircleSquareDataset()
+    draw_toy_image_class = RandomCircleSquareDataset(p=p)
 
     dog_stream_train, dog_stream_test = load_dog_stream(
         hdf5_filepath, batch_size)
