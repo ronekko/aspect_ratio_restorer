@@ -5,7 +5,6 @@ Created on Wed Nov 02 19:43:57 2016
 @author: yamane
 """
 
-import toydata
 import numpy as np
 import time
 import tqdm
@@ -17,6 +16,7 @@ import chainer.functions as F
 import chainer.links as L
 import cv2
 import utility
+import datasets
 
 
 # ネットワークの定義
@@ -125,17 +125,16 @@ if __name__ == '__main__':
     train_data = range(0, num_train)
     test_data = range(num_train, num_train + num_test)
 
+    dataset = datasets.DogDataset(file_path, output_size, crop_size,
+                                  aspect_ratio_max, aspect_ratio_min)
+
     queue_train = Queue(10)
-    process_train = Process(target=create_mini_batch,
-                            args=(queue_train, file_path, train_data,
-                                  batch_size, aspect_ratio_min,
-                                  aspect_ratio_max, crop_size, output_size))
+    process_train = Process(target=dataset.minibatch_classification,
+                            args=(queue_train, train_data, batch_size))
     process_train.start()
     queue_test = Queue(10)
-    process_test = Process(target=create_mini_batch,
-                           args=(queue_test, file_path, test_data,
-                                 batch_size, aspect_ratio_min,
-                                 aspect_ratio_max, crop_size, output_size))
+    process_test = Process(target=dataset.minibatch_classification,
+                           args=(queue_test, test_data, batch_size))
     process_test.start()
 
     model = Convnet().to_gpu()

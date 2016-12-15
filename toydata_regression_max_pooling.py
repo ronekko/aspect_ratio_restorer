@@ -14,8 +14,8 @@ import matplotlib.pyplot as plt
 from chainer import cuda, optimizers, Chain, serializers
 import chainer.functions as F
 import chainer.links as L
-import toydata
 import utility
+import datasets
 
 
 # ネットワークの定義
@@ -112,7 +112,7 @@ if __name__ == '__main__':
     r_dis_filename = os.path.join(output_root_dir, r_dis_filename)
 
     model = Convnet().to_gpu()
-    dataset = toydata.RandomCircleSquareDataset(
+    dataset = datasets.RandomCircleSquareDataset(
         image_size, circle_r_min, circle_r_max, size_min, size_max, p,
         output_size, aspect_ratio_max, aspect_ratio_min)
     # Optimizerの設定
