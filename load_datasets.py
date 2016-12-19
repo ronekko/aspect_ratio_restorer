@@ -67,9 +67,8 @@ def batch_images(randomcirclesquaredataset, batch_size):
         yield batch
 
 
-def dog_minibatch(queue, it, aspect_ratio_max, aspect_ratio_min,
-                  output_size, crop_size):
-    X_batch = it.next()[0]
+def data_crop(X_batch, aspect_ratio_max=2.5, aspect_ratio_min=1,
+              output_size=256, crop_size=224):
     images = []
     ts = []
     for b in range(X_batch.shape[0]):
@@ -89,7 +88,43 @@ def dog_minibatch(queue, it, aspect_ratio_max, aspect_ratio_min,
     X = np.transpose(X, (0, 3, 1, 2))
     X = X.astype(np.float32)
     T = np.array(ts, dtype=np.float32).reshape(-1, 1)
-    queue.put((X, T))
+    return X, T
+
+
+def data_padding(X_batch, aspect_ratio_max=2.5, aspect_ratio_min=1,
+                 output_size=224):
+    images = []
+    ts = []
+    for b in range(X_batch.shape[0]):
+        image = X_batch[b]
+        r = utility.sample_random_aspect_ratio(aspect_ratio_max,
+                                               aspect_ratio_min)
+        image = utility.change_aspect_ratio(image, r)
+        square_image = utility.padding_image(image)
+        # cv2.resize:(image, (w, h))
+        # transform.resize:(image, (h, w))
+        resize_image = cv2.resize(
+            square_image, (output_size, output_size))
+        resize_image = resize_image[..., None]
+        images.append(resize_image)
+        t = np.log(r)
+        ts.append(t)
+    X = np.stack(images, axis=0)
+    X = np.transpose(X, (0, 3, 1, 2))
+    X = X.astype(np.float32)
+    T = np.array(ts, dtype=np.float32).reshape(-1, 1)
+    return X, T
+
+
+def load_data(queue, stream, crop=True):
+    it = stream.get_epoch_iterator()
+    while True:
+        X = it.next()
+        if crop is True:
+            X, T =data_crop(X[0])
+        else:
+            X, T = data_padding(X[0])
+        queue.put((X, T))
 
 
 if __name__ == '__main__':
@@ -107,15 +142,14 @@ if __name__ == '__main__':
         hdf5_filepath, batch_size)
     toy_stream_train, toy_stream_test = load_toy_stream(
         draw_toy_image_class, batch_size)
-    dog_it_train = dog_stream_train.get_epoch_iterator()
-    queue_train = Queue(10)
-    process_train = Process(target=dog_minibatch,
-                            args=(queue_train, dog_it_train, aspect_ratio_max,
-                                  aspect_ratio_min, output_size, crop_size))
-    process_train.start()
+
+    queue_dog_train = Queue(10)
+    process = Process(target=load_data,
+                      args=(queue_dog_train, dog_stream_train, True))
+    process.start()
+
     for i in range(10):
-        print i
-        X, T = queue_train.get()
+        X, T = queue_dog_train.get()
         image = np.transpose(X, (0, 2, 3, 1))
         plt.imshow(image[0]/256.0)
         plt.show()
