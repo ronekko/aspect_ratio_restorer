@@ -10,6 +10,7 @@ import h5py
 import cv2
 import matplotlib.pyplot as plt
 from multiprocessing import Process, Queue
+from Queue import Full
 
 from fuel.datasets.hdf5 import H5PYDataset
 from fuel.streams import DataStream
@@ -38,6 +39,8 @@ def load_dog_stream(hdf5_filepath, batch_size, train_size=20000,
 
     stream_train = DataStream(dataset, iteration_scheme=scheme_train)
     stream_test = DataStream(dataset, iteration_scheme=scheme_test)
+    stream_train.get_epoch_iterator().next()
+    stream_test.get_epoch_iterator().next()
 
     return stream_train, stream_test
 
@@ -53,6 +56,8 @@ def load_toy_stream(randomcirclesquaredataset, batch_size):
 
     stream_train = DataStream(dataset)
     stream_test = DataStream(dataset)
+    stream_train.get_epoch_iterator().next()
+    stream_test.get_epoch_iterator().next()
 
     return stream_train, stream_test
 
@@ -104,7 +109,8 @@ def data_padding(X_batch, aspect_ratio_max=2.5, aspect_ratio_min=1,
         # cv2.resize:(image, (w, h))
         # transform.resize:(image, (h, w))
         resize_image = cv2.resize(
-            square_image, (output_size, output_size))
+            square_image, (output_size, output_size),
+            interpolation=cv2.INTER_NEAREST)
         resize_image = resize_image[..., None]
         images.append(resize_image)
         t = np.log(r)
@@ -116,25 +122,28 @@ def data_padding(X_batch, aspect_ratio_max=2.5, aspect_ratio_min=1,
     return X, T
 
 
-def load_data(queue, stream, crop=True):
-    it = stream.get_epoch_iterator()
+def load_data(queue, stream, crop):
     while True:
-        X = it.next()
-        if crop is True:
-            X, T =data_crop(X[0])
-        else:
-            X, T = data_padding(X[0])
-        queue.put((X, T))
+        try:
+            for X in stream.get_epoch_iterator():
+                if crop is True:
+                    X, T = data_crop(X[0])
+                else:
+                    X, T = data_padding(X[0])
+                queue.put((X, T), timeout=0.05)
+        except Full:
+            print 'Full'
 
 
 if __name__ == '__main__':
     hdf5_filepath = r'E:\stanford_Dogs_Dataset\raw_dataset_binary\output_size_500\output_size_500.hdf5'
     batch_size = 100
     p = [0.3, 0.3, 0.4]  # [円の生成率、四角の生成率、円と四角の混合生成率]
-    aspect_ratio_max = 2.5
+    aspect_ratio_max = 1.5
     aspect_ratio_min = 1.0
     output_size = 256
     crop_size = 224
+    crop = True
 
     draw_toy_image_class = RandomCircleSquareDataset(p=p)
 
@@ -143,13 +152,26 @@ if __name__ == '__main__':
     toy_stream_train, toy_stream_test = load_toy_stream(
         draw_toy_image_class, batch_size)
 
-    queue_dog_train = Queue(10)
-    process = Process(target=load_data,
-                      args=(queue_dog_train, dog_stream_train, True))
-    process.start()
-
+#    q_dog_train = Queue(10)
+    q_toy_train = Queue(10)
+#    process_dog = Process(target=load_data,
+#                          args=(q_dog_train, dog_stream_train, crop))
+    process_toy = Process(target=load_data,
+                          args=(q_toy_train, toy_stream_train, crop))
+#    process_dog.start()
+    process_toy.start()
+#    load_data(q_toy_train, toy_stream_train, padding)
     for i in range(10):
-        X, T = queue_dog_train.get()
-        image = np.transpose(X, (0, 2, 3, 1))
-        plt.imshow(image[0]/256.0)
-        plt.show()
+        if crop is True:
+            1
+#            X, T = q_dog_train.get()
+#            image = np.transpose(X, (0, 2, 3, 1))
+#            plt.imshow(image[0]/256.0)
+#            plt.show()
+        else:
+            1
+            X, T = q_toy_train.get()
+            plt.imshow(X[0][0])
+            plt.show()
+#    process_dog.terminate()
+    process_toy.terminate()
