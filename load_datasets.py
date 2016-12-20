@@ -72,7 +72,7 @@ def batch_images(randomcirclesquaredataset, batch_size):
         yield batch
 
 
-def data_crop(X_batch, aspect_ratio_max=2.5, aspect_ratio_min=1,
+def data_crop(X_batch, aspect_ratio_max=1.5, aspect_ratio_min=1,
               output_size=256, crop_size=224):
     images = []
     ts = []
@@ -122,14 +122,18 @@ def data_padding(X_batch, aspect_ratio_max=2.5, aspect_ratio_min=1,
     return X, T
 
 
-def load_data(queue, stream, crop):
+def load_data(queue, stream, crop, aspect_ratio_max=2.5, aspect_ratio_min=1.0,
+              output_size=256, crop_size=224):
     while True:
         try:
             for X in stream.get_epoch_iterator():
                 if crop is True:
-                    X, T = data_crop(X[0])
+                    X, T = data_crop(X[0], aspect_ratio_max=2.5,
+                                     aspect_ratio_min=1.0, output_size=256,
+                                     crop_size=224)
                 else:
-                    X, T = data_padding(X[0])
+                    X, T = data_padding(X[0], aspect_ratio_max=2.5,
+                                        aspect_ratio_min=1.0, output_size=224)
                 queue.put((X, T), timeout=0.05)
         except Full:
             print 'Full'

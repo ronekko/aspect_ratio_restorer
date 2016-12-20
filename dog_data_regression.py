@@ -9,16 +9,16 @@ import os
 import numpy as np
 import time
 import tqdm
-import h5py
 import copy
-import cv2
 import matplotlib.pyplot as plt
 from multiprocessing import Process, Queue
+
 from chainer import cuda, optimizers, Chain, serializers
 import chainer.functions as F
 import chainer.links as L
+
 import utility
-import datasets
+import load_datasets
 
 
 # ネットワークの定義
@@ -113,40 +113,6 @@ def test_output(model, X, T, r_loss):
     return r_loss
 
 
-def create_mini_batch(queue, file_path, data, batch_size=100, min_ratio=1,
-                      max_ratio=4, crop_size=224, output_size=256):
-    dataset = h5py.File(file_path)
-    image_features = dataset['image_features']
-    r_min = min_ratio
-    r_max = max_ratio
-
-    num_batches = len(data) / batch_size
-
-    while True:
-        for indexes in np.array_split(data, num_batches):
-            images = []
-            ts = []
-            image_batch = image_features[indexes.tolist()]
-            for i in range(len(indexes)):
-                image = image_batch[i]
-                r = utility.sample_random_aspect_ratio(r_max, r_min)
-                image = utility.change_aspect_ratio(image, r)
-                square_image = utility.crop_center(image)
-                resize_image = cv2.resize(square_image,
-                                          (output_size, output_size))
-                resize_image = utility.random_crop_and_flip(resize_image,
-                                                            crop_size)
-                images.append(resize_image)
-                t = np.log(r)
-                ts.append(t)
-            X = np.stack(images, axis=0)
-            X = np.transpose(X, (0, 3, 1, 2))
-            X = X.astype(np.float32)
-            T = np.array(ts, dtype=np.float32).reshape(-1, 1)
-
-            queue.put((X, T))
-
-
 if __name__ == '__main__':
     file_name = os.path.splitext(os.path.basename(__file__))[0]
     time_start = time.time()
@@ -165,12 +131,14 @@ if __name__ == '__main__':
     output_size = 256  # 生成画像サイズ
     crop_size = 224  # ネットワーク入力画像サイズ
     aspect_ratio_min = 1.0  # 最小アスペクト比の誤り
-    aspect_ratio_max = 3  # 最大アスペクト比の誤り
-    file_path = r'E:\stanford_Dogs_Dataset\raw_dataset_binary\output_size_500\output_size_500.hdf5'  # データセットファイル保存場所
+    aspect_ratio_max = 1.5  # 最大アスペクト比の誤り
+    crop = True
+    hdf5_filepath = r'E:\stanford_Dogs_Dataset\raw_dataset_binary\output_size_500\output_size_500.hdf5'  # データセットファイル保存場所
     output_location = 'C:\Users\yamane\Dropbox\correct_aspect_ratio'  # 学習結果保存場所
     # 学習結果保存フォルダ作成
     output_root_dir = os.path.join(output_location, file_name)
-    output_root_dir = os.path.join(output_root_dir, str(time_start))
+    folder_name = str(time_start) + '_asp_max_' + str(aspect_ratio_max)
+    output_root_dir = os.path.join(output_root_dir, folder_name)
     if os.path.exists(output_root_dir):
         pass
     else:
@@ -187,21 +155,20 @@ if __name__ == '__main__':
     test_data = range(num_train, num_train + num_test)
     num_batches_train = num_train / batch_size
     num_batches_test = num_test / batch_size
-    dataset = datasets.DogDataset(file_path, output_size, crop_size,
-                                  aspect_ratio_max, aspect_ratio_min)
+    # stream作成
+    dog_stream_train, dog_stream_test = load_datasets.load_dog_stream(
+        hdf5_filepath, batch_size)
     # キューを作成、プロセススタート
     queue_train = Queue(10)
-    process_train = Process(target=dataset.minibatch_regression,
-                            args=(queue_train, train_data, batch_size))
+    process_train = Process(target=load_datasets.load_data,
+                            args=(queue_train, dog_stream_train, crop,
+                                  aspect_ratio_max, aspect_ratio_min,
+                                  output_size, crop_size))
     process_train.start()
     queue_valid = Queue(10)
-    process_valid = Process(target=dataset.minibatch_regression,
-                            args=(queue_valid, test_data, batch_size))
+    process_valid = Process(target=load_datasets.load_data,
+                            args=(queue_valid, dog_stream_test, crop))
     process_valid.start()
-    queue_test = Queue(1)
-    process_test = Process(target=dataset.minibatch_regression,
-                           args=(queue_test, test_data, 1))
-    process_test.start()
     # モデル読み込み
     model = Convnet().to_gpu()
     # Optimizerの設定
@@ -256,8 +223,8 @@ if __name__ == '__main__':
             plt.show()
 
             # テスト用のデータを取得
-            X_test, T_test = queue_test.get()
-            r_loss = test_output(model_best, X_test, T_test, r_loss)
+            X_test, T_test = queue_valid.get()
+            r_loss = test_output(model_best, X_test[0:1], T_test[0:1], r_loss)
 
     except KeyboardInterrupt:
         print "割り込み停止が実行されました"
@@ -281,7 +248,7 @@ if __name__ == '__main__':
     serializers.save_npz(model_filename, model_best)
 
     process_train.terminate()
-    process_test.terminate()
+    process_valid.terminate()
     print 'max_iteration:', max_iteration
     print 'learning_rate:', learning_rate
     print 'batch_size:', batch_size
