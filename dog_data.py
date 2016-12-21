@@ -5,7 +5,6 @@ Created on Wed Nov 02 19:43:57 2016
 @author: yamane
 """
 
-import toydata
 import numpy as np
 import time
 import tqdm
@@ -16,6 +15,8 @@ from chainer import cuda, optimizers, Chain
 import chainer.functions as F
 import chainer.links as L
 import cv2
+import utility
+import datasets
 
 
 # ネットワークの定義
@@ -89,14 +90,14 @@ def create_mini_batch(queue, file_path, data, batch_size=100, min_ratio=1,
                 image = image_batch[i]
                 t = np.random.choice(2)
                 if t == 1:
-                    r = toydata.sample_random_aspect_ratio(r_max, r_min)
+                    r = utility.sample_random_aspect_ratio(r_max, r_min)
                 else:
                     r = 1
-                image = toydata.change_aspect_ratio(image, r)
-                square_image = toydata.crop_center(image)
+                image = utility.change_aspect_ratio(image, r)
+                square_image = utility.crop_center(image)
                 resize_image = cv2.resize(square_image,
                                           (output_size, output_size))
-                resize_image = toydata.random_crop_and_flip(resize_image,
+                resize_image = utility.random_crop_and_flip(resize_image,
                                                             crop_size)
                 images.append(resize_image)
                 ts.append(t)
@@ -124,17 +125,16 @@ if __name__ == '__main__':
     train_data = range(0, num_train)
     test_data = range(num_train, num_train + num_test)
 
+    dataset = datasets.DogDataset(file_path, output_size, crop_size,
+                                  aspect_ratio_max, aspect_ratio_min)
+
     queue_train = Queue(10)
-    process_train = Process(target=create_mini_batch,
-                            args=(queue_train, file_path, train_data,
-                                  batch_size, aspect_ratio_min,
-                                  aspect_ratio_max, crop_size, output_size))
+    process_train = Process(target=dataset.minibatch_classification,
+                            args=(queue_train, train_data, batch_size))
     process_train.start()
     queue_test = Queue(10)
-    process_test = Process(target=create_mini_batch,
-                           args=(queue_test, file_path, test_data,
-                                 batch_size, aspect_ratio_min,
-                                 aspect_ratio_max, crop_size, output_size))
+    process_test = Process(target=dataset.minibatch_classification,
+                           args=(queue_test, test_data, batch_size))
     process_test.start()
 
     model = Convnet().to_gpu()

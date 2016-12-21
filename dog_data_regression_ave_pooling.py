@@ -12,10 +12,13 @@ import tqdm
 import copy
 import matplotlib.pyplot as plt
 from multiprocessing import Process, Queue
+
 from chainer import cuda, optimizers, Chain, serializers
 import chainer.functions as F
 import chainer.links as L
+
 import dog_data_regression
+import load_datasets
 
 
 # ネットワークの定義
@@ -91,12 +94,14 @@ if __name__ == '__main__':
     output_size = 256  # 生成画像サイズ
     crop_size = 224  # ネットワーク入力画像サイズ
     aspect_ratio_min = 1.0  # 最小アスペクト比の誤り
-    aspect_ratio_max = 3  # 最大アスペクト比の誤り
-    file_path = r'E:\stanford_Dogs_Dataset\raw_dataset_binary\output_size_500\output_size_500.hdf5'  # データセットファイル保存場所
+    aspect_ratio_max = 1.5  # 最大アスペクト比の誤り
+    crop = True
+    hdf5_filepath = r'E:\stanford_Dogs_Dataset\raw_dataset_binary\output_size_500\output_size_500.hdf5'  # データセットファイル保存場所
     output_location = 'C:\Users\yamane\Dropbox\correct_aspect_ratio'  # 学習結果保存場所
     # 学習結果保存フォルダ作成
     output_root_dir = os.path.join(output_location, file_name)
-    output_root_dir = os.path.join(output_root_dir, str(time_start))
+    folder_name = str(time_start) + '_asp_max_' + str(aspect_ratio_max)
+    output_root_dir = os.path.join(output_root_dir, folder_name)
     if os.path.exists(output_root_dir):
         pass
     else:
@@ -113,24 +118,21 @@ if __name__ == '__main__':
     test_data = range(num_train, num_train + num_test)
     num_batches_train = num_train / batch_size
     num_batches_test = num_test / batch_size
+    # stream作成
+    dog_stream_train, dog_stream_test = load_datasets.load_dog_stream(
+        hdf5_filepath, batch_size)
     # キューを作成、プロセススタート
     queue_train = Queue(10)
-    process_train = Process(target=dog_data_regression.create_mini_batch,
-                            args=(queue_train, file_path, train_data,
-                                  batch_size, aspect_ratio_min,
-                                  aspect_ratio_max, crop_size, output_size))
+    process_train = Process(target=load_datasets.load_data,
+                            args=(queue_train, dog_stream_train, crop,
+                                  aspect_ratio_max, aspect_ratio_min,
+                                  output_size, crop_size))
     process_train.start()
-    queue_valid = Queue(10)
-    process_valid = Process(target=dog_data_regression.create_mini_batch,
-                            args=(queue_valid, file_path, test_data,
-                                  batch_size, aspect_ratio_min,
-                                  aspect_ratio_max, crop_size, output_size))
-    process_valid.start()
-    queue_test = Queue(1)
-    process_test = Process(target=dog_data_regression.create_mini_batch,
-                           args=(queue_test, file_path, test_data,
-                                 1, aspect_ratio_min, aspect_ratio_max,
-                                 crop_size, output_size))
+    queue_test = Queue(10)
+    process_test = Process(target=load_datasets.load_data,
+                           args=(queue_test, dog_stream_test, crop,
+                                 aspect_ratio_max, aspect_ratio_min,
+                                 output_size, crop_size))
     process_test.start()
     # モデル読み込み
     model = Convnet().to_gpu()
@@ -162,7 +164,7 @@ if __name__ == '__main__':
             total_time = time_end - time_origin
             epoch_loss.append(np.mean(losses))
 
-            loss_valid = model.loss_ave(queue_valid, num_batches_test, True)
+            loss_valid = model.loss_ave(queue_test, num_batches_test, True)
             epoch_valid_loss.append(loss_valid)
             if loss_valid < loss_valid_best:
                 loss_valid_best = loss_valid
@@ -170,7 +172,7 @@ if __name__ == '__main__':
                 model_best = copy.deepcopy(model)
 
             # 訓練データでの結果を表示
-            print "dog_data_regression.py"
+            print "dog_data_regression_ave_pooling.py"
             print "epoch:", epoch
             print "time", epoch_time, "(", total_time, ")"
             print "loss[train]:", epoch_loss[epoch]
@@ -187,7 +189,7 @@ if __name__ == '__main__':
 
             # テスト用のデータを取得
             X_test, T_test = queue_test.get()
-            r_loss = dog_data_regression.test_output(model_best, X_test, T_test, r_loss)
+            r_loss = dog_data_regression.test_output(model_best, X_test[0:1], T_test[0:1], r_loss)
 
     except KeyboardInterrupt:
         print "割り込み停止が実行されました"
