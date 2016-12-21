@@ -128,12 +128,11 @@ def load_data(queue, stream, crop, aspect_ratio_max=2.5, aspect_ratio_min=1.0,
         try:
             for X in stream.get_epoch_iterator():
                 if crop is True:
-                    X, T = data_crop(X[0], aspect_ratio_max=2.5,
-                                     aspect_ratio_min=1.0, output_size=256,
-                                     crop_size=224)
+                    X, T = data_crop(X[0], aspect_ratio_max, aspect_ratio_min,
+                                     output_size, crop_size)
                 else:
-                    X, T = data_padding(X[0], aspect_ratio_max=2.5,
-                                        aspect_ratio_min=1.0, output_size=224)
+                    X, T = data_padding(X[0], aspect_ratio_max,
+                                        aspect_ratio_min, crop_size)
                 queue.put((X, T), timeout=0.05)
         except Full:
             print 'Full'
@@ -157,25 +156,24 @@ if __name__ == '__main__':
         draw_toy_image_class, batch_size)
 
 #    q_dog_train = Queue(10)
-    q_toy_train = Queue(10)
 #    process_dog = Process(target=load_data,
 #                          args=(q_dog_train, dog_stream_train, crop))
-    process_toy = Process(target=load_data,
-                          args=(q_toy_train, toy_stream_train, crop))
 #    process_dog.start()
+
+    q_toy_train = Queue(10)
+    process_toy = Process(target=load_data,
+                          args=(q_toy_train, toy_stream_train, False))
     process_toy.start()
-#    load_data(q_toy_train, toy_stream_train, padding)
-    for i in range(10):
-        if crop is True:
-            1
-#            X, T = q_dog_train.get()
-#            image = np.transpose(X, (0, 2, 3, 1))
-#            plt.imshow(image[0]/256.0)
-#            plt.show()
-        else:
-            1
-            X, T = q_toy_train.get()
-            plt.imshow(X[0][0])
-            plt.show()
+
+#    for i in range(10):
+#        X, T = q_dog_train.get()
+#        image = np.transpose(X, (0, 2, 3, 1))
+#        plt.imshow(image[0]/256.0)
+#        plt.show()
 #    process_dog.terminate()
+
+    for i in range(10):
+        X, T = q_toy_train.get()
+        plt.imshow(X[0][0])
+        plt.show()
     process_toy.terminate()

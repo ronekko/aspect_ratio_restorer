@@ -228,7 +228,7 @@ if __name__ == '__main__':
     serializers.save_npz(model_filename, model_best)
 
     process_train.terminate()
-    process_test.terminate()
+    process_valid.terminate()
     print 'max_iteration:', max_iteration
     print 'learning_rate:', learning_rate
     print 'batch_size:', batch_size
