@@ -167,7 +167,9 @@ if __name__ == '__main__':
     process_train.start()
     queue_valid = Queue(10)
     process_valid = Process(target=load_datasets.load_data,
-                            args=(queue_valid, dog_stream_test, crop))
+                            args=(queue_valid, dog_stream_test, crop,
+                                  aspect_ratio_max, aspect_ratio_min,
+                                  output_size, crop_size))
     process_valid.start()
     # モデル読み込み
     model = Convnet().to_gpu()
@@ -180,7 +182,6 @@ if __name__ == '__main__':
         for epoch in range(max_iteration):
             time_begin = time.time()
             losses = []
-            accuracies = []
             for i in tqdm.tqdm(range(num_batches_train)):
                 X_batch, T_batch = queue_train.get()
                 X_batch = cuda.to_gpu(X_batch)

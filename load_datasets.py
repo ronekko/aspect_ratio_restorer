@@ -45,14 +45,13 @@ def load_dog_stream(hdf5_filepath, batch_size, train_size=20000,
     return stream_train, stream_test
 
 
-def load_toy_stream(randomcirclesquaredataset, batch_size):
+def load_toy_stream(batch_size, ):
     """Parameters
     ----------
     randomcirclesquaredataset : RandomCircleSqureDatasetクラスインスタンス.
 
     batch_size : バッチサイズ"""
-    dataset = IterableDataset(
-        ToyDataIterator(randomcirclesquaredataset, batch_size))
+    dataset = IterableDataset(RandomCircleSquareDataset(batch_size=batch_size))
 
     stream_train = DataStream(dataset)
     stream_test = DataStream(dataset)
@@ -60,23 +59,6 @@ def load_toy_stream(randomcirclesquaredataset, batch_size):
     stream_test.get_epoch_iterator().next()
 
     return stream_train, stream_test
-
-
-class ToyDataIterator(object):
-    def __init__(self, randomcirclesquaredataset, batch_size):
-        self.randomcirclesquaredataset = randomcirclesquaredataset
-        self.batch_size = batch_size
-
-    def __iter__(self):
-        return self
-
-    def next(self):
-        images = []
-        for i in range(self.batch_size):
-            image = self.randomcirclesquaredataset.create_image()
-            images.append(image)
-        batch = np.stack(images, axis=0)
-        return batch
 
 
 def data_crop(X_batch, aspect_ratio_max=1.5, aspect_ratio_min=1,
@@ -159,8 +141,7 @@ if __name__ == '__main__':
 
     dog_stream_train, dog_stream_test = load_dog_stream(
         hdf5_filepath, batch_size)
-    toy_stream_train, toy_stream_test = load_toy_stream(
-        draw_toy_image_class, batch_size)
+    toy_stream_train, toy_stream_test = load_toy_stream(batch_size)
 
 #    q_dog_train = Queue(10)
 #    process_dog = Process(target=load_data,

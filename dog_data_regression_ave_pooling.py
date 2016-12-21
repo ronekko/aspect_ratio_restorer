@@ -130,7 +130,9 @@ if __name__ == '__main__':
     process_train.start()
     queue_valid = Queue(10)
     process_valid = Process(target=load_datasets.load_data,
-                            args=(queue_valid, dog_stream_test, crop))
+                            args=(queue_valid, dog_stream_test, crop,
+                                  aspect_ratio_max, aspect_ratio_min,
+                                  output_size, crop_size))
     process_valid.start()
     # モデル読み込み
     model = Convnet().to_gpu()
