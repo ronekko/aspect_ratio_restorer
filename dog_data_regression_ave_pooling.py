@@ -128,12 +128,12 @@ if __name__ == '__main__':
                                   aspect_ratio_max, aspect_ratio_min,
                                   output_size, crop_size))
     process_train.start()
-    queue_valid = Queue(10)
-    process_valid = Process(target=load_datasets.load_data,
-                            args=(queue_valid, dog_stream_test, crop,
-                                  aspect_ratio_max, aspect_ratio_min,
-                                  output_size, crop_size))
-    process_valid.start()
+    queue_test = Queue(10)
+    process_test = Process(target=load_datasets.load_data,
+                           args=(queue_test, dog_stream_test, crop,
+                                 aspect_ratio_max, aspect_ratio_min,
+                                 output_size, crop_size))
+    process_test.start()
     # モデル読み込み
     model = Convnet().to_gpu()
     # Optimizerの設定
@@ -164,7 +164,7 @@ if __name__ == '__main__':
             total_time = time_end - time_origin
             epoch_loss.append(np.mean(losses))
 
-            loss_valid = model.loss_ave(queue_valid, num_batches_test, True)
+            loss_valid = model.loss_ave(queue_test, num_batches_test, True)
             epoch_valid_loss.append(loss_valid)
             if loss_valid < loss_valid_best:
                 loss_valid_best = loss_valid
@@ -188,7 +188,7 @@ if __name__ == '__main__':
             plt.show()
 
             # テスト用のデータを取得
-            X_test, T_test = queue_valid.get()
+            X_test, T_test = queue_test.get()
             r_loss = dog_data_regression.test_output(model_best, X_test[0:1], T_test[0:1], r_loss)
 
     except KeyboardInterrupt:
@@ -213,7 +213,7 @@ if __name__ == '__main__':
     serializers.save_npz(model_filename, model_best)
 
     process_train.terminate()
-    process_valid.terminate()
+    process_test.terminate()
     print 'max_iteration:', max_iteration
     print 'learning_rate:', learning_rate
     print 'batch_size:', batch_size

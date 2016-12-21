@@ -17,8 +17,8 @@ from chainer import cuda, optimizers, Chain, serializers
 import chainer.functions as F
 import chainer.links as L
 
-import utility
 import load_datasets
+import toydata_regression
 
 
 # ネットワークの定義
@@ -76,37 +76,6 @@ class Convnet(Chain):
         return y
 
 
-def test_output(model, X, T, r_loss):
-    predict_t = model.predict(X, True)
-    target_t = T
-    predict_r = np.exp(predict_t)
-    target_r = np.exp(target_t)
-    predict_image = utility.fix_image(X, predict_r)
-    original_image = utility.fix_image(X, target_r)
-    r_dis = np.absolute(predict_r - target_r)
-    r_loss.append(r_dis[0])
-
-    print 'predict t:', predict_t, 'target t:', target_t
-    print 'predict r:', predict_r, 'target r:', target_r
-
-    plt.plot(r_loss)
-    plt.title("r_disdance")
-    plt.grid()
-    plt.show()
-
-    plt.subplot(131)
-    plt.title("debased_image")
-    plt.imshow(X[0][0])
-    plt.subplot(132)
-    plt.title("fix_image")
-    plt.imshow(predict_image[0])
-    plt.subplot(133)
-    plt.title("target_image")
-    plt.imshow(original_image[0])
-    plt.show()
-    return r_loss
-
-
 if __name__ == '__main__':
     file_name = os.path.splitext(os.path.basename(__file__))[0]
     time_start = time.time()
@@ -157,12 +126,12 @@ if __name__ == '__main__':
                                   aspect_ratio_max, aspect_ratio_min,
                                   crop_size))
     process_train.start()
-    queue_valid = Queue(10)
-    process_valid = Process(target=load_datasets.load_data,
-                            args=(queue_valid, toy_stream_test, crop,
-                                  aspect_ratio_max, aspect_ratio_min,
-                                  crop_size))
-    process_valid.start()
+    queue_test = Queue(10)
+    process_test = Process(target=load_datasets.load_data,
+                           args=(queue_test, toy_stream_test, crop,
+                                 aspect_ratio_max, aspect_ratio_min,
+                                 crop_size))
+    process_test.start()
     # モデル読み込み
     model = Convnet().to_gpu()
     # Optimizerの設定
@@ -192,7 +161,7 @@ if __name__ == '__main__':
             total_time = time_end - time_origin
             epoch_loss.append(np.mean(losses))
 
-            loss_valid = model.loss_ave(queue_valid, num_batches_test, True)
+            loss_valid = model.loss_ave(queue_test, num_batches_test, True)
             epoch_valid_loss.append(loss_valid)
             if loss_valid < loss_valid_best:
                 loss_valid_best = loss_valid
@@ -216,8 +185,9 @@ if __name__ == '__main__':
             plt.show()
 
             # テスト用のデータを取得
-            X_test, T_test = queue_valid.get()
-            r_loss = test_output(model_best, X_test[0:1], T_test[0:1], r_loss)
+            X_test, T_test = queue_test.get()
+            r_loss = toydata_regression.test_output(model_best, X_test[0:1],
+                                                    T_test[0:1], r_loss)
 
     except KeyboardInterrupt:
         print "割り込み停止が実行されました"
@@ -241,7 +211,7 @@ if __name__ == '__main__':
     serializers.save_npz(model_filename, model_best)
 
     process_train.terminate()
-    process_valid.terminate()
+    process_test.terminate()
     print 'max_iteration:', max_iteration
     print 'learning_rate:', learning_rate
     print 'batch_size:', batch_size
