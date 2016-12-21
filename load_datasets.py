@@ -52,7 +52,7 @@ def load_toy_stream(randomcirclesquaredataset, batch_size):
 
     batch_size : バッチサイズ"""
     dataset = IterableDataset(
-        batch_images(randomcirclesquaredataset, batch_size))
+        ToyDataIterator(randomcirclesquaredataset, batch_size))
 
     stream_train = DataStream(dataset)
     stream_test = DataStream(dataset)
@@ -62,14 +62,21 @@ def load_toy_stream(randomcirclesquaredataset, batch_size):
     return stream_train, stream_test
 
 
-def batch_images(randomcirclesquaredataset, batch_size):
-    while True:
+class ToyDataIterator(object):
+    def __init__(self, randomcirclesquaredataset, batch_size):
+        self.randomcirclesquaredataset = randomcirclesquaredataset
+        self.batch_size = batch_size
+
+    def __iter__(self):
+        return self
+
+    def next(self):
         images = []
-        for i in range(batch_size):
-            image = randomcirclesquaredataset.create_image()
+        for i in range(self.batch_size):
+            image = self.randomcirclesquaredataset.create_image()
             images.append(image)
         batch = np.stack(images, axis=0)
-        yield batch
+        return batch
 
 
 def data_crop(X_batch, aspect_ratio_max=1.5, aspect_ratio_min=1,
