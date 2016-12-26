@@ -79,24 +79,24 @@ class Convnet(Chain):
         return y
 
 
-def test_output(model, X, T, r_loss):
+def test_output(model, X, T, t_loss):
     predict_t = model.predict(X, True)
     target_t = T
     predict_r = np.exp(predict_t)
     target_r = np.exp(target_t)
-    predict_image = utility.fix_image(X, predict_r)
-    original_image = utility.fix_image(X, target_r)
+    predict_image = utility.fix_image(X[0:1], predict_r[0])
+    original_image = utility.fix_image(X[0:1], target_r[0])
     debased_image = np.transpose(X[0], (1, 2, 0))
     predict_image = np.transpose(predict_image, (1, 2, 0))
     original_image = np.transpose(original_image, (1, 2, 0))
-    r_dis = np.absolute(predict_r - target_r)
-    r_loss.append(r_dis[0])
+    t_dis = np.absolute(predict_t - target_t)
+    t_loss.append(np.mean(t_dis))
 
-    print 'predict t:', predict_t, 'target t:', target_t
-    print 'predict r:', predict_r, 'target r:', target_r
+    print 'predict t:', predict_t[0], 'target t:', target_t[0]
+    print 'predict r:', predict_r[0], 'target r:', target_r[0]
 
-    plt.plot(r_loss)
-    plt.title("r_disdance")
+    plt.plot(t_loss)
+    plt.title("t_disdance")
     plt.grid()
     plt.show()
 
@@ -110,7 +110,7 @@ def test_output(model, X, T, r_loss):
     plt.title("target_image")
     plt.imshow(original_image/256.0)
     plt.show()
-    return r_loss
+    return t_loss
 
 
 if __name__ == '__main__':
@@ -120,10 +120,10 @@ if __name__ == '__main__':
     epoch_loss = []
     epoch_valid_loss = []
     loss_valid_best = np.inf
-    r_loss = []
+    t_loss = []
 
     # 超パラメータ
-    max_iteration = 150  # 繰り返し回数
+    max_iteration = 100  # 繰り返し回数
     batch_size = 100  # ミニバッチサイズ
     num_train = 20000  # 学習データ数
     num_test = 100  # 検証データ数
@@ -131,7 +131,7 @@ if __name__ == '__main__':
     output_size = 256  # 生成画像サイズ
     crop_size = 224  # ネットワーク入力画像サイズ
     aspect_ratio_min = 1.0  # 最小アスペクト比の誤り
-    aspect_ratio_max = 1.5  # 最大アスペクト比の誤り
+    aspect_ratio_max = 2.0  # 最大アスペクト比の誤り
     crop = True
     hdf5_filepath = r'E:\stanford_Dogs_Dataset\raw_dataset_binary\output_size_500\output_size_500.hdf5'  # データセットファイル保存場所
     output_location = 'C:\Users\yamane\Dropbox\correct_aspect_ratio'  # 学習結果保存場所
@@ -146,10 +146,10 @@ if __name__ == '__main__':
     # ファイル名を作成
     model_filename = str(file_name) + str(time_start) + '.npz'
     loss_filename = 'epoch_loss' + str(time_start) + '.png'
-    r_dis_filename = 'r_distance' + str(time_start) + '.png'
+    t_dis_filename = 't_distance' + str(time_start) + '.png'
     model_filename = os.path.join(output_root_dir, model_filename)
     loss_filename = os.path.join(output_root_dir, loss_filename)
-    r_dis_filename = os.path.join(output_root_dir, r_dis_filename)
+    t_dis_filename = os.path.join(output_root_dir, t_dis_filename)
     # バッチサイズ計算
     train_data = range(0, num_train)
     test_data = range(num_train, num_train + num_test)
@@ -214,6 +214,7 @@ if __name__ == '__main__':
             print "loss[train]:", epoch_loss[epoch]
             print "loss[valid]:", loss_valid
             print "loss[valid_best]:", loss_valid_best
+            print "epoch[valid_best]:", epoch__loss_best
 
             plt.plot(epoch_loss)
             plt.plot(epoch_valid_loss)
@@ -225,7 +226,7 @@ if __name__ == '__main__':
 
             # テスト用のデータを取得
             X_test, T_test = queue_test.get()
-            r_loss = test_output(model_best, X_test[0:1], T_test[0:1], r_loss)
+            t_loss = test_output(model_best, X_test, T_test, t_loss)
 
     except KeyboardInterrupt:
         print "割り込み停止が実行されました"
@@ -239,10 +240,10 @@ if __name__ == '__main__':
     plt.savefig(loss_filename)
     plt.show()
 
-    plt.plot(r_loss)
-    plt.title("r_disdance")
+    plt.plot(t_loss)
+    plt.title("t_disdance")
     plt.grid()
-    plt.savefig(r_dis_filename)
+    plt.savefig(t_dis_filename)
     plt.show()
 
     model_filename = os.path.join(output_root_dir, model_filename)

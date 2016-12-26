@@ -36,7 +36,6 @@ class Convnet(Chain):
             conv5=L.Convolution2D(32, 64, 3, stride=2, pad=1),
             norm5=L.BatchNormalization(64),
 
-            norm6=L.BatchNormalization(64),
             l1=L.Linear(64, 1)
         )
 
@@ -46,8 +45,7 @@ class Convnet(Chain):
         h = F.relu(self.norm3(self.conv3(h), test=test))
         h = F.relu(self.norm4(self.conv4(h), test=test))
         h = F.relu(self.norm5(self.conv5(h), test=test))
-        h = F.relu(self.norm6(F.average_pooling_2d(h, 7), test=test))
-        y = self.l1(h)
+        y = self.l1(F.average_pooling_2d(h, 7))
         return y
 
     def forward(self, X, test):
@@ -83,10 +81,10 @@ if __name__ == '__main__':
     epoch_loss = []
     epoch_valid_loss = []
     loss_valid_best = np.inf
-    r_loss = []
+    t_loss = []
 
     # 超パラメータ
-    max_iteration = 150  # 繰り返し回数
+    max_iteration = 100  # 繰り返し回数
     batch_size = 100  # ミニバッチサイズ
     num_train = 20000  # 学習データ数
     num_test = 100  # 検証データ数
@@ -94,7 +92,7 @@ if __name__ == '__main__':
     output_size = 256  # 生成画像サイズ
     crop_size = 224  # ネットワーク入力画像サイズ
     aspect_ratio_min = 1.0  # 最小アスペクト比の誤り
-    aspect_ratio_max = 1.5  # 最大アスペクト比の誤り
+    aspect_ratio_max = 2.0  # 最大アスペクト比の誤り
     crop = True
     hdf5_filepath = r'E:\stanford_Dogs_Dataset\raw_dataset_binary\output_size_500\output_size_500.hdf5'  # データセットファイル保存場所
     output_location = 'C:\Users\yamane\Dropbox\correct_aspect_ratio'  # 学習結果保存場所
@@ -109,10 +107,10 @@ if __name__ == '__main__':
     # ファイル名を作成
     model_filename = str(file_name) + str(time_start) + '.npz'
     loss_filename = 'epoch_loss' + str(time_start) + '.png'
-    r_dis_filename = 'r_distance' + str(time_start) + '.png'
+    t_dis_filename = 't_distance' + str(time_start) + '.png'
     model_filename = os.path.join(output_root_dir, model_filename)
     loss_filename = os.path.join(output_root_dir, loss_filename)
-    r_dis_filename = os.path.join(output_root_dir, r_dis_filename)
+    t_dis_filename = os.path.join(output_root_dir, t_dis_filename)
     # バッチサイズ計算
     train_data = range(0, num_train)
     test_data = range(num_train, num_train + num_test)
@@ -178,6 +176,7 @@ if __name__ == '__main__':
             print "loss[train]:", epoch_loss[epoch]
             print "loss[valid]:", loss_valid
             print "loss[valid_best]:", loss_valid_best
+            print "epoch[valid_best]:", epoch__loss_best
 
             plt.plot(epoch_loss)
             plt.plot(epoch_valid_loss)
@@ -189,7 +188,8 @@ if __name__ == '__main__':
 
             # テスト用のデータを取得
             X_test, T_test = queue_test.get()
-            r_loss = dog_data_regression.test_output(model_best, X_test[0:1], T_test[0:1], r_loss)
+            t_loss = dog_data_regression.test_output(model_best, X_test,
+                                                     T_test, t_loss)
 
     except KeyboardInterrupt:
         print "割り込み停止が実行されました"
@@ -203,10 +203,10 @@ if __name__ == '__main__':
     plt.savefig(loss_filename)
     plt.show()
 
-    plt.plot(r_loss)
-    plt.title("r_disdance")
+    plt.plot(t_loss)
+    plt.title("t_disdance")
     plt.grid()
-    plt.savefig(r_dis_filename)
+    plt.savefig(t_dis_filename)
     plt.show()
 
     model_filename = os.path.join(output_root_dir, model_filename)

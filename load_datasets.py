@@ -61,20 +61,27 @@ def load_toy_stream(batch_size, ):
     return stream_train, stream_test
 
 
-def data_crop(X_batch, aspect_ratio_max=1.5, aspect_ratio_min=1,
-              output_size=256, crop_size=224):
+def data_crop(X_batch, aspect_ratio_max=2.0, aspect_ratio_min=1,
+              output_size=256, crop_size=224, test=False, r=2.0):
     images = []
     ts = []
     for b in range(X_batch.shape[0]):
         image = X_batch[b]
-        r = utility.sample_random_aspect_ratio(aspect_ratio_max,
-                                               aspect_ratio_min)
-        image = utility.change_aspect_ratio(image, r)
-        square_image = utility.crop_center(image)
-        resize_image = cv2.resize(
-            square_image, (output_size, output_size))
-        resize_image = utility.random_crop_and_flip(resize_image,
-                                                    crop_size)
+        if test is True:
+            r = r
+            image = utility.change_aspect_ratio(image, r)
+            square_image = utility.crop_center(image)
+            resize_image = cv2.resize(
+                square_image, (crop_size, crop_size))
+        else:
+            r = utility.sample_random_aspect_ratio(aspect_ratio_max,
+                                                   aspect_ratio_min)
+            image = utility.change_aspect_ratio(image, r)
+            square_image = utility.crop_center(image)
+            resize_image = cv2.resize(
+                square_image, (output_size, output_size))
+            resize_image = utility.random_crop_and_flip(resize_image,
+                                                        crop_size)
         images.append(resize_image)
         t = np.log(r)
         ts.append(t)
@@ -85,14 +92,17 @@ def data_crop(X_batch, aspect_ratio_max=1.5, aspect_ratio_min=1,
     return X, T
 
 
-def data_padding(X_batch, aspect_ratio_max=2.5, aspect_ratio_min=1,
-                 output_size=224):
+def data_padding(X_batch, aspect_ratio_max=2.0, aspect_ratio_min=1,
+                 output_size=224, test=False, r=2.0):
     images = []
     ts = []
     for b in range(X_batch.shape[0]):
         image = X_batch[b]
-        r = utility.sample_random_aspect_ratio(aspect_ratio_max,
-                                               aspect_ratio_min)
+        if test is True:
+            r = r
+        else:
+            r = utility.sample_random_aspect_ratio(aspect_ratio_max,
+                                                   aspect_ratio_min)
         image = utility.change_aspect_ratio(image, r)
         square_image = utility.padding_image(image)
         # cv2.resize:(image, (w, h))
@@ -111,17 +121,17 @@ def data_padding(X_batch, aspect_ratio_max=2.5, aspect_ratio_min=1,
     return X, T
 
 
-def load_data(queue, stream, crop, aspect_ratio_max=2.5, aspect_ratio_min=1.0,
-              output_size=256, crop_size=224):
+def load_data(queue, stream, crop, aspect_ratio_max=2.0, aspect_ratio_min=1.0,
+              output_size=256, crop_size=224, test=False, r=2.0):
     while True:
         try:
             for X in stream.get_epoch_iterator():
                 if crop is True:
                     X, T = data_crop(X[0], aspect_ratio_max, aspect_ratio_min,
-                                     output_size, crop_size)
+                                     output_size, crop_size, test, r)
                 else:
                     X, T = data_padding(X[0], aspect_ratio_max,
-                                        aspect_ratio_min, crop_size)
+                                        aspect_ratio_min, crop_size, test, r)
                 queue.put((X, T), timeout=0.05)
         except Full:
             print 'Full'
@@ -131,7 +141,7 @@ if __name__ == '__main__':
     hdf5_filepath = r'E:\stanford_Dogs_Dataset\raw_dataset_binary\output_size_500\output_size_500.hdf5'
     batch_size = 100
     p = [0.3, 0.3, 0.4]  # [円の生成率、四角の生成率、円と四角の混合生成率]
-    aspect_ratio_max = 1.5
+    aspect_ratio_max = 2.0
     aspect_ratio_min = 1.0
     output_size = 256
     crop_size = 224
