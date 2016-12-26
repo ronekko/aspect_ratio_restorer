@@ -12,7 +12,8 @@ from skimage import draw
 class RandomCircleSquareDataset(object):
     def __init__(self, image_size=500, circle_r_min=50, circle_r_max=150,
                  size_min=50, size_max=200, p=[0.3, 0.3, 0.4], output_size=224,
-                 aspect_ratio_max=4, aspect_ratio_min=1, batch_size=100):
+                 aspect_ratio_max=4, aspect_ratio_min=1, batch_size=100,
+                 epoch_len=1000):
         self.image_size = image_size
         self.cr_min = circle_r_min
         self.cr_max = circle_r_max
@@ -23,6 +24,7 @@ class RandomCircleSquareDataset(object):
         self.ar_max = aspect_ratio_max
         self.ar_min = aspect_ratio_min
         self.batch_size = batch_size
+        self.epoch_len=epoch_len
 
     def __iter__(self):
         return self
@@ -95,3 +97,6 @@ aspect_ratio_max:{}"""
         return template.format(self.image_size, self.output_size, self.cr_min,
                                self.cr_max, self.size_min, self.size_max,
                                self.p, self.ar_min, self.ar_max)
+
+    def __len__(self):
+        return self.epoch_len
