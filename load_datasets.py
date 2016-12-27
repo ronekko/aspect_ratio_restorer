@@ -65,21 +65,39 @@ def data_crop(X_batch, aspect_ratio_max=2.0, aspect_ratio_min=1,
               output_size=256, crop_size=224, test=False, r=2.0):
     images = []
     ts = []
+
     for b in range(X_batch.shape[0]):
+        u = np.random.randint(5)
         image = X_batch[b]
         if test is True:
             r = r
-            image = utility.change_aspect_ratio(image, r)
+            image = utility.change_aspect_ratio(image, r, u)
             square_image = utility.crop_center(image)
-            resize_image = cv2.resize(
-                square_image, (crop_size, crop_size))
+            if u == 0:
+                resize_image = cv2.resize(square_image,(output_size,output_size),interpolation=cv2.INTER_NEAREST)
+            elif u == 1:
+                resize_image = cv2.resize(square_image,(output_size,output_size),interpolation=cv2.INTER_LINEAR)
+            elif u == 2:
+                resize_image = cv2.resize(square_image,(output_size,output_size),interpolation=cv2.INTER_AREA)
+            elif u == 3:
+                resize_image = cv2.resize(square_image,(output_size,output_size),interpolation=cv2.INTER_CUBIC)
+            elif u == 4:
+                resize_image = cv2.resize(square_image,(output_size,output_size),interpolation=cv2.INTER_LANCZOS4)
         else:
             r = utility.sample_random_aspect_ratio(aspect_ratio_max,
                                                    aspect_ratio_min)
-            image = utility.change_aspect_ratio(image, r)
+            image = utility.change_aspect_ratio(image, r, u)
             square_image = utility.crop_center(image)
-            resize_image = cv2.resize(
-                square_image, (output_size, output_size))
+            if u == 0:
+                resize_image = cv2.resize(square_image,(output_size,output_size),interpolation=cv2.INTER_NEAREST)
+            elif u == 1:
+                resize_image = cv2.resize(square_image,(output_size,output_size),interpolation=cv2.INTER_LINEAR)
+            elif u == 2:
+                resize_image = cv2.resize(square_image,(output_size,output_size),interpolation=cv2.INTER_AREA)
+            elif u == 3:
+                resize_image = cv2.resize(square_image,(output_size,output_size),interpolation=cv2.INTER_CUBIC)
+            elif u == 4:
+                resize_image = cv2.resize(square_image,(output_size,output_size),interpolation=cv2.INTER_LANCZOS4)
             resize_image = utility.random_crop_and_flip(resize_image,
                                                         crop_size)
         images.append(resize_image)
@@ -97,19 +115,30 @@ def data_padding(X_batch, aspect_ratio_max=2.0, aspect_ratio_min=1,
     images = []
     ts = []
     for b in range(X_batch.shape[0]):
+        u = np.random.randint(5)
+        if u == 0:
+            interpolation = cv2.INTER_NEAREST
+        elif u == 1:
+            interpolation = cv2.INTER_LINEAR
+        elif u == 2:
+            interpolation = cv2.INTER_AREA
+        elif u == 3:
+            interpolation = cv2.INTER_CUBIC
+        elif u == 4:
+            interpolation = cv2.INTER_LANCZOS4
         image = X_batch[b]
         if test is True:
             r = r
         else:
             r = utility.sample_random_aspect_ratio(aspect_ratio_max,
                                                    aspect_ratio_min)
-        image = utility.change_aspect_ratio(image, r)
+        image = utility.change_aspect_ratio(image, r, interpolation)
         square_image = utility.padding_image(image)
         # cv2.resize:(image, (w, h))
         # transform.resize:(image, (h, w))
         resize_image = cv2.resize(
             square_image, (output_size, output_size),
-            interpolation=cv2.INTER_NEAREST)
+            interpolation=interpolation)
         resize_image = resize_image[..., None]
         images.append(resize_image)
         t = np.log(r)
