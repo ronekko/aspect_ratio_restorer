@@ -86,11 +86,11 @@ if __name__ == '__main__':
     t_loss = []
 
     # 超パラメータ
-    max_iteration = 100  # 繰り返し回数
+    max_iteration = 200  # 繰り返し回数
     batch_size = 100  # ミニバッチサイズ
     num_train = 20000  # 学習データ数
-    num_test = 100  # 検証データ数
-    learning_rate = 0.001  # 学習率
+    num_test = 500  # 検証データ数
+    learning_rate = 0.01  # 学習率
     output_size = 256  # 生成画像サイズ
     crop_size = 224  # ネットワーク入力画像サイズ
     aspect_ratio_min = 1.0  # 最小アスペクト比の誤り
