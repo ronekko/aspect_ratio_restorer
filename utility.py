@@ -96,8 +96,6 @@ def padding_image(image):
 def sample_random_aspect_ratio(r_max, r_min=1):
     # アスペクト比rをランダム生成する
     r = np.random.uniform(r_min, r_max)
-    if np.random.rand() > 0.5:
-        r = 1 / r
     return r
 
 

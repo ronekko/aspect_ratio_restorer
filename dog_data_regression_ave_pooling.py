@@ -105,7 +105,7 @@ if __name__ == '__main__':
     else:
         os.makedirs(output_root_dir)
     # ファイル名を作成
-    model_filename = str(file_name) + str(time_start) + '.npz'
+    model_filename = str(file_name) + '.npz'
     loss_filename = 'epoch_loss' + str(time_start) + '.png'
     t_dis_filename = 't_distance' + str(time_start) + '.png'
     model_filename = os.path.join(output_root_dir, model_filename)

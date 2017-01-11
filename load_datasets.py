@@ -71,6 +71,7 @@ def data_crop(X_batch, aspect_ratio_max=2.0, aspect_ratio_min=1,
         image = X_batch[b]
         if test is True:
             r = r
+            t = np.log(r)
             image = utility.change_aspect_ratio(image, r, u)
             square_image = utility.crop_center(image)
             if u == 0:
@@ -84,8 +85,9 @@ def data_crop(X_batch, aspect_ratio_max=2.0, aspect_ratio_min=1,
             elif u == 4:
                 resize_image = cv2.resize(square_image,(output_size,output_size),interpolation=cv2.INTER_LANCZOS4)
         else:
-            r = utility.sample_random_aspect_ratio(aspect_ratio_max,
-                                                   aspect_ratio_min)
+            t = utility.sample_random_aspect_ratio(np.log(aspect_ratio_max),
+                                                   -np.log(aspect_ratio_max))
+            r = np.exp(t)
             image = utility.change_aspect_ratio(image, r, u)
             square_image = utility.crop_center(image)
             if u == 0:
@@ -101,7 +103,6 @@ def data_crop(X_batch, aspect_ratio_max=2.0, aspect_ratio_min=1,
             resize_image = utility.random_crop_and_flip(resize_image,
                                                         crop_size)
         images.append(resize_image)
-        t = np.log(r)
         ts.append(t)
     X = np.stack(images, axis=0)
     X = np.transpose(X, (0, 3, 1, 2))
@@ -119,6 +120,7 @@ def data_padding(X_batch, aspect_ratio_max=2.0, aspect_ratio_min=1,
         image = X_batch[b]
         if test is True:
             r = r
+            t = np.log(r)
             image = utility.change_aspect_ratio(image, r, u)
             square_image = utility.crop_center(image)
             if u == 0:
@@ -132,8 +134,9 @@ def data_padding(X_batch, aspect_ratio_max=2.0, aspect_ratio_min=1,
             elif u == 4:
                 resize_image = cv2.resize(square_image,(output_size,output_size),interpolation=cv2.INTER_LANCZOS4)
         else:
-            r = utility.sample_random_aspect_ratio(aspect_ratio_max,
-                                                   aspect_ratio_min)
+            t = utility.sample_random_aspect_ratio(np.log(aspect_ratio_max),
+                                                   -np.log(aspect_ratio_max))
+            r = np.exp(t)
             image = utility.change_aspect_ratio(image, r, u)
             square_image = utility.crop_center(image)
             if u == 0:
@@ -149,7 +152,6 @@ def data_padding(X_batch, aspect_ratio_max=2.0, aspect_ratio_min=1,
 
         resize_image = resize_image[..., None]
         images.append(resize_image)
-        t = np.log(r)
         ts.append(t)
     X = np.stack(images, axis=0)
     X = np.transpose(X, (0, 3, 1, 2))
