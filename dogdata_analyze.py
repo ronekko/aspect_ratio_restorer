@@ -12,9 +12,7 @@ from multiprocessing import Process, Queue
 
 from chainer import cuda, serializers, Variable
 
-import dog_data_regression
 import dog_data_regression_ave_pooling
-import dog_data_regression_max_pooling
 import load_datasets
 
 
@@ -82,14 +80,19 @@ if __name__ == '__main__':
     aspect_ratio_min = 1.0  # 最小アスペクト比の誤り
     aspect_ratio_max = 1.5  # 最大アスペクト比の誤り
     step_size = 0.01
-    test_ratio = [1/2.0, 1/1.9, 1/1.8, 1/1.7, 1/1.6, 1/1.5, 1/1.4, 1/1.3, 1/1.2, 1/1.1, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0]
     crop = True
     test = True
     hdf5_filepath = r'E:\stanford_Dogs_Dataset\raw_dataset_binary\output_size_500\output_size_500.hdf5'  # データセットファイル保存場所
-    model_file = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\dog_data_regression_ave_pooling\1482373541.87_asp_max_2.0\dog_data_regression_ave_pooling1482373541.87.npz'
+    model_file = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\dog_data_regression_ave_pooling\1483938126.85_asp_max_2.0\dog_data_regression_ave_pooling1483938126.85.npz'
     t_losses = []
     t_max = 0
     t_min = np.inf
+    a = []
+    aaa = np.log(2.0)*2/10
+    aa = np.log(0.5)
+    for i in range(11):
+        a.append(aa)
+        aa = aa + aaa
     # バッチサイズ計算
     train_data = range(0, num_train)
     test_data = range(num_train, num_train + num_test)
@@ -103,46 +106,30 @@ if __name__ == '__main__':
     # Optimizerの設定
     serializers.load_npz(model_file, model)
 
-    try:
-        for r in test_ratio:
-            queue = Queue(10)
-            process = Process(target=load_datasets.load_data,
-                              args=(queue, dog_stream_test, crop,
-                                    aspect_ratio_max, aspect_ratio_min,
-                                    output_size, crop_size, test, r))
-            process.start()
-            t_loss = []
-            for i in range(num_batches_test):
-                # テスト用のデータを取得
-                X_test, T_test = queue.get()
-                # 復元結果を表示
-                t_loss = dog_data_regression.test_output(model, X_test, T_test,
-                                                         t_loss)
-            t_losses.append(np.mean(t_loss))
-            process.terminate()
-    except KeyboardInterrupt:
-        print "割り込み停止が実行されました"
-    plt.plot(np.log(test_ratio), t_losses)
-    plt.title("t_losses")
-    plt.xlim(np.log(0.5), np.log(2.0))
-    plt.grid()
-    plt.show()
-#    X_test_gpu = Variable(cuda.to_gpu(X_test))
-#    # yを計算
-#    y_test = model.forward(X_test_gpu, True)
-#    # 特徴マップを取得
-#    l = get_receptive_field(y_test)
-#    # 特徴マップを表示
-#    for f in l[-1][0]:
-#        plt.matshow(f, cmap=plt.cm.gray)
-#        plt.show()
-    # 特徴マップの使用率を取得
+    queue = Queue(10)
+    process = Process(target=load_datasets.load_data,
+                      args=(queue, dog_stream_test, crop,
+                            aspect_ratio_max, aspect_ratio_min,
+                            output_size, crop_size, test))
+    process.start()
+    X_test, T_test = queue.get()
+    process.terminate()
+    X_test_gpu = Variable(cuda.to_gpu(X_test))
+    # yを計算
+    y_test = model.forward(X_test_gpu, True)
+    # 特徴マップを取得
+    l = get_receptive_field(y_test)
+    # 特徴マップを表示
+    for f in l[-1][0]:
+        plt.matshow(f, cmap=plt.cm.gray)
+        plt.show()
+#    # 特徴マップの使用率を取得
 #    l5 = check_use_channel(l, 5)
 #    l4 = check_use_channel(l, 4)
 #    l3 = check_use_channel(l, 3)
 #    l2 = check_use_channel(l, 2)
 #    l1 = check_use_channel(l, 1)
-    # 特徴マップの使用率を表示
+#    # 特徴マップの使用率を表示
 #    plt.plot(l1)
 #    plt.title("layer1")
 #    plt.show()
@@ -158,7 +145,7 @@ if __name__ == '__main__':
 #    plt.plot(l5)
 #    plt.title("layer5")
 #    plt.show()
-    # 出力に対する入力の勾配を可視化
+#    # 出力に対する入力の勾配を可視化
 #    y_test.grad = cuda.cupy.ones(y_test.data.shape, dtype=np.float32)
 #    y_test.backward(retain_grad=True)
 #    grad = X_test_gpu.grad
@@ -168,14 +155,13 @@ if __name__ == '__main__':
 #        plt.colorbar()
 #        plt.show()
     # 入力画像を表示
-#    for c in X_test[0:1]:
-#        c = np.transpose(c, (1, 2, 0))
-#        plt.imshow(c/256.0, cmap=plt.cm.gray)
-#        plt.colorbar()
-#        plt.show()
+    for c in X_test[0:1]:
+        c = np.transpose(c, (1, 2, 0))
+        plt.imshow(c/256.0, cmap=plt.cm.gray)
+        plt.colorbar()
+        plt.show()
 
     print 'test', test
     print 'num_test', num_test
-    print 'r', r
     print 'step_size', step_size
     print 'model_file', model_file
