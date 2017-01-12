@@ -89,16 +89,16 @@ def test_output(model, X, T, t_loss):
     debased_image = np.transpose(X[0], (1, 2, 0))
     predict_image = np.transpose(predict_image, (1, 2, 0))
     original_image = np.transpose(original_image, (1, 2, 0))
-    t_dis = np.absolute(predict_t - target_t)
-    t_loss.append(np.mean(t_dis))
+    t_dis = predict_t - target_t
+    t_loss.append(t_dis)
 
     print 'predict t:', predict_t[0], 'target t:', target_t[0]
     print 'predict r:', predict_r[0], 'target r:', target_r[0]
 
-    plt.plot(t_loss)
-    plt.title("t_disdance")
-    plt.grid()
-    plt.show()
+#    plt.plot(t_loss)
+#    plt.title("t_disdance")
+#    plt.grid()
+#    plt.show()
 
     plt.subplot(131)
     plt.title("debased_image")
