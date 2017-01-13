@@ -26,8 +26,8 @@ if __name__ == '__main__':
     num_test = 500  # 検証データ数
     crop = True
     test = True
-    hdf5_filepath = r'E:\stanford_Dogs_Dataset\raw_dataset_binary\output_size_500\output_size_500.hdf5'  # データセットファイル保存場所
-    model_file = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\dog_data_regression_ave_pooling\1483748245.92_asp_max_2.0\dog_data_regression_ave_pooling1483748245.92.npz'
+    hdf5_filepath = r'E:\voc2012\raw_dataset\output_size_500\output_size_500.hdf5'  # データセットファイル保存場所
+    model_file = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\dog_data_regression_ave_pooling\1484229222.38_asp_max_3.0\dog_data_regression_ave_pooling.npz'
     aspect_ratio_max = 2.0
     aspect_ratio_min = 1.0
     output_size = 256

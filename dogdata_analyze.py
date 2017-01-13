@@ -72,7 +72,7 @@ if __name__ == '__main__':
     file_name = os.path.splitext(os.path.basename(__file__))[0]
     # 超パラメータ
     max_iteration = 150  # 繰り返し回数
-    batch_size = 100  # ミニバッチサイズ
+    batch_size = 500  # ミニバッチサイズ
     num_train = 20000  # 学習データ数
     num_test = 500  # 検証データ数
     output_size = 256  # 生成画像サイズ
@@ -82,8 +82,8 @@ if __name__ == '__main__':
     step_size = 0.01
     crop = True
     test = True
-    hdf5_filepath = r'E:\stanford_Dogs_Dataset\raw_dataset_binary\output_size_500\output_size_500.hdf5'  # データセットファイル保存場所
-    model_file = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\dog_data_regression_ave_pooling\1483938126.85_asp_max_2.0\dog_data_regression_ave_pooling1483938126.85.npz'
+    hdf5_filepath = r'E:\voc2012\raw_dataset\output_size_500\output_size_500.hdf5'  # データセットファイル保存場所
+    model_file = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\dog_data_regression_ave_pooling\1484229222.38_asp_max_3.0\dog_data_regression_ave_pooling.npz'
     t_losses = []
     t_max = 0
     t_min = np.inf
@@ -120,7 +120,7 @@ if __name__ == '__main__':
     # 特徴マップを取得
     l = get_receptive_field(y_test)
     # 特徴マップを表示
-    for f in l[-1][0]:
+    for f in l[-1][165]:
         plt.matshow(f, cmap=plt.cm.gray)
         plt.show()
 #    # 特徴マップの使用率を取得
@@ -155,7 +155,7 @@ if __name__ == '__main__':
 #        plt.colorbar()
 #        plt.show()
     # 入力画像を表示
-    for c in X_test[0:1]:
+    for c in X_test[165:166]:
         c = np.transpose(c, (1, 2, 0))
         plt.imshow(c/256.0, cmap=plt.cm.gray)
         plt.colorbar()

@@ -21,10 +21,10 @@ import utility
 from datasets import RandomCircleSquareDataset
 
 
-def load_dog_stream(hdf5_filepath, batch_size, train_size=20000,
+def load_dog_stream(hdf5_filepath, batch_size, train_size=16500,
                     shuffle=False):
     indices_train = range(0, train_size)
-    indices_test = range(train_size, 20579)
+    indices_test = range(train_size, 17000)
 
     h5py_file = h5py.File(hdf5_filepath)
     num_examples = len(h5py_file['image_features'])
