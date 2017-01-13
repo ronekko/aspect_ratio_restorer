@@ -94,7 +94,7 @@ if __name__ == '__main__':
     output_size = 256  # 生成画像サイズ
     crop_size = 224  # ネットワーク入力画像サイズ
     aspect_ratio_min = 1.0  # 最小アスペクト比の誤り
-    aspect_ratio_max = 2.5  # 最大アスペクト比の誤り
+    aspect_ratio_max = 3.0  # 最大アスペクト比の誤り
     crop = True
     hdf5_filepath = r'E:\stanford_Dogs_Dataset\raw_dataset_binary\output_size_500\output_size_500.hdf5'  # データセットファイル保存場所
     output_location = 'C:\Users\yamane\Dropbox\correct_aspect_ratio'  # 学習結果保存場所
@@ -203,12 +203,6 @@ if __name__ == '__main__':
     plt.legend(["train", "valid"], loc="upper right")
     plt.grid()
     plt.savefig(loss_filename)
-    plt.show()
-
-    plt.plot(t_loss)
-    plt.title("t_disdance")
-    plt.grid()
-    plt.savefig(t_dis_filename)
     plt.show()
 
     model_filename = os.path.join(output_root_dir, model_filename)
