@@ -87,7 +87,7 @@ if __name__ == '__main__':
     # 超パラメータ
     max_iteration = 300  # 繰り返し回数
     batch_size = 100  # ミニバッチサイズ
-    num_train = 20000  # 学習データ数
+    num_train = 16500  # 学習データ数
     num_test = 500  # 検証データ数
     learning_rate = 0.01  # 学習率
     output_size = 256  # 生成画像サイズ
@@ -95,7 +95,7 @@ if __name__ == '__main__':
     aspect_ratio_min = 1.0  # 最小アスペクト比の誤り
     aspect_ratio_max = 3.0  # 最大アスペクト比の誤り
     crop = True
-    hdf5_filepath = r'E:\stanford_Dogs_Dataset\raw_dataset_binary\output_size_500\output_size_500.hdf5'  # データセットファイル保存場所
+    hdf5_filepath = r'E:\voc2012\raw_dataset\output_size_500\output_size_500.hdf5'  # データセットファイル保存場所
     output_location = 'C:\Users\yamane\Dropbox\correct_aspect_ratio'  # 学習結果保存場所
     # 学習結果保存フォルダ作成
     output_root_dir = os.path.join(output_location, file_name)
