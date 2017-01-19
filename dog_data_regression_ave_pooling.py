@@ -35,6 +35,8 @@ class Convnet(Chain):
             norm4=L.BatchNormalization(32),
             conv5=L.Convolution2D(32, 64, 3, stride=2, pad=1),
             norm5=L.BatchNormalization(64),
+            conv6=L.Convolution2D(64, 64, 1),
+            norm6=L.BatchNormalization(64),
 
             l1=L.Linear(64, 1)
         )
@@ -45,6 +47,7 @@ class Convnet(Chain):
         h = F.relu(self.norm3(self.conv3(h), test=test))
         h = F.relu(self.norm4(self.conv4(h), test=test))
         h = F.relu(self.norm5(self.conv5(h), test=test))
+        h = F.relu(self.norm6(self.conv6(h), test=test))
         h = F.average_pooling_2d(h, 7)
         y = self.l1(h)
         return y
@@ -85,8 +88,8 @@ if __name__ == '__main__':
     t_loss = []
 
     # 超パラメータ
-    max_iteration = 300  # 繰り返し回数
-    batch_size = 100  # ミニバッチサイズ
+    max_iteration = 500  # 繰り返し回数
+    batch_size = 500  # ミニバッチサイズ
     num_train = 16500  # 学習データ数
     num_test = 500  # 検証データ数
     learning_rate = 0.01  # 学習率
