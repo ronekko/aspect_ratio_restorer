@@ -94,7 +94,7 @@ if __name__ == '__main__':
     num_test = 500  # 検証データ数
     learning_rate = 0.01  # 学習率
     output_size = 256  # 生成画像サイズ
-    crop_size = 224  # ネットワーク入力画像サイズ
+    crop_size = 225  # ネットワーク入力画像サイズ
     aspect_ratio_min = 1.0  # 最小アスペクト比の誤り
     aspect_ratio_max = 3.0  # 最大アスペクト比の誤り
     crop = True
