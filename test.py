@@ -27,7 +27,7 @@ if __name__ == '__main__':
     crop = True
     test = True
     hdf5_filepath = r'E:\voc2012\raw_dataset\output_size_500\output_size_500.hdf5'  # データセットファイル保存場所
-    model_file = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\dog_data_regression_ave_pooling\1484660782.8_asp_max_3.0\dog_data_regression_ave_pooling.npz'
+    model_file = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\dog_data_regression_ave_pooling\1484830422.72_asp_max_3.0\dog_data_regression_ave_pooling.npz'
     aspect_ratio_max = 2.0
     aspect_ratio_min = 1.0
     output_size = 256
@@ -70,6 +70,20 @@ if __name__ == '__main__':
                                                      t_loss)
         process.terminate()
         t_losses.append(t_loss[0])
+    sum_value = np.ndarray((500,))
+    for a in range(500):
+        for b in range(51):
+            sum_value[a] += np.abs(t_losses[b][a])
+    mean_value = sum_value / 500.0
+    plt.figure(figsize=(16, 12))
+    plt.plot(mean_value)
+    plt.title('average error for each test data')
+    plt.xlabel('Order of test data number')
+    plt.ylabel('average error of prediction in log scale')
+    plt.ylim(0, max(mean_value)+0.01)
+    plt.grid()
+    plt.show()
+
     e = t_losses
     ee = np.ndarray((num_t, num_test, 1))
     for i in range(len(ee)):
