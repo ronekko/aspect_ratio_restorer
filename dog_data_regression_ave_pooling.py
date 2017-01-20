@@ -89,8 +89,8 @@ if __name__ == '__main__':
 
     # 超パラメータ
     max_iteration = 1000  # 繰り返し回数
-    batch_size = 500  # ミニバッチサイズ
-    num_train = 16500  # 学習データ数
+    batch_size = 100  # ミニバッチサイズ
+    num_train = 5000 # 学習データ数
     num_test = 500  # 検証データ数
     learning_rate = 0.01  # 学習率
     output_size = 256  # 生成画像サイズ
@@ -174,6 +174,7 @@ if __name__ == '__main__':
                 model_best = copy.deepcopy(model)
 
             # 訓練データでの結果を表示
+            print
             print "dog_data_regression_ave_pooling.py"
             print "epoch:", epoch
             print "time", epoch_time, "(", total_time, ")"
@@ -182,14 +183,15 @@ if __name__ == '__main__':
             print "loss[valid_best]:", loss_valid_best
             print "epoch[valid_best]:", epoch__loss_best
 
-            plt.figure(figsize=(16, 12))
-            plt.plot(epoch_loss)
-            plt.plot(epoch_valid_loss)
-            plt.ylim(0, 0.5)
-            plt.title("loss")
-            plt.legend(["train", "valid"], loc="upper right")
-            plt.grid()
-            plt.show()
+            if (epoch % 10) == 0:
+                plt.figure(figsize=(16, 12))
+                plt.plot(epoch_loss)
+                plt.plot(epoch_valid_loss)
+                plt.ylim(0, 0.5)
+                plt.title("loss")
+                plt.legend(["train", "valid"], loc="upper right")
+                plt.grid()
+                plt.show()
 
             # テスト用のデータを取得
             X_test, T_test = queue_test.get()
