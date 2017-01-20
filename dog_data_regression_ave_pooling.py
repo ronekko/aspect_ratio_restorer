@@ -88,7 +88,7 @@ if __name__ == '__main__':
     t_loss = []
 
     # 超パラメータ
-    max_iteration = 500  # 繰り返し回数
+    max_iteration = 1000  # 繰り返し回数
     batch_size = 500  # ミニバッチサイズ
     num_train = 16500  # 学習データ数
     num_test = 500  # 検証データ数
@@ -182,6 +182,7 @@ if __name__ == '__main__':
             print "loss[valid_best]:", loss_valid_best
             print "epoch[valid_best]:", epoch__loss_best
 
+            plt.figure(figsize=(16, 12))
             plt.plot(epoch_loss)
             plt.plot(epoch_valid_loss)
             plt.ylim(0, 0.5)
@@ -198,6 +199,7 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         print "割り込み停止が実行されました"
 
+    plt.figure(figsize=(16, 12))
     plt.plot(epoch_loss)
     plt.plot(epoch_valid_loss)
     plt.ylim(0, 0.5)
