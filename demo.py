@@ -16,6 +16,7 @@ from chainer import serializers
 
 import utility
 import dog_data_regression_ave_pooling
+import make_html
 
 
 if __name__ == '__main__':
@@ -95,6 +96,7 @@ if __name__ == '__main__':
 #        plt.imshow(img)
 #        plt.show()
 
+    make_html.make_html(save_path)
     x = np.stack(loss, axis=0)
     mu, sigma = 100, 15
 
