@@ -89,8 +89,8 @@ if __name__ == '__main__':
 
     # 超パラメータ
     max_iteration = 1000  # 繰り返し回数
-    batch_size = 100  # ミニバッチサイズ
-    num_train = 5000 # 学習データ数
+    batch_size = 500  # ミニバッチサイズ
+    num_train = 16500  # 学習データ数
     num_test = 500  # 検証データ数
     learning_rate = 0.01  # 学習率
     output_size = 256  # 生成画像サイズ
