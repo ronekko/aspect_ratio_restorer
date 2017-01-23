@@ -31,7 +31,7 @@ if __name__ == '__main__':
     aspect_ratio_max = 2.0
     aspect_ratio_min = 1.0
     output_size = 256
-    crop_size = 224
+    crop_size = 300
 
     t_losses = []
     t_list = []

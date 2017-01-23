@@ -35,6 +35,7 @@ if __name__ == '__main__':
     test_num = 500
     asp_r_max = 2.0
     loss = []
+    th = 0.15
 
     # モデル読み込み
     model = dog_data_regression_ave_pooling.Convnet().to_gpu()
@@ -51,16 +52,14 @@ if __name__ == '__main__':
 
     for i in range(test_num):
         # アスペクト比を設定
-        if np.random.rand() > 0.5:
-            t_l = np.random.uniform(np.log(1), np.log(1.5))
-        else:
-            t_l = np.random.uniform(np.log(1/1.5), np.log(1))
+        t_l = np.random.uniform(np.log(1/2.0), np.log(2.0))
         t_r = np.exp(t_l)
         # 画像読み込み
         img = plt.imread(test_paths[i])
         dis_img = utility.change_aspect_ratio(img, t_r)
         square_img = utility.crop_center(dis_img)
-        resize_img = cv2.resize(square_img, (224, 224))
+        resize_img = cv2.resize(square_img, (300, 300))
+#        resize_img = square_img
         x_bhwc = resize_img[None, ...]
         x_bchw = np.transpose(x_bhwc, (0, 3, 1, 2))
         x = x_bchw.astype(np.float32)
@@ -75,26 +74,26 @@ if __name__ == '__main__':
         file_name = os.path.join(save_path, ('%.18f' % e_l))
 
         print '[test_data]:', i+1
-        print '[t_l]:', round(t_l, 4), '\t[t_r]:', round(t_r, 4)
-        print '[y_l]:', round(y_l[0][0], 4), '\t[y_r]:', round(y_r[0][0], 4)
-        print '[e_l]:', round(e_l, 4), '\t[e_r]:', round(e_r, 4)
+#        print '[t_l]:', round(t_l, 4), '\t[t_r]:', round(t_r, 4)
+#        print '[y_l]:', round(y_l[0][0], 4), '\t[y_r]:', round(y_r[0][0], 4)
+#        print '[e_l]:', round(e_l, 4), '\t[e_r]:', round(e_r, 4)
 
 #        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
 #        plt.tick_params(bottom='off', top='off', left='off', right='off')
 #        plt.imshow(fix_img)
 #        plt.savefig(file_name+'.png', format='png', bbox_inches='tight')
 
-        plt.figure(figsize=(16, 16))
-        plt.subplot(131)
-        plt.title('Distortion image')
-        plt.imshow(dis_img)
-        plt.subplot(132)
-        plt.title('Fixed image')
-        plt.imshow(fix_img)
-        plt.subplot(133)
-        plt.title('Normal image')
-        plt.imshow(img)
-        plt.show()
+#        plt.figure(figsize=(16, 16))
+#        plt.subplot(131)
+#        plt.title('Distortion image')
+#        plt.imshow(dis_img)
+#        plt.subplot(132)
+#        plt.title('Fixed image')
+#        plt.imshow(fix_img)
+#        plt.subplot(133)
+#        plt.title('Normal image')
+#        plt.imshow(img)
+#        plt.show()
 
 #    make_html.make_html(save_path)
     x = np.stack(loss, axis=0)
@@ -109,6 +108,11 @@ if __name__ == '__main__':
     ax.set_ylabel('freq')
     fig.show()
 
-    print '[mean]:', np.mean(loss)
-    print '[median]:', np.median(loss)
+    count = 0
+    for i in range(500):
+        if np.abs(x[i]) < th:
+            count += 1
+    print 'under', th, '=', count / 5.0, '%'
+    print '[mean]:', np.mean(np.abs(loss))
+    print '[median]:', np.median(np.abs(loss))
     print '[std]:', np.std(loss, ddof=1)
