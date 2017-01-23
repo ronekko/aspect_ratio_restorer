@@ -22,7 +22,7 @@ import make_html
 if __name__ == '__main__':
     save_root = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\demo'
     txt_file = r'E:\voc2012\raw_dataset\output_size_500\output_size_500.txt'
-    model_file = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\dog_data_regression_ave_pooling\1484830422.72_asp_max_3.0\dog_data_regression_ave_pooling.npz'
+    model_file = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\dog_data_regression_ave_pooling\1484916833.81_asp_max_3.0\dog_data_regression_ave_pooling.npz'
 
     folder_name = model_file.split('\\')[-2]
     save_path = os.path.join(save_root, folder_name)
@@ -72,31 +72,31 @@ if __name__ == '__main__':
         e_r = np.abs(t_r - y_r[0][0])
         loss.append(e_l)
 
-#        file_name = os.path.join(save_path, ('%.18f' % e_l))
+        file_name = os.path.join(save_path, ('%.18f' % e_l))
 
-#        print '[test_data]:', i+1
-#        print '[t_l]:', round(t_l, 4), '\t[t_r]:', round(t_r, 4)
-#        print '[y_l]:', round(y_l[0][0], 4), '\t[y_r]:', round(y_r[0][0], 4)
-#        print '[e_l]:', round(e_l, 4), '\t[e_r]:', round(e_r, 4)
+        print '[test_data]:', i+1
+        print '[t_l]:', round(t_l, 4), '\t[t_r]:', round(t_r, 4)
+        print '[y_l]:', round(y_l[0][0], 4), '\t[y_r]:', round(y_r[0][0], 4)
+        print '[e_l]:', round(e_l, 4), '\t[e_r]:', round(e_r, 4)
 
 #        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
 #        plt.tick_params(bottom='off', top='off', left='off', right='off')
 #        plt.imshow(fix_img)
 #        plt.savefig(file_name+'.png', format='png', bbox_inches='tight')
 
-#        plt.figure(figsize=(16, 16))
-#        plt.subplot(131)
-#        plt.title('Distortion image')
-#        plt.imshow(dis_img)
-#        plt.subplot(132)
-#        plt.title('Fixed image')
-#        plt.imshow(fix_img)
-#        plt.subplot(133)
-#        plt.title('Normal image')
-#        plt.imshow(img)
-#        plt.show()
+        plt.figure(figsize=(16, 16))
+        plt.subplot(131)
+        plt.title('Distortion image')
+        plt.imshow(dis_img)
+        plt.subplot(132)
+        plt.title('Fixed image')
+        plt.imshow(fix_img)
+        plt.subplot(133)
+        plt.title('Normal image')
+        plt.imshow(img)
+        plt.show()
 
-    make_html.make_html(save_path)
+#    make_html.make_html(save_path)
     x = np.stack(loss, axis=0)
     mu, sigma = 100, 15
 

@@ -57,7 +57,7 @@ if __name__ == '__main__':
     r = 1.0
     channels = 64
     hdf5_filepath = r'E:\voc2012\raw_dataset\output_size_500\output_size_500.hdf5'  # データセットファイル保存場所
-    model_file = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\dog_data_regression_ave_pooling\1484660782.8_asp_max_3.0\dog_data_regression_ave_pooling.npz'
+    model_file = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\dog_data_regression_ave_pooling\1484916833.81_asp_max_3.0\dog_data_regression_ave_pooling.npz'
 
     # モデル読み込み
     model = dog_data_regression_ave_pooling.Convnet().to_gpu()

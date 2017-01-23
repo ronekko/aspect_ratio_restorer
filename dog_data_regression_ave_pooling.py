@@ -48,7 +48,7 @@ class Convnet(Chain):
         h = F.relu(self.norm4(self.conv4(h), test=test))
         h = F.relu(self.norm5(self.conv5(h), test=test))
         h = F.relu(self.norm6(self.conv6(h), test=test))
-        h = F.average_pooling_2d(h, 7)
+        h = F.average_pooling_2d(h, h.shape[2:])
         y = self.l1(h)
         return y
 
