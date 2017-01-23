@@ -64,7 +64,7 @@ if __name__ == '__main__':
     # Optimizerの設定
     serializers.load_npz(model_file, model)
 
-    origin = plt.imread(r'dog_data_regression_ave_pooling\1484660782.8_asp_max_3.0\max\2009_003151.jpg')
+    origin = plt.imread(r'C:\Users\yamane\Dropbox\correct_aspect_ratio\dog_data_regression_ave_pooling\1484660782.8_asp_max_3.0\min\2009_000412.jpg')
     debased = utility.change_aspect_ratio(origin, r)
     square = utility.crop_center(debased)
     resize = cv2.resize(square, (224, 224))
@@ -91,7 +91,11 @@ if __name__ == '__main__':
 
     h_test, y_test = affine_pool.affine_pool(model, conv, X_test_gpu, True)
     h = cuda.to_cpu(h_test.data)
-    plt.matshow(h[0][0]+np.absolute(np.min(h[0][0])), cmap=plt.cm.gray)
+    if np.abs(np.min(h[0][0])) > np.abs(np.max(h[0][0])):
+        max_value = np.abs(np.min(h[0][0]))
+    else:
+        max_value = np.abs(np.max(h[0][0]))
+    plt.matshow(h[0][0], vmin=-max_value, vmax=max_value, cmap=plt.cm.bwr)
     plt.colorbar()
     plt.show()
 
