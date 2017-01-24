@@ -8,34 +8,33 @@ Created on Fri Jan 06 16:59:52 2017
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-from multiprocessing import Process, Queue
+
+import cv2
 
 from chainer import serializers
 
-import dog_data_regression
 import dog_data_regression_ave_pooling
-import load_datasets
+import utility
 
 
 if __name__ == '__main__':
     file_name = os.path.splitext(os.path.basename(__file__))[0]
     # 超パラメータ
-    max_iteration = 150  # 繰り返し回数
-    batch_size = 500  # ミニバッチサイズ
-    num_train = 20000  # 学習データ数
-    num_test = 500  # 検証データ数
-    crop = True
-    test = True
-    hdf5_filepath = r'E:\voc2012\raw_dataset\output_size_500\output_size_500.hdf5'  # データセットファイル保存場所
-    model_file = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\dog_data_regression_ave_pooling\1484916833.81_asp_max_3.0\dog_data_regression_ave_pooling.npz'
-    aspect_ratio_max = 2.0
-    aspect_ratio_min = 1.0
-    output_size = 256
-    crop_size = 300
+    save_root = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\demo'
+    txt_file = r'E:\voc2012\raw_dataset\output_size_500\output_size_500.txt'
+    model_file = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\dog_data_regression_ave_pooling\1484916833.81_asp_max_3.0\\dog_data_regression_ave_pooling.npz'
 
-    t_losses = []
+    crop_size = 224
+    num_train = 16500
+    num_test = 500
+    th = 0.1
+    num_split = 10
+    test = True
+
+    loss = []
+    loss_abs = []
     t_list = []
-    num_split = 50
+
     num_t = num_split + 1
     t_step = np.log(2.0) * 2 / num_split
     t = np.log(0.5)
@@ -43,38 +42,51 @@ if __name__ == '__main__':
         t_list.append(t)
         t = t + t_step
 
-    # バッチサイズ計算
-    num_batches_test = num_test / batch_size
-    # stream作成
-    dog_stream_train, dog_stream_test = load_datasets.load_dog_stream(
-        hdf5_filepath, batch_size)
     # モデル読み込み
     model = dog_data_regression_ave_pooling.Convnet().to_gpu()
     # Optimizerの設定
     serializers.load_npz(model_file, model)
 
-    for r in np.exp(t_list):
-        queue = Queue(10)
-        process = Process(target=load_datasets.load_data,
-                          args=(queue, dog_stream_test, crop, aspect_ratio_max,
-                                aspect_ratio_min, output_size, crop_size,
-                                test, r))
-        process.start()
-        t_loss = []
-        loss = []
-        for i in range(num_batches_test):
-            # テスト用のデータを取得
-            X_test, T_test = queue.get()
-            # 復元結果を表示
-            t_loss = dog_data_regression.test_output(model, X_test, T_test,
-                                                     t_loss)
-        process.terminate()
-        t_losses.append(t_loss[0])
-    sum_value = np.ndarray((500,))
-    for a in range(500):
-        for b in range(51):
-            sum_value[a] += np.abs(t_losses[b][a])
-    mean_value = sum_value / 500.0
+    # テキストファイル読み込み
+    image_paths = []
+    f = open(txt_file, 'r')
+    for path in f:
+        path = path.strip()
+        image_paths.append(path)
+    test_paths = image_paths[num_train:num_train+num_test]
+
+    for t in t_list:
+        print t
+        # アスペクト比を設定
+        t_l = t
+        t_r = np.exp(t_l)
+        x_list_500 = []
+
+        for i in range(num_test):
+            # 画像読み込み
+            img = plt.imread(test_paths[i])
+            img = utility.crop_center(img)
+            img = cv2.resize(img, (1500, 1500))
+            dis_img = utility.change_aspect_ratio(img, t_r)
+            square_img = utility.crop_center(dis_img)
+            resize_img = cv2.resize(square_img, (256, 256))
+#            crop_img = utility.crop_224(resize_img)
+#            resize_img = square_img
+            crop_img_500 = resize_img.astype(np.float32)
+            x_list_500.append(crop_img_500)
+
+        x_bhwc = np.stack(x_list_500, axis=0)
+        x_bchw = np.transpose(x_bhwc, (0, 3, 1, 2))
+        y_l = model.predict(x_bchw, test)
+        y_r = np.exp(y_l)
+
+        e_l = y_l - t_l
+        e_l_abs = np.abs(y_l - t_l)
+        e_r = y_r - t_r
+        loss.append(e_l)
+        loss_abs.append(e_l_abs)
+
+    mean_value = np.mean(loss_abs, axis=0)
     plt.figure(figsize=(16, 12))
     plt.plot(mean_value)
     plt.title('average error for each test data')
@@ -84,10 +96,7 @@ if __name__ == '__main__':
     plt.grid()
     plt.show()
 
-    e = t_losses
-    ee = np.ndarray((num_t, num_test, 1))
-    for i in range(len(ee)):
-        ee[i] = e[i]
+    ee = np.stack(loss, axis=0)
     ee = ee.reshape(num_t, num_test)
     eee = np.ndarray((num_t, 1))
     for i in range(len(ee)):
@@ -104,5 +113,10 @@ if __name__ == '__main__':
     plt.grid()
     plt.show()
 
+    count = 0
+    for i in range(500):
+        if mean_value[i] < th:
+            count += 1
+    print 'under', th, '=', count / 5.0, '%'
     print 'num_test', num_test
     print 'model_file', model_file
