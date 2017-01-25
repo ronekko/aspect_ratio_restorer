@@ -74,33 +74,13 @@ def data_crop(X_batch, aspect_ratio_max=2.0, aspect_ratio_min=1,
             t = np.log(r)
             image = utility.change_aspect_ratio(image, r, u)
             square_image = utility.crop_center(image)
-            if u == 0:
-                resize_image = cv2.resize(square_image,(output_size,output_size),interpolation=cv2.INTER_NEAREST)
-            elif u == 1:
-                resize_image = cv2.resize(square_image,(output_size,output_size),interpolation=cv2.INTER_LINEAR)
-            elif u == 2:
-                resize_image = cv2.resize(square_image,(output_size,output_size),interpolation=cv2.INTER_AREA)
-            elif u == 3:
-                resize_image = cv2.resize(square_image,(output_size,output_size),interpolation=cv2.INTER_CUBIC)
-            elif u == 4:
-                resize_image = cv2.resize(square_image,(output_size,output_size),interpolation=cv2.INTER_LANCZOS4)
         else:
             t = utility.sample_random_aspect_ratio(np.log(aspect_ratio_max),
                                                    -np.log(aspect_ratio_max))
             r = np.exp(t)
             image = utility.change_aspect_ratio(image, r, u)
             square_image = utility.crop_center(image)
-            if u == 0:
-                resize_image = cv2.resize(square_image,(output_size,output_size),interpolation=cv2.INTER_NEAREST)
-            elif u == 1:
-                resize_image = cv2.resize(square_image,(output_size,output_size),interpolation=cv2.INTER_LINEAR)
-            elif u == 2:
-                resize_image = cv2.resize(square_image,(output_size,output_size),interpolation=cv2.INTER_AREA)
-            elif u == 3:
-                resize_image = cv2.resize(square_image,(output_size,output_size),interpolation=cv2.INTER_CUBIC)
-            elif u == 4:
-                resize_image = cv2.resize(square_image,(output_size,output_size),interpolation=cv2.INTER_LANCZOS4)
-            resize_image = utility.random_crop_and_flip(resize_image,
+            resize_image = utility.random_crop_and_flip(square_image,
                                                         crop_size)
         images.append(resize_image)
         ts.append(t)
@@ -177,7 +157,7 @@ def load_data(queue, stream, crop, aspect_ratio_max=2.0, aspect_ratio_min=1.0,
 
 
 if __name__ == '__main__':
-    hdf5_filepath = r'E:\stanford_Dogs_Dataset\raw_dataset_binary\output_size_500\output_size_500.hdf5'
+    hdf5_filepath = r'E:\voc\raw_dataset\output_size_256\output_size_256.hdf5'
     batch_size = 100
     p = [0.3, 0.3, 0.4]  # [円の生成率、四角の生成率、円と四角の混合生成率]
     aspect_ratio_max = 2.0
@@ -192,25 +172,25 @@ if __name__ == '__main__':
         hdf5_filepath, batch_size)
     toy_stream_train, toy_stream_test = load_toy_stream(batch_size)
 
-#    q_dog_train = Queue(10)
-#    process_dog = Process(target=load_data,
-#                          args=(q_dog_train, dog_stream_train, crop))
-#    process_dog.start()
+    q_dog_train = Queue(10)
+    process_dog = Process(target=load_data,
+                          args=(q_dog_train, dog_stream_train, crop))
+    process_dog.start()
 
-    q_toy_train = Queue(10)
-    process_toy = Process(target=load_data,
-                          args=(q_toy_train, toy_stream_train, False))
-    process_toy.start()
-
-#    for i in range(10):
-#        X, T = q_dog_train.get()
-#        image = np.transpose(X, (0, 2, 3, 1))
-#        plt.imshow(image[0]/256.0)
-#        plt.show()
-#    process_dog.terminate()
+#    q_toy_train = Queue(10)
+#    process_toy = Process(target=load_data,
+#                          args=(q_toy_train, toy_stream_train, False))
+#    process_toy.start()
 
     for i in range(10):
-        X, T = q_toy_train.get()
-        plt.imshow(X[0][0])
+        X, T = q_dog_train.get()
+        image = np.transpose(X, (0, 2, 3, 1))
+        plt.imshow(image[0]/256.0)
         plt.show()
-    process_toy.terminate()
+    process_dog.terminate()
+
+#    for i in range(10):
+#        X, T = q_toy_train.get()
+#        plt.imshow(X[0][0])
+#        plt.show()
+#    process_toy.terminate()

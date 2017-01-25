@@ -94,11 +94,11 @@ if __name__ == '__main__':
     num_test = 500  # 検証データ数
     learning_rate = 0.01  # 学習率
     output_size = 256  # 生成画像サイズ
-    crop_size = 225  # ネットワーク入力画像サイズ
+    crop_size = 224  # ネットワーク入力画像サイズ
     aspect_ratio_min = 1.0  # 最小アスペクト比の誤り
     aspect_ratio_max = 3.0  # 最大アスペクト比の誤り
     crop = True
-    hdf5_filepath = r'E:\voc2012\raw_dataset\output_size_500\output_size_500.hdf5'  # データセットファイル保存場所
+    hdf5_filepath = r'E:\voc\raw_dataset\output_size_256\output_size_256.hdf5'  # データセットファイル保存場所
     output_location = 'C:\Users\yamane\Dropbox\correct_aspect_ratio'  # 学習結果保存場所
     # 学習結果保存フォルダ作成
     output_root_dir = os.path.join(output_location, file_name)

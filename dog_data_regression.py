@@ -100,17 +100,16 @@ def test_output(model, X, T, t_loss):
 #    plt.grid()
 #    plt.show()
 
-    if (len(t_loss) % 10) == 0:
-        plt.subplot(131)
-        plt.title("debased_image")
-        plt.imshow(debased_image/256.0)
-        plt.subplot(132)
-        plt.title("fix_image")
-        plt.imshow(predict_image/256.0)
-        plt.subplot(133)
-        plt.title("target_image")
-        plt.imshow(original_image/256.0)
-        plt.show()
+#    plt.subplot(131)
+#    plt.title("debased_image")
+#    plt.imshow(debased_image/256.0)
+#    plt.subplot(132)
+#    plt.title("fix_image")
+#    plt.imshow(predict_image/256.0)
+#    plt.subplot(133)
+#    plt.title("target_image")
+#    plt.imshow(original_image/256.0)
+#    plt.show()
     return t_loss
 
 
