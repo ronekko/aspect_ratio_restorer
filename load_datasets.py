@@ -24,7 +24,7 @@ from datasets import RandomCircleSquareDataset
 def load_dog_stream(hdf5_filepath, batch_size, train_size=16500,
                     shuffle=False):
     indices_train = range(0, train_size)
-    indices_test = range(train_size, 17000)
+    indices_test = range(train_size, 17125)
 
     h5py_file = h5py.File(hdf5_filepath)
     num_examples = len(h5py_file['image_features'])
@@ -69,6 +69,7 @@ def data_crop(X_batch, aspect_ratio_max=2.0, aspect_ratio_min=1,
     for b in range(X_batch.shape[0]):
         u = np.random.randint(5)
         image = X_batch[b]
+        image = np.transpose(image, (2, 0, 1))
         if test is True:
             r = r
             t = np.log(r)
@@ -80,7 +81,17 @@ def data_crop(X_batch, aspect_ratio_max=2.0, aspect_ratio_min=1,
             r = np.exp(t)
             image = utility.change_aspect_ratio(image, r, u)
             square_image = utility.crop_center(image)
-            resize_image = utility.random_crop_and_flip(square_image,
+            if u == 0:
+                resize_image = cv2.resize(square_image,(output_size,output_size),interpolation=cv2.INTER_NEAREST)
+            elif u == 1:
+                resize_image = cv2.resize(square_image,(output_size,output_size),interpolation=cv2.INTER_LINEAR)
+            elif u == 2:
+                resize_image = cv2.resize(square_image,(output_size,output_size),interpolation=cv2.INTER_AREA)
+            elif u == 3:
+                resize_image = cv2.resize(square_image,(output_size,output_size),interpolation=cv2.INTER_CUBIC)
+            elif u == 4:
+                resize_image = cv2.resize(square_image,(output_size,output_size),interpolation=cv2.INTER_LANCZOS4)
+            resize_image = utility.random_crop_and_flip(resize_image,
                                                         crop_size)
         images.append(resize_image)
         ts.append(t)
