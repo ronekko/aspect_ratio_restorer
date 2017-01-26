@@ -21,14 +21,14 @@ if __name__ == '__main__':
     file_name = os.path.splitext(os.path.basename(__file__))[0]
     # 超パラメータ
     save_root = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\demo'
-    txt_file = r'E:\voc2012\raw_dataset\output_size_500\output_size_500.txt'
-    model_file = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\dog_data_regression_ave_pooling\1484916833.81_asp_max_3.0\\dog_data_regression_ave_pooling.npz'
+    txt_file = r'E:\voc2012\raw_dataset\output_size_256\output_size_256.txt'
+    model_file = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\dog_data_regression_ave_pooling\1485316413.27_asp_max_3.0\\dog_data_regression_ave_pooling.npz'
 
     crop_size = 224
     num_train = 16500
     num_test = 500
     th = 0.1
-    num_split = 10
+    num_split = 50
     test = True
 
     loss = []
@@ -60,22 +60,22 @@ if __name__ == '__main__':
         # アスペクト比を設定
         t_l = t
         t_r = np.exp(t_l)
-        x_list_500 = []
+        x_list = []
 
         for i in range(num_test):
             # 画像読み込み
             img = plt.imread(test_paths[i])
-            img = utility.crop_center(img)
-            img = cv2.resize(img, (1500, 1500))
+#            img = utility.crop_center(img)
+#            img = cv2.resize(img, (256, 256))
             dis_img = utility.change_aspect_ratio(img, t_r)
             square_img = utility.crop_center(dis_img)
-            resize_img = cv2.resize(square_img, (256, 256))
-#            crop_img = utility.crop_224(resize_img)
+#            square_img = cv2.resize(square_img, (256, 256))
+            crop_img = utility.crop_224(square_img)
 #            resize_img = square_img
-            crop_img_500 = resize_img.astype(np.float32)
-            x_list_500.append(crop_img_500)
+            crop_img = crop_img.astype(np.float32)
+            x_list.append(crop_img)
 
-        x_bhwc = np.stack(x_list_500, axis=0)
+        x_bhwc = np.stack(x_list, axis=0)
         x_bchw = np.transpose(x_bhwc, (0, 3, 1, 2))
         y_l = model.predict(x_bchw, test)
         y_r = np.exp(y_l)

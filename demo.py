@@ -21,8 +21,8 @@ import make_html
 
 if __name__ == '__main__':
     save_root = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\demo'
-    txt_file = r'E:\voc2012\raw_dataset\output_size_500\output_size_500.txt'
-    model_file = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\dog_data_regression_ave_pooling\1484916833.81_asp_max_3.0\dog_data_regression_ave_pooling.npz'
+    txt_file = r'E:\voc2012\raw_dataset\output_size_256\output_size_256.txt'
+    model_file = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\dog_data_regression_ave_pooling\1485316413.27_asp_max_3.0\dog_data_regression_ave_pooling.npz'
 
     folder_name = model_file.split('\\')[-2]
     fix_folder = os.path.join(folder_name, 'fix')
@@ -70,12 +70,12 @@ if __name__ == '__main__':
         t_r = np.exp(t_l)
         # 画像読み込み
         img_ori = plt.imread(test_paths[i])
-#        img = utility.crop_center(img_ori)
-#        img = cv2.resize(img, (500, 500))
+        img = utility.crop_center(img_ori)
+        img = cv2.resize(img, (256, 256))
         dis_img = utility.change_aspect_ratio(img_ori, t_r)
         dis_img_ori = utility.change_aspect_ratio(img_ori, t_r)
         square_img = utility.crop_center(dis_img)
-        resize_img = cv2.resize(square_img, (224, 224))
+        resize_img = utility.crop_224(square_img)
 #        resize_img = square_img
         x_bhwc = resize_img[None, ...]
         x_bchw = np.transpose(x_bhwc, (0, 3, 1, 2))
@@ -93,9 +93,9 @@ if __name__ == '__main__':
 #        file_name_o = os.path.join(save_path_o, ('%.18f' % e_l))
 
         print '[test_data]:', i+1
-#        print '[t_l]:', round(t_l, 4), '\t[t_r]:', round(t_r, 4)
-#        print '[y_l]:', round(y_l[0][0], 4), '\t[y_r]:', round(y_r[0][0], 4)
-#        print '[e_l]:', round(e_l, 4), '\t[e_r]:', round(e_r, 4)
+        print '[t_l]:', round(t_l, 4), '\t[t_r]:', round(t_r, 4)
+        print '[y_l]:', round(y_l[0][0], 4), '\t[y_r]:', round(y_r[0][0], 4)
+        print '[e_l]:', round(e_l, 4), '\t[e_r]:', round(e_r, 4)
 
 #        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
 #        plt.tick_params(bottom='off', top='off', left='off', right='off')
@@ -112,27 +112,27 @@ if __name__ == '__main__':
 #        plt.imshow(img_ori)
 #        plt.savefig(file_name_o+'.png', format='png', bbox_inches='tight')
 
-#        plt.figure(figsize=(16, 16))
-#        plt.subplot(131)
-#        plt.title('Distortion image')
-#        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
-#        plt.tick_params(bottom='off', top='off', left='off', right='off')
-#        plt.imshow(dis_img_ori)
-#        plt.subplot(132)
-#        plt.title('Fixed image')
-#        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
-#        plt.tick_params(bottom='off', top='off', left='off', right='off')
-#        plt.imshow(fix_img)
-#        plt.subplot(133)
-#        plt.title('Normal image')
-#        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
-#        plt.tick_params(bottom='off', top='off', left='off', right='off')
-#        plt.imshow(img_ori)
-#        plt.show()
+        plt.figure(figsize=(16, 16))
+        plt.subplot(131)
+        plt.title('Distortion image')
+        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
+        plt.tick_params(bottom='off', top='off', left='off', right='off')
+        plt.imshow(dis_img_ori)
+        plt.subplot(132)
+        plt.title('Fixed image')
+        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
+        plt.tick_params(bottom='off', top='off', left='off', right='off')
+        plt.imshow(fix_img)
+        plt.subplot(133)
+        plt.title('Normal image')
+        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
+        plt.tick_params(bottom='off', top='off', left='off', right='off')
+        plt.imshow(img_ori)
+        plt.show()
 
-    make_html.make_html(save_path_d)
-    make_html.make_html(save_path_f)
-    make_html.make_html(save_path_o)
+#    make_html.make_html(save_path_d)
+#    make_html.make_html(save_path_f)
+#    make_html.make_html(save_path_o)
     x = np.stack(loss, axis=0)
     mu, sigma = 100, 15
 
