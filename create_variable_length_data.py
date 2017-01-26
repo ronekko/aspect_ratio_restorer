@@ -46,6 +46,7 @@ def output_path_list(path_list, output_root_dir):
 
 def output_hdf5(path_list, data_chw, output_root_dir):
     num_data = len(path_list)
+    shapes = []
 
     dirs = output_root_dir.split('\\')
     file_name = dirs[-1] + '.hdf5'
@@ -56,18 +57,20 @@ def output_hdf5(path_list, data_chw, output_root_dir):
     image_features = f.create_dataset('image_features',
                                       (num_data,),
                                       dtype=dtype)
-    image_features_shapes = f.create_dataset('image_features_shapes',
-                                             (num_data, 3),
-                                             dtype='uint8')
 
     image_features.dims[0].label = 'batch'
 
     try:
         for i in tqdm.tqdm(range(num_data)):
             image = io.imread(path_list[i])
-            image_shape = image.shape
+            shapes.append(image.shape)
             image_features[i] = image.flatten()
-            image_features_shapes[i] = image_shape
+
+        shapes = np.array(shapes).astype(np.int32)
+        image_features_shapes = f.create_dataset('image_features_shapes',
+                                                 (num_data, 3),
+                                                 dtype=np.int32)
+        image_features_shapes[...] = shapes
 
         image_features.dims.create_scale(image_features_shapes, 'shapes')
         image_features.dims[0].attach_scale(image_features_shapes)
