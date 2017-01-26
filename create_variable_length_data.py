@@ -45,16 +45,17 @@ def output_path_list(path_list, output_root_dir):
 
 
 def output_hdf5(path_list, data_chw, output_root_dir):
-    num_data = len(path_list[:100])
+    num_data = len(path_list)
 
     dirs = output_root_dir.split('\\')
     file_name = dirs[-1] + '.hdf5'
     output_root_dir = os.path.join(output_root_dir, file_name)
 
     f = h5py.File(output_root_dir, mode='w')
+    dtype = h5py.special_dtype(vlen=np.dtype('uint8'))
     image_features = f.create_dataset('image_features',
                                       (num_data,),
-                                      dtype='uint8')
+                                      dtype=dtype)
     image_features_shapes = f.create_dataset('image_features_shapes',
                                              (num_data, 3),
                                              dtype='uint8')
