@@ -35,7 +35,7 @@ class Convnet(Chain):
             norm4=L.BatchNormalization(32),
             conv5=L.Convolution2D(32, 64, 3, stride=2, pad=1),
             norm5=L.BatchNormalization(64),
-            conv6=L.Convolution2D(64, 64, 3, stride=1, pad=1),
+            conv6=L.Convolution2D(64, 64, 1),
             norm6=L.BatchNormalization(64),
 
             l1=L.Linear(64, 1)
@@ -89,7 +89,7 @@ if __name__ == '__main__':
 
     # 超パラメータ
     max_iteration = 1000  # 繰り返し回数
-    batch_size = 500  # ミニバッチサイズ
+    batch_size = 100  # ミニバッチサイズ
     num_train = 16500  # 学習データ数
     num_test = 500  # 検証データ数
     learning_rate = 0.01  # 学習率

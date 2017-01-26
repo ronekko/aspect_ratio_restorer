@@ -157,7 +157,9 @@ def load_data(queue, stream, crop, aspect_ratio_max=2.0, aspect_ratio_min=1.0,
 
 
 if __name__ == '__main__':
-    hdf5_filepath = r'E:\voc\raw_dataset\output_size_256\output_size_256.hdf5'
+#    hdf5_filepath = r'E:\voc\raw_dataset\output_size_256\output_size_256.hdf5'
+    hdf5_filepath_256 = r'E:\voc\raw_dataset\output_size_256\output_size_256.hdf5'  # データセットファイル保存場所
+    hdf5_filepath_500 = r'E:\voc2012\raw_dataset\output_size_500\output_size_500.hdf5'  # データセットファイル保存場所
     batch_size = 100
     p = [0.3, 0.3, 0.4]  # [円の生成率、四角の生成率、円と四角の混合生成率]
     aspect_ratio_max = 2.0
@@ -168,13 +170,15 @@ if __name__ == '__main__':
 
     draw_toy_image_class = RandomCircleSquareDataset(p=p)
 
-    dog_stream_train, dog_stream_test = load_dog_stream(
-        hdf5_filepath, batch_size)
+    dog_stream_train_256, dog_stream_test_256 = load_dog_stream(
+        hdf5_filepath_256, batch_size)
+    dog_stream_train_500, dog_stream_test_500 = load_dog_stream(
+        hdf5_filepath_500, batch_size)
     toy_stream_train, toy_stream_test = load_toy_stream(batch_size)
 
     q_dog_train = Queue(10)
     process_dog = Process(target=load_data,
-                          args=(q_dog_train, dog_stream_train, crop))
+                          args=(q_dog_train, dog_stream_train_256, crop))
     process_dog.start()
 
 #    q_toy_train = Queue(10)
