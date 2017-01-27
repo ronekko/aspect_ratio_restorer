@@ -25,20 +25,20 @@ import load_datasets
 class Convnet(Chain):
     def __init__(self):
         super(Convnet, self).__init__(
-            conv1=L.Convolution2D(3, 16, 3, stride=2, pad=1),
-            norm1=L.BatchNormalization(16),
-            conv2=L.Convolution2D(16, 16, 3, stride=2, pad=1),
-            norm2=L.BatchNormalization(16),
-            conv3=L.Convolution2D(16, 32, 3, stride=2, pad=1),
-            norm3=L.BatchNormalization(32),
-            conv4=L.Convolution2D(32, 32, 3, stride=2, pad=1),
-            norm4=L.BatchNormalization(32),
-            conv5=L.Convolution2D(32, 64, 3, stride=2, pad=1),
-            norm5=L.BatchNormalization(64),
-            conv6=L.Convolution2D(64, 64, 1),
-            norm6=L.BatchNormalization(64),
+            conv1=L.Convolution2D(3, 64, 3, stride=2, pad=1),
+            norm1=L.BatchNormalization(64),
+            conv2=L.Convolution2D(64, 64, 3, stride=2, pad=1),
+            norm2=L.BatchNormalization(64),
+            conv3=L.Convolution2D(64, 128, 3, stride=2, pad=1),
+            norm3=L.BatchNormalization(128),
+            conv4=L.Convolution2D(128, 128, 3, stride=2, pad=1),
+            norm4=L.BatchNormalization(128),
+            conv5=L.Convolution2D(128, 256, 3, stride=2, pad=1),
+            norm5=L.BatchNormalization(256),
+            conv6=L.Convolution2D(256, 256, 1),
+            norm6=L.BatchNormalization(256),
 
-            l1=L.Linear(64, 1)
+            l1=L.Linear(256, 1)
         )
 
     def network(self, X, test):
