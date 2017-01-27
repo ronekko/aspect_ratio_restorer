@@ -5,6 +5,7 @@ Created on Thu Dec 15 15:06:51 2016
 @author: yamane
 """
 
+import os
 import numpy as np
 import h5py
 import cv2
@@ -24,13 +25,9 @@ from datasets import RandomCircleSquareDataset
 def load_dog_stream(hdf5_filepath, batch_size, train_size=16500,
                     shuffle=False):
     indices_train = range(0, train_size)
-    indices_test = range(train_size, 17125)
+    indices_test = range(train_size, 17000)
 
     h5py_file = h5py.File(hdf5_filepath)
-    num_examples = len(h5py_file['image_features'])
-    split_train = (0, num_examples)
-    split_dict = dict(train=dict(image_features=split_train))
-    h5py_file.attrs["split"] = H5PYDataset.create_split_array(split_dict)
     dataset = H5PYDataset(h5py_file, ['train'])
 
     scheme_class = ShuffledScheme if shuffle else SequentialScheme
@@ -69,7 +66,6 @@ def data_crop(X_batch, aspect_ratio_max=2.0, aspect_ratio_min=1,
     for b in range(X_batch.shape[0]):
         u = np.random.randint(5)
         image = X_batch[b]
-        image = np.transpose(image, (2, 0, 1))
         if test is True:
             r = r
             t = np.log(r)
@@ -169,8 +165,9 @@ def load_data(queue, stream, crop, aspect_ratio_max=2.0, aspect_ratio_min=1.0,
 
 if __name__ == '__main__':
 #    hdf5_filepath = r'E:\voc\raw_dataset\output_size_256\output_size_256.hdf5'
-    hdf5_filepath_256 = r'E:\voc\raw_dataset\output_size_256\output_size_256.hdf5'  # データセットファイル保存場所
-    hdf5_filepath_500 = r'E:\voc2012\raw_dataset\output_size_500\output_size_500.hdf5'  # データセットファイル保存場所
+#    hdf5_filepath = r'E:\voc2012\raw_dataset\output_size_500\output_size_500.hdf5'
+    hdf5_filepath = r'E:\voc\variable_dataset\output_size_256\output_size_256.hdf5'  # データセットファイル保存場所
+    assert os.path.exists(hdf5_filepath)
     batch_size = 100
     p = [0.3, 0.3, 0.4]  # [円の生成率、四角の生成率、円と四角の混合生成率]
     aspect_ratio_max = 2.0
@@ -179,17 +176,20 @@ if __name__ == '__main__':
     crop_size = 224
     crop = True
 
-    draw_toy_image_class = RandomCircleSquareDataset(p=p)
+#    draw_toy_image_class = RandomCircleSquareDataset(p=p)
 
-    dog_stream_train_256, dog_stream_test_256 = load_dog_stream(
-        hdf5_filepath_256, batch_size)
-    dog_stream_train_500, dog_stream_test_500 = load_dog_stream(
-        hdf5_filepath_500, batch_size)
-    toy_stream_train, toy_stream_test = load_toy_stream(batch_size)
+    dog_stream_train, dog_stream_test = load_dog_stream(
+        hdf5_filepath, batch_size)
+#    toy_stream_train, toy_stream_test = load_toy_stream(batch_size)
+
+#    for batch in dog_stream_train.get_epoch_iterator():
+#        plt.imshow(batch[0][0])
+#        plt.show()
 
     q_dog_train = Queue(10)
     process_dog = Process(target=load_data,
-                          args=(q_dog_train, dog_stream_train_256, crop))
+                          args=(q_dog_train, dog_stream_train, crop))
+
     process_dog.start()
 
 #    q_toy_train = Queue(10)

@@ -84,6 +84,11 @@ def output_hdf5(path_list, data_chw, output_root_dir):
             image_features_shape_labels, 'shape_labels')
         image_features.dims[0].attach_scale(image_features_shape_labels)
 
+        # specify the splits
+        split_train = (0, num_data)
+        split_dict = dict(train=dict(image_features=split_train))
+        f.attrs["split"] = H5PYDataset.create_split_array(split_dict)
+
     except KeyboardInterrupt:
         print "割り込み停止が実行されました"
 
