@@ -20,9 +20,9 @@ import make_html
 
 
 if __name__ == '__main__':
-    save_root = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\demo'
-    txt_file = r'E:\voc2012\raw_dataset\output_size_256\output_size_256.txt'
-    model_file = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\dog_data_regression_ave_pooling\1485316413.27_asp_max_3.0\dog_data_regression_ave_pooling.npz'
+    save_root = r'E:\demo'
+    txt_file = r'E:\voc\variable_dataset\output_size_256\output_size_256.txt'
+    model_file = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\dog_data_regression_ave_pooling\1485422422.06_asp_max_3.0\dog_data_regression_ave_pooling.npz'
 
     folder_name = model_file.split('\\')[-2]
     fix_folder = os.path.join(folder_name, 'fix')
@@ -42,8 +42,8 @@ if __name__ == '__main__':
         os.makedirs(save_path_d)
         os.makedirs(save_path_o)
 
-    train_num = 16500
-    test_num = 500
+    train_num = 17000
+    test_num = 100
     asp_r_max = 2.0
     loss = []
     th = 0.11
@@ -69,28 +69,25 @@ if __name__ == '__main__':
             t_l = np.random.uniform(np.log(1/2.0), np.log(1/1.2))
         t_r = np.exp(t_l)
         # 画像読み込み
-        img_ori = plt.imread(test_paths[i])
-        img = utility.crop_center(img_ori)
-        img = cv2.resize(img, (256, 256))
-        dis_img = utility.change_aspect_ratio(img_ori, t_r)
-        dis_img_ori = utility.change_aspect_ratio(img_ori, t_r)
+        img = plt.imread(test_paths[i])
+        dis_img = utility.change_aspect_ratio(img, t_r)
         square_img = utility.crop_center(dis_img)
-        resize_img = utility.crop_224(square_img)
-#        resize_img = square_img
-        x_bhwc = resize_img[None, ...]
+        resize_img = cv2.resize(square_img, (256, 256))
+        crop_img = utility.crop_224(square_img)
+        x_bhwc = crop_img[None, ...]
         x_bchw = np.transpose(x_bhwc, (0, 3, 1, 2))
         x = x_bchw.astype(np.float32)
         y_l = model.predict(x, True)
         y_r = np.exp(y_l)
-        fix_img = utility.change_aspect_ratio(dis_img_ori, 1/y_r)
+        fix_img = utility.change_aspect_ratio(dis_img, 1/y_r)
 
         e_l = t_l - y_l[0][0]
         e_r = np.abs(t_r - y_r[0][0])
         loss.append(e_l)
 
-#        file_name_f = os.path.join(save_path_f, ('%.18f' % e_l))
-#        file_name_d = os.path.join(save_path_d, ('%.18f' % e_l))
-#        file_name_o = os.path.join(save_path_o, ('%.18f' % e_l))
+        file_name_f = os.path.join(save_path_f, ('%.18f' % e_l))
+        file_name_d = os.path.join(save_path_d, ('%.18f' % e_l))
+        file_name_o = os.path.join(save_path_o, ('%.18f' % e_l))
 
         print '[test_data]:', i+1
         print '[t_l]:', round(t_l, 4), '\t[t_r]:', round(t_r, 4)
@@ -104,12 +101,12 @@ if __name__ == '__main__':
 #
 #        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
 #        plt.tick_params(bottom='off', top='off', left='off', right='off')
-#        plt.imshow(dis_img_ori)
+#        plt.imshow(dis_img)
 #        plt.savefig(file_name_d+'.png', format='png', bbox_inches='tight')
 #
 #        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
 #        plt.tick_params(bottom='off', top='off', left='off', right='off')
-#        plt.imshow(img_ori)
+#        plt.imshow(img)
 #        plt.savefig(file_name_o+'.png', format='png', bbox_inches='tight')
 
         plt.figure(figsize=(16, 16))
@@ -117,7 +114,7 @@ if __name__ == '__main__':
         plt.title('Distortion image')
         plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
         plt.tick_params(bottom='off', top='off', left='off', right='off')
-        plt.imshow(dis_img_ori)
+        plt.imshow(dis_img)
         plt.subplot(132)
         plt.title('Fixed image')
         plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
@@ -127,7 +124,7 @@ if __name__ == '__main__':
         plt.title('Normal image')
         plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
         plt.tick_params(bottom='off', top='off', left='off', right='off')
-        plt.imshow(img_ori)
+        plt.imshow(img)
         plt.show()
 
 #    make_html.make_html(save_path_d)
@@ -146,7 +143,7 @@ if __name__ == '__main__':
     fig.show()
 
     count = 0
-    for i in range(500):
+    for i in range(test_num):
         if np.abs(x[i]) < th:
             count += 1
     print 'under', th, '=', count / 5.0, '%'

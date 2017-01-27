@@ -21,12 +21,12 @@ if __name__ == '__main__':
     file_name = os.path.splitext(os.path.basename(__file__))[0]
     # 超パラメータ
     save_root = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\demo'
-    txt_file = r'E:\voc2012\raw_dataset\output_size_256\output_size_256.txt'
-    model_file = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\dog_data_regression_ave_pooling\1485316413.27_asp_max_3.0\\dog_data_regression_ave_pooling.npz'
+    txt_file = r'E:\voc\variable_dataset\output_size_256\output_size_256.txt'
+    model_file = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\dog_data_regression_ave_pooling\1485422422.06_asp_max_3.0\dog_data_regression_ave_pooling.npz'
 
     crop_size = 224
-    num_train = 16500
-    num_test = 500
+    num_train = 17000
+    num_test = 100
     th = 0.1
     num_split = 50
     test = True
@@ -65,18 +65,15 @@ if __name__ == '__main__':
         for i in range(num_test):
             # 画像読み込み
             img = plt.imread(test_paths[i])
-#            img = utility.crop_center(img)
-#            img = cv2.resize(img, (256, 256))
             dis_img = utility.change_aspect_ratio(img, t_r)
             square_img = utility.crop_center(dis_img)
-#            square_img = cv2.resize(square_img, (256, 256))
-            crop_img = utility.crop_224(square_img)
-#            resize_img = square_img
-            crop_img = crop_img.astype(np.float32)
+            resize_img = cv2.resize(square_img, (256, 256))
+            crop_img = utility.crop_224(resize_img)
             x_list.append(crop_img)
 
         x_bhwc = np.stack(x_list, axis=0)
         x_bchw = np.transpose(x_bhwc, (0, 3, 1, 2))
+        x_bchw = x_bchw.astype(np.float32)
         y_l = model.predict(x_bchw, test)
         y_r = np.exp(y_l)
 
@@ -113,8 +110,18 @@ if __name__ == '__main__':
     plt.grid()
     plt.show()
 
+    plt.figure(figsize=(16, 12))
+    plt.boxplot(loss)
+    plt.xlim([np.log(1/2.5), np.log(2.5)])
+    plt.xticks(range(num_t), t_list)
+    plt.title('DCT Coefficient Amplitude vs. Order of Coefficient')
+    plt.xlabel('Order of AR in log scale')
+    plt.ylabel('error of prediction in log scale')
+    plt.grid()
+    plt.show()
+
     count = 0
-    for i in range(500):
+    for i in range(100):
         if mean_value[i] < th:
             count += 1
     print 'under', th, '=', count / 5.0, '%'
