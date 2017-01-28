@@ -22,7 +22,7 @@ import make_html
 if __name__ == '__main__':
     save_root = r'E:\demo'
     txt_file = r'E:\voc\variable_dataset\output_size_256\output_size_256.txt'
-    model_file = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\dog_data_regression_ave_pooling\1485422422.06_asp_max_3.0\dog_data_regression_ave_pooling.npz'
+    model_file = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\dog_data_regression_ave_pooling\1485527305.69_asp_max_3.0\dog_data_regression_ave_pooling.npz'
 
     folder_name = model_file.split('\\')[-2]
     fix_folder = os.path.join(folder_name, 'fix')
@@ -62,11 +62,8 @@ if __name__ == '__main__':
     test_paths = image_paths[train_num:train_num+test_num]
 
     for i in range(test_num):
-        # アスペクト比を設定
-        if np.random.rand() > 0.5:
-            t_l = np.random.uniform(np.log(1.2), np.log(2.0))
-        else:
-            t_l = np.random.uniform(np.log(1/2.0), np.log(1/1.2))
+        # アスペクト比を設
+        t_l = np.random.uniform(np.log(1/2.0), np.log(2.0))
         t_r = np.exp(t_l)
         # 画像読み込み
         img = plt.imread(test_paths[i])
@@ -94,42 +91,42 @@ if __name__ == '__main__':
         print '[y_l]:', round(y_l[0][0], 4), '\t[y_r]:', round(y_r[0][0], 4)
         print '[e_l]:', round(e_l, 4), '\t[e_r]:', round(e_r, 4)
 
-#        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
-#        plt.tick_params(bottom='off', top='off', left='off', right='off')
-#        plt.imshow(fix_img)
-#        plt.savefig(file_name_f+'.png', format='png', bbox_inches='tight')
-#
-#        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
-#        plt.tick_params(bottom='off', top='off', left='off', right='off')
-#        plt.imshow(dis_img)
-#        plt.savefig(file_name_d+'.png', format='png', bbox_inches='tight')
-#
-#        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
-#        plt.tick_params(bottom='off', top='off', left='off', right='off')
-#        plt.imshow(img)
-#        plt.savefig(file_name_o+'.png', format='png', bbox_inches='tight')
-
-        plt.figure(figsize=(16, 16))
-        plt.subplot(131)
-        plt.title('Distortion image')
-        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
-        plt.tick_params(bottom='off', top='off', left='off', right='off')
-        plt.imshow(dis_img)
-        plt.subplot(132)
-        plt.title('Fixed image')
         plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
         plt.tick_params(bottom='off', top='off', left='off', right='off')
         plt.imshow(fix_img)
-        plt.subplot(133)
-        plt.title('Normal image')
+        plt.savefig(file_name_f+'.png', format='png', bbox_inches='tight')
+
+        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
+        plt.tick_params(bottom='off', top='off', left='off', right='off')
+        plt.imshow(dis_img)
+        plt.savefig(file_name_d+'.png', format='png', bbox_inches='tight')
+
         plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
         plt.tick_params(bottom='off', top='off', left='off', right='off')
         plt.imshow(img)
-        plt.show()
+        plt.savefig(file_name_o+'.png', format='png', bbox_inches='tight')
 
-#    make_html.make_html(save_path_d)
-#    make_html.make_html(save_path_f)
-#    make_html.make_html(save_path_o)
+#        plt.figure(figsize=(16, 16))
+#        plt.subplot(131)
+#        plt.title('Distortion image')
+#        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
+#        plt.tick_params(bottom='off', top='off', left='off', right='off')
+#        plt.imshow(dis_img)
+#        plt.subplot(132)
+#        plt.title('Fixed image')
+#        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
+#        plt.tick_params(bottom='off', top='off', left='off', right='off')
+#        plt.imshow(fix_img)
+#        plt.subplot(133)
+#        plt.title('Normal image')
+#        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
+#        plt.tick_params(bottom='off', top='off', left='off', right='off')
+#        plt.imshow(img)
+#        plt.show()
+
+    make_html.make_html(save_path_d)
+    make_html.make_html(save_path_f)
+    make_html.make_html(save_path_o)
     x = np.stack(loss, axis=0)
     mu, sigma = 100, 15
 
@@ -146,7 +143,7 @@ if __name__ == '__main__':
     for i in range(test_num):
         if np.abs(x[i]) < th:
             count += 1
-    print 'under', th, '=', count / 5.0, '%'
+    print 'under', th, '=', count / 1.0, '%'
     print '[mean]:', np.mean(np.abs(loss))
     print '[median]:', np.median(np.abs(loss))
     print '[std]:', np.std(loss, ddof=1)

@@ -22,7 +22,7 @@ if __name__ == '__main__':
     # 超パラメータ
     save_root = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\demo'
     txt_file = r'E:\voc\variable_dataset\output_size_256\output_size_256.txt'
-    model_file = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\dog_data_regression_ave_pooling\1485422422.06_asp_max_3.0\dog_data_regression_ave_pooling.npz'
+    model_file = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\dog_data_regression_ave_pooling\1485527305.69_asp_max_3.0\dog_data_regression_ave_pooling.npz'
 
     crop_size = 224
     num_train = 17000
@@ -121,9 +121,10 @@ if __name__ == '__main__':
     plt.show()
 
     count = 0
+    th=0.1
     for i in range(100):
         if mean_value[i] < th:
             count += 1
-    print 'under', th, '=', count / 5.0, '%'
+    print 'under', th, '=', count / 1.0, '%'
     print 'num_test', num_test
     print 'model_file', model_file
