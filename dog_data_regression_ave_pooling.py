@@ -25,30 +25,39 @@ import load_datasets
 class Convnet(Chain):
     def __init__(self):
         super(Convnet, self).__init__(
-            conv1=L.Convolution2D(3, 64, 3, stride=2, pad=1),
-            norm1=L.BatchNormalization(64),
-            conv2=L.Convolution2D(64, 64, 3, stride=2, pad=1),
-            norm2=L.BatchNormalization(64),
-            conv3=L.Convolution2D(64, 128, 3, stride=2, pad=1),
-            norm3=L.BatchNormalization(128),
-            conv4=L.Convolution2D(128, 128, 3, stride=2, pad=1),
-            norm4=L.BatchNormalization(128),
-            conv5=L.Convolution2D(128, 256, 3, stride=2, pad=1),
-            norm5=L.BatchNormalization(256),
-            conv6=L.Convolution2D(256, 256, 1),
-            norm6=L.BatchNormalization(256),
+            conv1_1=L.Convolution2D(3, 64, 3, stride=2, pad=1),
+            norm1_1=L.BatchNormalization(64),
 
-            l1=L.Linear(256, 1)
+            conv2_1=L.Convolution2D(64, 128, 3, stride=2, pad=1),
+            norm2_1=L.BatchNormalization(128),
+
+            conv3_1=L.Convolution2D(128, 256, 3, stride=2, pad=1),
+            norm3_1=L.BatchNormalization(256),
+
+            conv4_1=L.Convolution2D(256, 256, 3, stride=2, pad=1),
+            norm4_1=L.BatchNormalization(256),
+
+            conv5_1=L.Convolution2D(256, 512, 3, stride=1, pad=1),
+            norm5_1=L.BatchNormalization(512),
+            conv5_2=L.Convolution2D(512, 512, 3, stride=2, pad=1),
+            norm5_2=L.BatchNormalization(512),
+
+            l1=L.Linear(512, 1)
         )
 
     def network(self, X, test):
-        h = F.relu(self.norm1(self.conv1(X), test=test))
-        h = F.relu(self.norm2(self.conv2(h), test=test))
-        h = F.relu(self.norm3(self.conv3(h), test=test))
-        h = F.relu(self.norm4(self.conv4(h), test=test))
-        h = F.relu(self.norm5(self.conv5(h), test=test))
-        h = F.relu(self.norm6(self.conv6(h), test=test))
-        h = F.average_pooling_2d(h, h.shape[2:])
+        h = F.relu(self.norm1_1(self.conv1_1(X), test=test))
+
+        h = F.relu(self.norm2_1(self.conv2_1(h), test=test))
+
+        h = F.relu(self.norm3_1(self.conv3_1(h), test=test))
+
+        h = F.relu(self.norm4_1(self.conv4_1(h), test=test))
+
+        h = F.relu(self.norm5_1(self.conv5_1(h), test=test))
+        h = F.relu(self.norm5_2(self.conv5_2(h), test=test))
+
+        h = F.max_pooling_2d(h, 7)
         y = self.l1(h)
         return y
 

@@ -22,7 +22,7 @@ import make_html
 if __name__ == '__main__':
     save_root = r'E:\demo'
     txt_file = r'E:\voc\variable_dataset\output_size_256\output_size_256.txt'
-    model_file = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\dog_data_regression_ave_pooling\1485527305.69_asp_max_3.0\dog_data_regression_ave_pooling.npz'
+    model_file = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\dog_data_regression_ave_pooling\1485686792.4_asp_max_4.0\dog_data_regression_ave_pooling.npz'
 
     folder_name = model_file.split('\\')[-2]
     fix_folder = os.path.join(folder_name, 'fix')
@@ -44,7 +44,7 @@ if __name__ == '__main__':
 
     train_num = 17000
     test_num = 100
-    asp_r_max = 2.0
+    asp_r_max = 3.0
     loss = []
     th = 0.11
 
@@ -63,7 +63,7 @@ if __name__ == '__main__':
 
     for i in range(test_num):
         # アスペクト比を設
-        t_l = np.random.uniform(np.log(1/2.0), np.log(2.0))
+        t_l = np.random.uniform(np.log(1/asp_r_max), np.log(asp_r_max))
         t_r = np.exp(t_l)
         # 画像読み込み
         img = plt.imread(test_paths[i])
@@ -133,7 +133,7 @@ if __name__ == '__main__':
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
 
-    ax.hist(x, bins=50)
+    ax.hist(x, bins=25)
     ax.set_title('first histogram $\mu=100,\ \sigma=15$')
     ax.set_xlabel('t-y')
     ax.set_ylabel('freq')

@@ -22,7 +22,7 @@ if __name__ == '__main__':
     # 超パラメータ
     save_root = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\demo'
     txt_file = r'E:\voc\variable_dataset\output_size_256\output_size_256.txt'
-    model_file = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\dog_data_regression_ave_pooling\1485527305.69_asp_max_3.0\dog_data_regression_ave_pooling.npz'
+    model_file = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\dog_data_regression_ave_pooling\1485686792.4_asp_max_4.0\dog_data_regression_ave_pooling.npz'
 
     crop_size = 224
     num_train = 17000
@@ -36,8 +36,8 @@ if __name__ == '__main__':
     t_list = []
 
     num_t = num_split + 1
-    t_step = np.log(2.0) * 2 / num_split
-    t = np.log(0.5)
+    t_step = np.log(3.0) * 2 / num_split
+    t = np.log(1/3.0)
     for i in range(num_t):
         t_list.append(t)
         t = t + t_step
@@ -102,7 +102,7 @@ if __name__ == '__main__':
     plt.figure(figsize=(16, 12))
     plt.plot(ee, 'o', c='#348ABD')
     plt.plot(eee, 'r-')
-    plt.xlim([np.log(1/2.5), np.log(2.5)])
+    plt.xlim([np.log(1/3.5), np.log(3.5)])
     plt.xticks(range(num_t), t_list)
     plt.title('DCT Coefficient Amplitude vs. Order of Coefficient')
     plt.xlabel('Order of AR in log scale')
@@ -112,7 +112,7 @@ if __name__ == '__main__':
 
     plt.figure(figsize=(16, 12))
     plt.boxplot(loss)
-    plt.xlim([np.log(1/2.5), np.log(2.5)])
+    plt.xlim([np.log(1/3.5), np.log(3.5)])
     plt.xticks(range(num_t), t_list)
     plt.title('DCT Coefficient Amplitude vs. Order of Coefficient')
     plt.xlabel('Order of AR in log scale')
