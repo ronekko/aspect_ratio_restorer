@@ -25,58 +25,37 @@ import load_datasets
 class Convnet(Chain):
     def __init__(self):
         super(Convnet, self).__init__(
-            conv1_1=L.Convolution2D(3, 64, 3, stride=1, pad=1),
+            conv1_1=L.Convolution2D(3, 64, 3, stride=2, pad=1),
             norm1_1=L.BatchNormalization(64),
-            conv1_2=L.Convolution2D(64, 64, 3, stride=2, pad=1),
-            norm1_2=L.BatchNormalization(64),
 
-            conv2_1=L.Convolution2D(64, 128, 3, stride=1, pad=1),
+            conv2_1=L.Convolution2D(64, 128, 3, stride=2, pad=1),
             norm2_1=L.BatchNormalization(128),
-            conv2_2=L.Convolution2D(128, 128, 3, stride=2, pad=1),
-            norm2_2=L.BatchNormalization(128),
 
-            conv3_1=L.Convolution2D(128, 256, 3, stride=1, pad=1),
+            conv3_1=L.Convolution2D(128, 256, 3, stride=2, pad=1),
             norm3_1=L.BatchNormalization(256),
-            conv3_2=L.Convolution2D(256, 256, 3, stride=1, pad=1),
-            norm3_2=L.BatchNormalization(256),
-            conv3_3=L.Convolution2D(256, 256, 3, stride=2, pad=1),
-            norm3_3=L.BatchNormalization(256),
 
-            conv4_1=L.Convolution2D(256, 512, 3, stride=1, pad=1),
-            norm4_1=L.BatchNormalization(512),
-            conv4_2=L.Convolution2D(512, 512, 3, stride=1, pad=1),
-            norm4_2=L.BatchNormalization(512),
-            conv4_3=L.Convolution2D(512, 512, 3, stride=2, pad=1),
-            norm4_3=L.BatchNormalization(512),
+            conv4_1=L.Convolution2D(256, 256, 3, stride=2, pad=1),
+            norm4_1=L.BatchNormalization(256),
 
-            conv5_1=L.Convolution2D(512, 512, 3, stride=1, pad=1),
+            conv5_1=L.Convolution2D(256, 512, 3, stride=1, pad=1),
             norm5_1=L.BatchNormalization(512),
-            conv5_2=L.Convolution2D(512, 512, 3, stride=1, pad=1),
+            conv5_2=L.Convolution2D(512, 512, 3, stride=2, pad=1),
             norm5_2=L.BatchNormalization(512),
-            conv5_3=L.Convolution2D(512, 512, 3, stride=2, pad=1),
-            norm5_3=L.BatchNormalization(512),
 
             l1=L.Linear(512, 1)
         )
 
     def network(self, X, test):
         h = F.relu(self.norm1_1(self.conv1_1(X), test=test))
-        h = F.relu(self.norm1_2(self.conv1_2(h), test=test))
 
         h = F.relu(self.norm2_1(self.conv2_1(h), test=test))
-        h = F.relu(self.norm2_2(self.conv2_2(h), test=test))
 
         h = F.relu(self.norm3_1(self.conv3_1(h), test=test))
-        h = F.relu(self.norm3_2(self.conv3_2(h), test=test))
-        h = F.relu(self.norm3_3(self.conv3_3(h), test=test))
 
         h = F.relu(self.norm4_1(self.conv4_1(h), test=test))
-        h = F.relu(self.norm4_2(self.conv4_2(h), test=test))
-        h = F.relu(self.norm4_3(self.conv4_3(h), test=test))
 
         h = F.relu(self.norm5_1(self.conv5_1(h), test=test))
         h = F.relu(self.norm5_2(self.conv5_2(h), test=test))
-        h = F.relu(self.norm5_3(self.conv5_3(h), test=test))
 
         h = F.max_pooling_2d(h, 7)
         y = self.l1(h)
@@ -126,7 +105,7 @@ if __name__ == '__main__':
     output_size = 256  # 生成画像サイズ
     crop_size = 224  # ネットワーク入力画像サイズ
     aspect_ratio_min = 1.0  # 最小アスペクト比の誤り
-    aspect_ratio_max = 3.0  # 最大アスペクト比の誤り
+    aspect_ratio_max = 4.0  # 最大アスペクト比の誤り
     crop = True
     hdf5_filepath = r'E:\voc\variable_dataset\output_size_256\output_size_256.hdf5'  # データセットファイル保存場所
     output_location = 'C:\Users\yamane\Dropbox\correct_aspect_ratio'  # 学習結果保存場所
