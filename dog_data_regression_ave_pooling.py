@@ -31,11 +31,13 @@ class Convnet(Chain):
             conv2_1=L.Convolution2D(64, 128, 3, stride=2, pad=1),
             norm2_1=L.BatchNormalization(128),
 
-            conv3_1=L.Convolution2D(128, 256, 3, stride=2, pad=1),
-            norm3_1=L.BatchNormalization(256),
+            conv3_1=L.Convolution2D(128, 128, 3, stride=2, pad=1),
+            norm3_1=L.BatchNormalization(128),
 
-            conv4_1=L.Convolution2D(256, 256, 3, stride=2, pad=1),
+            conv4_1=L.Convolution2D(128, 256, 3, stride=1, pad=1),
             norm4_1=L.BatchNormalization(256),
+            conv4_2=L.Convolution2D(256, 256, 3, stride=2, pad=1),
+            norm4_2=L.BatchNormalization(256),
 
             conv5_1=L.Convolution2D(256, 512, 3, stride=1, pad=1),
             norm5_1=L.BatchNormalization(512),
@@ -53,6 +55,7 @@ class Convnet(Chain):
         h = F.relu(self.norm3_1(self.conv3_1(h), test=test))
 
         h = F.relu(self.norm4_1(self.conv4_1(h), test=test))
+        h = F.relu(self.norm4_2(self.conv4_2(h), test=test))
 
         h = F.relu(self.norm5_1(self.conv5_1(h), test=test))
         h = F.relu(self.norm5_2(self.conv5_2(h), test=test))
