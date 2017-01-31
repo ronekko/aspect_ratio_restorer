@@ -27,13 +27,14 @@ if __name__ == '__main__':
     crop_size = 224
     num_train = 17000
     num_test = 100
-    th = 0.1
+    th = np.log(1.1)
     num_split = 50
     test = True
 
     loss = []
     loss_abs = []
     t_list = []
+    base_line = np.ones((num_test,))
 
     num_t = num_split + 1
     t_step = np.log(3.0) * 2 / num_split
@@ -77,36 +78,39 @@ if __name__ == '__main__':
         y_l = model.predict(x_bchw, test)
         y_r = np.exp(y_l)
 
-        e_l = y_l - t_l
-        e_l_abs = np.abs(y_l - t_l)
-        e_r = y_r - t_r
+        e_l = t_l - y_l
+        e_l_abs = np.abs(t_l - y_l)
+        e_r = t_r - y_r
         loss.append(e_l)
         loss_abs.append(e_l_abs)
 
-    mean_value = np.mean(loss_abs, axis=0)
+    for i in range(100):
+        base_line[i] = th
+
+    mean_value_abs = np.mean(loss_abs, axis=0)
     plt.figure(figsize=(16, 12))
-    plt.plot(mean_value)
+    plt.plot(mean_value_abs)
+    plt.plot(base_line, 'r-')
     plt.title('average error for each test data')
+    plt.legend(["average error", "base line"], loc="upper right")
     plt.xlabel('Order of test data number')
-    plt.ylabel('average error of prediction in log scale')
-    plt.ylim(0, max(mean_value)+0.01)
+    plt.ylabel('average error(|t-y|)')
+    plt.ylim(0, max(mean_value_abs)+0.01)
     plt.grid()
     plt.show()
 
     ee = np.stack(loss, axis=0)
     ee = ee.reshape(num_t, num_test)
-    eee = np.ndarray((num_t, 1))
-    for i in range(len(ee)):
-        eee[i] = np.mean(ee[i])
-    eee = eee.reshape(num_t)
+    eee = np.mean(loss, axis=1)
     plt.figure(figsize=(16, 12))
     plt.plot(ee, 'o', c='#348ABD')
-    plt.plot(eee, 'r-')
+    plt.plot(eee, 'r-', label='average')
     plt.xlim([np.log(1/3.5), np.log(3.5)])
     plt.xticks(range(num_t), t_list)
-    plt.title('DCT Coefficient Amplitude vs. Order of Coefficient')
+    plt.title('Order of AR in log scale vs. error of prediction in log scale')
+    plt.legend(loc="upper right")
     plt.xlabel('Order of AR in log scale')
-    plt.ylabel('error of prediction in log scale')
+    plt.ylabel('error(t-y)')
     plt.grid()
     plt.show()
 
@@ -114,17 +118,16 @@ if __name__ == '__main__':
     plt.boxplot(loss)
     plt.xlim([np.log(1/3.5), np.log(3.5)])
     plt.xticks(range(num_t), t_list)
-    plt.title('DCT Coefficient Amplitude vs. Order of Coefficient')
+    plt.title('Order of AR in log scale vs. error of prediction in log scale')
     plt.xlabel('Order of AR in log scale')
-    plt.ylabel('error of prediction in log scale')
+    plt.ylabel('error(t-y)')
     plt.grid()
     plt.show()
 
     count = 0
-    th=0.1
     for i in range(100):
-        if mean_value[i] < th:
+        if mean_value_abs[i] < th:
             count += 1
-    print 'under', th, '=', count / 1.0, '%'
+    print 'under', th, '=', count, '%'
     print 'num_test', num_test
     print 'model_file', model_file

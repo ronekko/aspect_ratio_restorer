@@ -42,11 +42,11 @@ if __name__ == '__main__':
         os.makedirs(save_path_d)
         os.makedirs(save_path_o)
 
-    train_num = 17000
-    test_num = 100
+    num_train = 17000
+    num_test = 100
     asp_r_max = 3.0
-    loss = []
-    th = 0.11
+    th = np.log(1.1)
+    base_line = np.ones((num_test,))
 
     # モデル読み込み
     model = dog_data_regression_ave_pooling.Convnet().to_gpu()
@@ -59,9 +59,11 @@ if __name__ == '__main__':
     for path in f:
         path = path.strip()
         image_paths.append(path)
-    test_paths = image_paths[train_num:train_num+test_num]
+    test_paths = image_paths[num_train:num_train+num_test]
 
-    for i in range(test_num):
+    loss = []
+    loss_abs = []
+    for i in range(num_test):
         # アスペクト比を設
         t_l = np.random.uniform(np.log(1/asp_r_max), np.log(asp_r_max))
         t_r = np.exp(t_l)
@@ -70,7 +72,7 @@ if __name__ == '__main__':
         dis_img = utility.change_aspect_ratio(img, t_r)
         square_img = utility.crop_center(dis_img)
         resize_img = cv2.resize(square_img, (256, 256))
-        crop_img = utility.crop_224(square_img)
+        crop_img = utility.crop_224(resize_img)
         x_bhwc = crop_img[None, ...]
         x_bchw = np.transpose(x_bhwc, (0, 3, 1, 2))
         x = x_bchw.astype(np.float32)
@@ -78,33 +80,35 @@ if __name__ == '__main__':
         y_r = np.exp(y_l)
         fix_img = utility.change_aspect_ratio(dis_img, 1/y_r)
 
-        e_l = t_l - y_l[0][0]
-        e_r = np.abs(t_r - y_r[0][0])
+        e_l = t_l - y_l
+        e_l_abs = np.abs(t_l - y_l)
+        e_r = t_r - y_r
         loss.append(e_l)
+        loss_abs.append(e_l_abs)
 
-        file_name_f = os.path.join(save_path_f, ('%.18f' % e_l))
-        file_name_d = os.path.join(save_path_d, ('%.18f' % e_l))
-        file_name_o = os.path.join(save_path_o, ('%.18f' % e_l))
+#        file_name_f = os.path.join(save_path_f, ('%.18f' % e_l))
+#        file_name_d = os.path.join(save_path_d, ('%.18f' % e_l))
+#        file_name_o = os.path.join(save_path_o, ('%.18f' % e_l))
 
         print '[test_data]:', i+1
         print '[t_l]:', round(t_l, 4), '\t[t_r]:', round(t_r, 4)
         print '[y_l]:', round(y_l[0][0], 4), '\t[y_r]:', round(y_r[0][0], 4)
         print '[e_l]:', round(e_l, 4), '\t[e_r]:', round(e_r, 4)
 
-        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
-        plt.tick_params(bottom='off', top='off', left='off', right='off')
-        plt.imshow(fix_img)
-        plt.savefig(file_name_f+'.png', format='png', bbox_inches='tight')
-
-        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
-        plt.tick_params(bottom='off', top='off', left='off', right='off')
-        plt.imshow(dis_img)
-        plt.savefig(file_name_d+'.png', format='png', bbox_inches='tight')
-
-        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
-        plt.tick_params(bottom='off', top='off', left='off', right='off')
-        plt.imshow(img)
-        plt.savefig(file_name_o+'.png', format='png', bbox_inches='tight')
+#        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
+#        plt.tick_params(bottom='off', top='off', left='off', right='off')
+#        plt.imshow(fix_img)
+#        plt.savefig(file_name_f+'.png', format='png', bbox_inches='tight')
+#
+#        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
+#        plt.tick_params(bottom='off', top='off', left='off', right='off')
+#        plt.imshow(dis_img)
+#        plt.savefig(file_name_d+'.png', format='png', bbox_inches='tight')
+#
+#        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
+#        plt.tick_params(bottom='off', top='off', left='off', right='off')
+#        plt.imshow(img)
+#        plt.savefig(file_name_o+'.png', format='png', bbox_inches='tight')
 
 #        plt.figure(figsize=(16, 16))
 #        plt.subplot(131)
@@ -124,26 +128,59 @@ if __name__ == '__main__':
 #        plt.imshow(img)
 #        plt.show()
 
-    make_html.make_html(save_path_d)
-    make_html.make_html(save_path_f)
-    make_html.make_html(save_path_o)
-    x = np.stack(loss, axis=0)
+#    make_html.make_html(save_path_d)
+#    make_html.make_html(save_path_f)
+#    make_html.make_html(save_path_o)
+
+    for i in range(num_test):
+        base_line[i] = th
+
+    error_abs = np.stack(loss_abs, axis=0)
+    error_abs = error_abs.reshape(num_test, 1)
+    error = np.stack(loss, axis=0)
+    error = error.reshape(num_test, 1)
+
+    if np.abs(max(error)) > np.abs(min(error)):
+        max_value = np.abs(max(error))
+    else:
+        max_value = np.abs(min(error))
+
+    plt.figure(figsize=(16, 12))
+    plt.plot(error_abs)
+    plt.plot(base_line, 'r-')
+    plt.title('error abs for each test data')
+    plt.legend(["error", "base line"], loc="upper right")
+    plt.xlabel('Order of test data number')
+    plt.ylabel('|t-y|')
+    plt.ylim(0, max(error_abs)+0.01)
+    plt.grid()
+    plt.show()
+
+    plt.figure(figsize=(16, 12))
+    plt.plot(error)
+    plt.plot(base_line, 'r-')
+    plt.plot(-base_line, 'r-')
+    plt.title('error for each test data')
+    plt.legend(["error", "top base line", "bottom base line"], loc="upper right")
+    plt.xlabel('Order of test data number')
+    plt.ylabel('t-y')
+    plt.ylim(-max_value-0.01, max_value+0.01)
+    plt.grid()
+    plt.show()
+
     mu, sigma = 100, 15
-
-    fig = plt.figure()
+    fig = plt.figure(figsize=(16, 12))
     ax = fig.add_subplot(1, 1, 1)
-
-    ax.hist(x, bins=25)
-    ax.set_title('first histogram $\mu=100,\ \sigma=15$')
+    ax.hist(error, bins=25)
+    ax.set_title('error histogram $\mu=100,\ \sigma=15$')
     ax.set_xlabel('t-y')
     ax.set_ylabel('freq')
+    plt.xlim(-max_value-0.01, max_value+0.01)
     fig.show()
 
     count = 0
-    for i in range(test_num):
-        if np.abs(x[i]) < th:
+    for i in range(num_test):
+        if loss_abs[i] < th:
             count += 1
-    print 'under', th, '=', count / 1.0, '%'
-    print '[mean]:', np.mean(np.abs(loss))
-    print '[median]:', np.median(np.abs(loss))
-    print '[std]:', np.std(loss, ddof=1)
+    print 'under', th, '=', count, '%'
+    print '[mean]:', np.mean(loss_abs)
