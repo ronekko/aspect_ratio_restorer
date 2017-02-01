@@ -6,6 +6,7 @@ Created on Thu Jan 19 15:27:22 2017
 """
 
 import os
+import time
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.mlab as mlab
@@ -22,20 +23,20 @@ import make_html
 if __name__ == '__main__':
     save_root = r'E:\demo'
     txt_file = r'E:\voc\variable_dataset\output_size_256\output_size_256.txt'
-    model_file = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\dog_data_regression_ave_pooling\1485686792.4_asp_max_4.0\dog_data_regression_ave_pooling.npz'
+    model_file = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\dog_data_regression_ave_pooling\1485768519.06_asp_max_4.0\dog_data_regression_ave_pooling.npz'
 
     folder_name = model_file.split('\\')[-2]
     fix_folder = os.path.join(folder_name, 'fix')
-    debased_folder = os.path.join(folder_name, 'debased')
+    distorted_folder = os.path.join(folder_name, 'distorted')
     original_folder = os.path.join(folder_name, 'original')
     save_path_f = os.path.join(save_root, fix_folder)
-    save_path_d = os.path.join(save_root, debased_folder)
+    save_path_d = os.path.join(save_root, distorted_folder)
     save_path_o = os.path.join(save_root, original_folder)
     if os.path.exists(save_path_f):
         pass
-    elif os.path.exists(save_path_f):
+    elif os.path.exists(save_path_d):
         pass
-    elif os.path.exists(save_path_f):
+    elif os.path.exists(save_path_o):
         pass
     else:
         os.makedirs(save_path_f)
@@ -86,51 +87,51 @@ if __name__ == '__main__':
         loss.append(e_l)
         loss_abs.append(e_l_abs)
 
-#        file_name_f = os.path.join(save_path_f, ('%.18f' % e_l))
-#        file_name_d = os.path.join(save_path_d, ('%.18f' % e_l))
-#        file_name_o = os.path.join(save_path_o, ('%.18f' % e_l))
+        file_name_f = os.path.join(save_path_f, ('%.18f' % e_l))
+        file_name_d = os.path.join(save_path_d, ('%.18f' % e_l))
+        file_name_o = os.path.join(save_path_o, ('%.18f' % e_l))
 
         print '[test_data]:', i+1
         print '[t_l]:', round(t_l, 4), '\t[t_r]:', round(t_r, 4)
         print '[y_l]:', round(y_l[0][0], 4), '\t[y_r]:', round(y_r[0][0], 4)
         print '[e_l]:', round(e_l, 4), '\t[e_r]:', round(e_r, 4)
 
-#        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
-#        plt.tick_params(bottom='off', top='off', left='off', right='off')
-#        plt.imshow(fix_img)
-#        plt.savefig(file_name_f+'.png', format='png', bbox_inches='tight')
-#
-#        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
-#        plt.tick_params(bottom='off', top='off', left='off', right='off')
-#        plt.imshow(dis_img)
-#        plt.savefig(file_name_d+'.png', format='png', bbox_inches='tight')
-#
-#        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
-#        plt.tick_params(bottom='off', top='off', left='off', right='off')
-#        plt.imshow(img)
-#        plt.savefig(file_name_o+'.png', format='png', bbox_inches='tight')
+        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
+        plt.tick_params(bottom='off', top='off', left='off', right='off')
+        plt.imshow(fix_img)
+        plt.savefig(file_name_f+'.png', format='png', bbox_inches='tight')
 
-#        plt.figure(figsize=(16, 16))
-#        plt.subplot(131)
-#        plt.title('Distortion image')
-#        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
-#        plt.tick_params(bottom='off', top='off', left='off', right='off')
-#        plt.imshow(dis_img)
-#        plt.subplot(132)
-#        plt.title('Fixed image')
-#        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
-#        plt.tick_params(bottom='off', top='off', left='off', right='off')
-#        plt.imshow(fix_img)
-#        plt.subplot(133)
-#        plt.title('Normal image')
-#        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
-#        plt.tick_params(bottom='off', top='off', left='off', right='off')
-#        plt.imshow(img)
-#        plt.show()
+        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
+        plt.tick_params(bottom='off', top='off', left='off', right='off')
+        plt.imshow(dis_img)
+        plt.savefig(file_name_d+'.png', format='png', bbox_inches='tight')
 
-#    make_html.make_html(save_path_d)
-#    make_html.make_html(save_path_f)
-#    make_html.make_html(save_path_o)
+        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
+        plt.tick_params(bottom='off', top='off', left='off', right='off')
+        plt.imshow(img)
+        plt.savefig(file_name_o+'.png', format='png', bbox_inches='tight')
+
+        plt.figure(figsize=(16, 16))
+        plt.subplot(131)
+        plt.title('Distorted image')
+        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
+        plt.tick_params(bottom='off', top='off', left='off', right='off')
+        plt.imshow(dis_img)
+        plt.subplot(132)
+        plt.title('Fixed image')
+        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
+        plt.tick_params(bottom='off', top='off', left='off', right='off')
+        plt.imshow(fix_img)
+        plt.subplot(133)
+        plt.title('Normal image')
+        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
+        plt.tick_params(bottom='off', top='off', left='off', right='off')
+        plt.imshow(img)
+        plt.show()
+
+    make_html.make_html(save_path_d)
+    make_html.make_html(save_path_f)
+    make_html.make_html(save_path_o)
 
     for i in range(num_test):
         base_line[i] = th
