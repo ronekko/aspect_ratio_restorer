@@ -79,8 +79,6 @@ def padding_image(image):
 def sample_random_aspect_ratio(r_max, r_min=1):
     # アスペクト比rをランダム生成する
     r = np.random.uniform(r_min, r_max)
-    if np.random.rand() > 0.5:
-        r = 1 / r
     return r
 
 
@@ -109,5 +107,21 @@ def random_crop_and_flip(image, crop_size):
 
     if np.random.rand() > 0.5:  # 半々の確率で
         image = image[:, ::-1]  # 左右反転
+
+    return image
+
+
+def crop_224(image):
+    h_image, w_image = image.shape[:2]
+    h_crop = 224
+    w_crop = 224
+
+    # 0以上 h_image - h_crop以下の整数乱数
+    top = (h_image - h_crop + 1) / 2
+    left = (h_image - h_crop + 1) / 2
+    bottom = top + h_crop
+    right = left + w_crop
+
+    image = image[top:bottom, left:right]
 
     return image

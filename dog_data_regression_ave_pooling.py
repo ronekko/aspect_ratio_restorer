@@ -25,27 +25,43 @@ import load_datasets
 class Convnet(Chain):
     def __init__(self):
         super(Convnet, self).__init__(
-            conv1=L.Convolution2D(3, 16, 3, stride=2, pad=1),
-            norm1=L.BatchNormalization(16),
-            conv2=L.Convolution2D(16, 16, 3, stride=2, pad=1),
-            norm2=L.BatchNormalization(16),
-            conv3=L.Convolution2D(16, 32, 3, stride=2, pad=1),
-            norm3=L.BatchNormalization(32),
-            conv4=L.Convolution2D(32, 32, 3, stride=2, pad=1),
-            norm4=L.BatchNormalization(32),
-            conv5=L.Convolution2D(32, 64, 3, stride=2, pad=1),
-            norm5=L.BatchNormalization(64),
+            conv1_1=L.Convolution2D(3, 64, 3, stride=2, pad=1),
+            norm1_1=L.BatchNormalization(64),
 
-            l1=L.Linear(64, 1)
+            conv2_1=L.Convolution2D(64, 128, 3, stride=2, pad=1),
+            norm2_1=L.BatchNormalization(128),
+
+            conv3_1=L.Convolution2D(128, 128, 3, stride=2, pad=1),
+            norm3_1=L.BatchNormalization(128),
+
+            conv4_1=L.Convolution2D(128, 256, 3, stride=1, pad=1),
+            norm4_1=L.BatchNormalization(256),
+            conv4_2=L.Convolution2D(256, 256, 3, stride=2, pad=1),
+            norm4_2=L.BatchNormalization(256),
+
+            conv5_1=L.Convolution2D(256, 512, 3, stride=1, pad=1),
+            norm5_1=L.BatchNormalization(512),
+            conv5_2=L.Convolution2D(512, 512, 3, stride=2, pad=1),
+            norm5_2=L.BatchNormalization(512),
+
+            l1=L.Linear(512, 1)
         )
 
     def network(self, X, test):
-        h = F.relu(self.norm1(self.conv1(X), test=test))
-        h = F.relu(self.norm2(self.conv2(h), test=test))
-        h = F.relu(self.norm3(self.conv3(h), test=test))
-        h = F.relu(self.norm4(self.conv4(h), test=test))
-        h = F.relu(self.norm5(self.conv5(h), test=test))
-        y = self.l1(F.average_pooling_2d(h, 7))
+        h = F.relu(self.norm1_1(self.conv1_1(X), test=test))
+
+        h = F.relu(self.norm2_1(self.conv2_1(h), test=test))
+
+        h = F.relu(self.norm3_1(self.conv3_1(h), test=test))
+
+        h = F.relu(self.norm4_1(self.conv4_1(h), test=test))
+        h = F.relu(self.norm4_2(self.conv4_2(h), test=test))
+
+        h = F.relu(self.norm5_1(self.conv5_1(h), test=test))
+        h = F.relu(self.norm5_2(self.conv5_2(h), test=test))
+
+        h = F.max_pooling_2d(h, 7)
+        y = self.l1(h)
         return y
 
     def forward(self, X, test):
@@ -84,11 +100,11 @@ if __name__ == '__main__':
     t_loss = []
 
     # 超パラメータ
-    max_iteration = 100  # 繰り返し回数
+    max_iteration = 200  # 繰り返し回数
     batch_size = 100  # ミニバッチサイズ
     num_train = 20000  # 学習データ数
-    num_test = 100  # 検証データ数
-    learning_rate = 0.001  # 学習率
+    num_test = 500  # 検証データ数
+    learning_rate = 0.01  # 学習率
     output_size = 256  # 生成画像サイズ
     crop_size = 224  # ネットワーク入力画像サイズ
     aspect_ratio_min = 1.0  # 最小アスペクト比の誤り
@@ -105,7 +121,7 @@ if __name__ == '__main__':
     else:
         os.makedirs(output_root_dir)
     # ファイル名を作成
-    model_filename = str(file_name) + str(time_start) + '.npz'
+    model_filename = str(file_name) + '.npz'
     loss_filename = 'epoch_loss' + str(time_start) + '.png'
     t_dis_filename = 't_distance' + str(time_start) + '.png'
     model_filename = os.path.join(output_root_dir, model_filename)
