@@ -87,14 +87,22 @@ if __name__ == '__main__':
     for i in range(100):
         base_line[i] = th
 
+    error = np.stack(loss, axis=0)
+    error_flat = error.flat
+    a = error_flat
+#    if np.abs(max(a)) > np.abs(min(a)):
+#        max_value = np.abs(max(a))
+#    else:
+#        max_value = np.abs(min(a))
+
     mean_value_abs = np.mean(loss_abs, axis=0)
     plt.figure(figsize=(16, 12))
     plt.plot(mean_value_abs)
     plt.plot(base_line, 'r-')
-    plt.title('average error for each test data')
-    plt.legend(["average error", "base line"], loc="upper right")
-    plt.xlabel('Order of test data number')
-    plt.ylabel('average error(|t-y|)')
+    plt.title('average absolute Error for each test data', fontsize=28)
+    plt.legend(["average Error", "Error=0.0953"], loc="upper left")
+    plt.xlabel('Order of test data number', fontsize=28)
+    plt.ylabel('average Error(|t-y|)', fontsize=28)
     plt.ylim(0, max(mean_value_abs)+0.01)
     plt.grid()
     plt.show()
@@ -104,13 +112,13 @@ if __name__ == '__main__':
     average = np.mean(loss, axis=1)
     plt.figure(figsize=(16, 12))
     plt.plot(losses, 'o', c='#348ABD')
-    plt.plot(average, 'r-', label='average')
-    plt.xlim([np.log(1/3.5), np.log(3.5)])
+    plt.plot(average, 'r-', label='average Error')
+#    plt.xlim([np.log(1/3.5), np.log(3.5)])
     plt.xticks(range(num_t), t_list)
-    plt.title('Order of AR in log scale vs. error of prediction in log scale')
+    plt.title('Order of r in log scale vs. Error(t-y)', fontsize=28)
     plt.legend(loc="upper right")
-    plt.xlabel('Order of AR in log scale')
-    plt.ylabel('error(t-y)')
+    plt.xlabel('Order of r in log scale', fontsize=28)
+    plt.ylabel('Error(t-y)', fontsize=28)
     plt.grid()
     plt.show()
 
@@ -118,9 +126,9 @@ if __name__ == '__main__':
     plt.boxplot(loss)
     plt.xlim([np.log(1/3.5), np.log(3.5)])
     plt.xticks(range(num_t), t_list)
-    plt.title('Order of AR in log scale vs. error of prediction in log scale')
-    plt.xlabel('Order of AR in log scale')
-    plt.ylabel('error(t-y)')
+    plt.title('Order of r in log scale vs. Error(t-y)', fontsize=28)
+    plt.xlabel('Order of r in log scale', fontsize=28)
+    plt.ylabel('Error(t-y)', fontsize=28)
     plt.grid()
     plt.show()
 

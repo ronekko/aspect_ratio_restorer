@@ -64,12 +64,19 @@ if __name__ == '__main__':
 
     loss = []
     loss_abs = []
+    kernel = np.array([[-1, -1, -1],
+                       [-1,  8, -1],
+                       [-1, -1, -1]
+                       ], np.float32)
+#    kernel = np.ones((5, 5), np.float32) / 25
     for i in range(num_test):
         # アスペクト比を設
         t_l = np.random.uniform(np.log(1/asp_r_max), np.log(asp_r_max))
+#        t_l = 0.0
         t_r = np.exp(t_l)
         # 画像読み込み
         img = plt.imread(test_paths[i])
+        img = cv2.filter2D(img, -1, kernel)
         dis_img = utility.change_aspect_ratio(img, t_r)
         square_img = utility.crop_center(dis_img)
         resize_img = cv2.resize(square_img, (256, 256))
@@ -96,42 +103,43 @@ if __name__ == '__main__':
         print '[y_l]:', round(y_l[0][0], 4), '\t[y_r]:', round(y_r[0][0], 4)
         print '[e_l]:', round(e_l, 4), '\t[e_r]:', round(e_r, 4)
 
-        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
-        plt.tick_params(bottom='off', top='off', left='off', right='off')
-        plt.imshow(fix_img)
-        plt.savefig(file_name_f+'.png', format='png', bbox_inches='tight')
+#        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
+#        plt.tick_params(bottom='off', top='off', left='off', right='off')
+#        plt.imshow(fix_img)
+#        plt.savefig(file_name_f+'.jpg', format='jpg', bbox_inches='tight')
+#
+#        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
+#        plt.tick_params(bottom='off', top='off', left='off', right='off')
+#        plt.imshow(dis_img)
+#        plt.savefig(file_name_d+'.jpg', format='jpg', bbox_inches='tight')
+#
+#        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
+#        plt.tick_params(bottom='off', top='off', left='off', right='off')
+#        plt.imshow(img)
+#        plt.savefig(file_name_o+'.jpg', format='jpg', bbox_inches='tight')
 
-        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
-        plt.tick_params(bottom='off', top='off', left='off', right='off')
-        plt.imshow(dis_img)
-        plt.savefig(file_name_d+'.png', format='png', bbox_inches='tight')
+#        plt.figure(figsize=(16, 16))
+#        plt.subplot(131)
+#        plt.title('Distorted image')
+#        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
+#        plt.tick_params(bottom='off', top='off', left='off', right='off')
+#        plt.imshow(dis_img)
+#        plt.subplot(132)
+#        plt.title('Fixed image')
+#        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
+#        plt.tick_params(bottom='off', top='off', left='off', right='off')
+#        plt.imshow(fix_img)
+#        plt.subplot(133)
+#        plt.title('Normal image')
+#        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
+#        plt.tick_params(bottom='off', top='off', left='off', right='off')
+#        plt.imshow(img)
+#        plt.show()
+#        time.sleep(1)
 
-        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
-        plt.tick_params(bottom='off', top='off', left='off', right='off')
-        plt.imshow(img)
-        plt.savefig(file_name_o+'.png', format='png', bbox_inches='tight')
-
-        plt.figure(figsize=(16, 16))
-        plt.subplot(131)
-        plt.title('Distorted image')
-        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
-        plt.tick_params(bottom='off', top='off', left='off', right='off')
-        plt.imshow(dis_img)
-        plt.subplot(132)
-        plt.title('Fixed image')
-        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
-        plt.tick_params(bottom='off', top='off', left='off', right='off')
-        plt.imshow(fix_img)
-        plt.subplot(133)
-        plt.title('Normal image')
-        plt.tick_params(labelbottom='off', labeltop='off', labelleft='off', labelright='off')
-        plt.tick_params(bottom='off', top='off', left='off', right='off')
-        plt.imshow(img)
-        plt.show()
-
-    make_html.make_html(save_path_d)
-    make_html.make_html(save_path_f)
-    make_html.make_html(save_path_o)
+#    make_html.make_html(save_path_d)
+#    make_html.make_html(save_path_f)
+#    make_html.make_html(save_path_o)
 
     for i in range(num_test):
         base_line[i] = th
@@ -149,10 +157,10 @@ if __name__ == '__main__':
     plt.figure(figsize=(16, 12))
     plt.plot(error_abs)
     plt.plot(base_line, 'r-')
-    plt.title('error abs for each test data')
-    plt.legend(["error", "base line"], loc="upper right")
-    plt.xlabel('Order of test data number')
-    plt.ylabel('|t-y|')
+    plt.title('absolute Error for each test data', fontsize=28)
+    plt.legend(["Error", "Error=0.953"], loc="upper left")
+    plt.xlabel('Order of test data number', fontsize=28)
+    plt.ylabel('Error(|t-y|)', fontsize=28)
     plt.ylim(0, max(error_abs)+0.01)
     plt.grid()
     plt.show()
@@ -161,10 +169,10 @@ if __name__ == '__main__':
     plt.plot(error)
     plt.plot(base_line, 'r-')
     plt.plot(-base_line, 'r-')
-    plt.title('error for each test data')
-    plt.legend(["error", "top base line", "bottom base line"], loc="upper right")
-    plt.xlabel('Order of test data number')
-    plt.ylabel('t-y')
+    plt.title('Error for each test data', fontsize=28)
+    plt.legend(["Error", "Error=0.953", "Error=-0.953"], loc="upper left")
+    plt.xlabel('Order of test data number', fontsize=28)
+    plt.ylabel('Error(t-y)', fontsize=28)
     plt.ylim(-max_value-0.01, max_value+0.01)
     plt.grid()
     plt.show()
@@ -173,10 +181,10 @@ if __name__ == '__main__':
     fig = plt.figure(figsize=(16, 12))
     ax = fig.add_subplot(1, 1, 1)
     ax.hist(error, bins=25)
-    ax.set_title('error histogram $\mu=100,\ \sigma=15$')
-    ax.set_xlabel('t-y')
-    ax.set_ylabel('freq')
-    plt.xlim(-max_value-0.01, max_value+0.01)
+    ax.set_title('Error histogram', fontsize=28)
+    ax.set_xlabel('Error(t-y)', fontsize=28)
+    ax.set_ylabel('Percentage', fontsize=28)
+    plt.xlim(-1, 1)
     fig.show()
 
     count = 0
