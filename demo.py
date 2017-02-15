@@ -20,11 +20,7 @@ import dog_data_regression_ave_pooling
 import make_html
 
 
-if __name__ == '__main__':
-    save_root = r'E:\demo'
-    txt_file = r'E:\voc\variable_dataset\output_size_256\output_size_256.txt'
-    model_file = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\dog_data_regression_ave_pooling\1485768519.06_asp_max_4.0\dog_data_regression_ave_pooling.npz'
-
+def create_save_folder(save_root):
     folder_name = model_file.split('\\')[-2]
     fix_folder = os.path.join(folder_name, 'fix')
     distorted_folder = os.path.join(folder_name, 'distorted')
@@ -42,18 +38,10 @@ if __name__ == '__main__':
         os.makedirs(save_path_f)
         os.makedirs(save_path_d)
         os.makedirs(save_path_o)
+    return save_path_f, save_path_d, save_path_o
 
-    num_train = 17000
-    num_test = 100
-    asp_r_max = 3.0
-    th = np.log(1.1)
-    base_line = np.ones((num_test,))
 
-    # モデル読み込み
-    model = dog_data_regression_ave_pooling.Convnet().to_gpu()
-    # Optimizerの設定
-    serializers.load_npz(model_file, model)
-
+def load_test_data(txt_file, num_train, num_test):
     # テキストファイル読み込み
     image_paths = []
     f = open(txt_file, 'r')
@@ -61,7 +49,10 @@ if __name__ == '__main__':
         path = path.strip()
         image_paths.append(path)
     test_paths = image_paths[num_train:num_train+num_test]
+    return test_paths
 
+
+def fix(model, test_paths, save_path_f, save_path_d, save_path_o):
     loss = []
     loss_abs = []
     kernel = np.array([[-1, -1, -1],
@@ -76,7 +67,7 @@ if __name__ == '__main__':
         t_r = np.exp(t_l)
         # 画像読み込み
         img = plt.imread(test_paths[i])
-        img = cv2.filter2D(img, -1, kernel)
+#        img = cv2.filter2D(img, -1, kernel)
         dis_img = utility.change_aspect_ratio(img, t_r)
         square_img = utility.crop_center(dis_img)
         resize_img = cv2.resize(square_img, (256, 256))
@@ -86,7 +77,7 @@ if __name__ == '__main__':
         x = x_bchw.astype(np.float32)
         y_l = model.predict(x, True)
         y_r = np.exp(y_l)
-        fix_img = utility.change_aspect_ratio(dis_img, 1/y_r)
+#        fix_img = utility.change_aspect_ratio(dis_img, 1/y_r)
 
         e_l = t_l - y_l
         e_l_abs = np.abs(t_l - y_l)
@@ -94,9 +85,9 @@ if __name__ == '__main__':
         loss.append(e_l)
         loss_abs.append(e_l_abs)
 
-        file_name_f = os.path.join(save_path_f, ('%.18f' % e_l))
-        file_name_d = os.path.join(save_path_d, ('%.18f' % e_l))
-        file_name_o = os.path.join(save_path_o, ('%.18f' % e_l))
+#        file_name_f = os.path.join(save_path_f, ('%.18f' % e_l))
+#        file_name_d = os.path.join(save_path_d, ('%.18f' % e_l))
+#        file_name_o = os.path.join(save_path_o, ('%.18f' % e_l))
 
         print '[test_data]:', i+1
         print '[t_l]:', round(t_l, 4), '\t[t_r]:', round(t_r, 4)
@@ -136,11 +127,14 @@ if __name__ == '__main__':
 #        plt.imshow(img)
 #        plt.show()
 #        time.sleep(1)
-
 #    make_html.make_html(save_path_d)
 #    make_html.make_html(save_path_f)
 #    make_html.make_html(save_path_o)
+    return loss, loss_abs
 
+
+def draw_graph(loss, loss_abs, th, num_test):
+    base_line = np.ones((num_test,))
     for i in range(num_test):
         base_line[i] = th
 
@@ -177,7 +171,6 @@ if __name__ == '__main__':
     plt.grid()
     plt.show()
 
-    mu, sigma = 100, 15
     fig = plt.figure(figsize=(16, 12))
     ax = fig.add_subplot(1, 1, 1)
     ax.hist(error, bins=25)
@@ -193,3 +186,36 @@ if __name__ == '__main__':
             count += 1
     print 'under', th, '=', count, '%'
     print '[mean]:', np.mean(loss_abs)
+
+
+if __name__ == '__main__':
+    # テスト結果を保存する場所
+    save_root = r'E:\demo'
+    # テストに使うの画像ファイルのパスが記述されたテキストファイル
+    txt_file = r'E:\voc\variable_dataset\output_size_256\output_size_256.txt'
+    # テストに使うモデルのnpzファイルの場所
+    model_file = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\dog_data_regression_ave_pooling\1485768519.06_asp_max_4.0\dog_data_regression_ave_pooling.npz'
+    # 学習データ数
+    num_train = 17000
+    # テストデータ数
+    num_test = 100
+    # 歪み画像の最大アスペクト比
+    asp_r_max = 3.0
+    # 修正成功とみなす修正画像のアスペクト比の最大値
+    th = np.log(1.1)
+
+    # テスト結果を保存するフォルダを作成
+    save_path_f, save_path_d, save_path_o = create_save_folder(save_root)
+
+    # モデル読み込み
+    model = dog_data_regression_ave_pooling.Convnet().to_gpu()
+    # Optimizerの設定
+    serializers.load_npz(model_file, model)
+
+    # テスト用画像データのパスを取得
+    test_paths = load_test_data(txt_file, num_train, num_test)
+
+    #歪み画像の修正を実行
+    loss, loss_abs = fix(model, test_paths, save_path_f, save_path_d, save_path_o)
+
+    draw_graph(loss, loss_abs, th, num_test)
