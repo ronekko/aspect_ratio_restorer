@@ -17,7 +17,7 @@ import dog_data_regression_ave_pooling
 import make_html
 
 
-def create_save_folder(save_root):
+def create_save_folder(save_root, model_file):
     folder_name = model_file.split('\\')[-2]
     fix_folder = os.path.join(folder_name, 'fix')
     distorted_folder = os.path.join(folder_name, 'distorted')
@@ -95,7 +95,12 @@ def fix(model, stream, save_path_f, save_path_d, save_path_o):
     return loss, loss_abs
 
 
-def draw_graph(loss, loss_abs, success_asp, num_test):
+def draw_graph(loss, loss_abs, success_asp, num_test, save_root, model_file):
+    folder_name = model_file.split('\\')[-2]
+    save_root = os.path.join(save_root, folder_name)
+    loss_abs_file = os.path.join(save_root, 'loss_abs')
+    loss_file = os.path.join(save_root, 'loss')
+    loss_hist = os.path.join(save_root, 'loss_hist')
     threshold = np.log(success_asp)
     base_line = np.ones((num_test,))
     for i in range(num_test):
@@ -115,39 +120,42 @@ def draw_graph(loss, loss_abs, success_asp, num_test):
     plt.plot(error_abs)
     plt.plot(base_line, 'r-')
     plt.title('absolute Error for each test data', fontsize=28)
-    plt.legend(["Error", "Error=0.0953"], loc="upper left")
+    plt.legend(["Error", "log(1.1)"], loc="upper right")
     plt.xlabel('Order of test data number', fontsize=28)
-    plt.ylabel('Error(|t-y|)', fontsize=28)
+    plt.ylabel('Error(|t-y|) in log scale', fontsize=28)
     plt.ylim(0, max(error_abs)+0.01)
     plt.grid()
+    plt.savefig(loss_abs_file+'.jpg', format='jpg', bbox_inches='tight')
     plt.show()
 
     plt.figure(figsize=(16, 12))
-    plt.plot(error)
-    plt.plot(base_line, 'r-')
-    plt.plot(-base_line, 'r-')
+    plt.plot(error, label='Error')
+    plt.plot(base_line, label="log(1.1)")
+    plt.plot(-base_line, label="log(1.1^-1)")
     plt.title('Error for each test data', fontsize=28)
-    plt.legend(["Error", "Error=0.0953", "Error=-0.0953"], loc="upper left")
+    plt.legend(loc="upper right")
     plt.xlabel('Order of test data number', fontsize=28)
-    plt.ylabel('Error(t-y)', fontsize=28)
+    plt.ylabel('Error(t-y) in log scale', fontsize=28)
     plt.ylim(-max_value-0.01, max_value+0.01)
     plt.grid()
+    plt.savefig(loss_file+'.jpg', format='jpg', bbox_inches='tight')
     plt.show()
 
     fig = plt.figure(figsize=(16, 12))
     ax = fig.add_subplot(1, 1, 1)
     ax.hist(error, bins=25)
     ax.set_title('Error histogram', fontsize=28)
-    ax.set_xlabel('Error(t-y)', fontsize=28)
+    ax.set_xlabel('Error(t-y) in log scale', fontsize=28)
     ax.set_ylabel('Percentage', fontsize=28)
     plt.xlim(-1, 1)
+    plt.savefig(loss_hist+'.jpg', format='jpg', bbox_inches='tight')
     fig.show()
 
     count = 0
     for i in range(num_test):
         if loss_abs[0][i] < threshold:
             count += 1
-    print 'under', threshold, '=', count, '%'
+    print 'under log(1.1) =', count, '%'
     print '[mean]:', np.mean(loss_abs)
 
 
@@ -166,7 +174,8 @@ if __name__ == '__main__':
     batch_size = 100
 
     # テスト結果を保存するフォルダを作成
-    save_path_f, save_path_d, save_path_o = create_save_folder(save_root)
+    save_path_f, save_path_d, save_path_o = create_save_folder(save_root,
+                                                               model_file)
 
     # モデル読み込み
     model = dog_data_regression_ave_pooling.Convnet().to_gpu()
@@ -182,4 +191,4 @@ if __name__ == '__main__':
                          save_path_f, save_path_d, save_path_o)
 
     # 修正結果の誤差を描画
-    draw_graph(loss, loss_abs, success_asp, num_test)
+    draw_graph(loss, loss_abs, success_asp, num_test, save_root, model_file)
