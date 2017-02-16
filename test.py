@@ -9,32 +9,118 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 
-import cv2
-
 from chainer import serializers
 
 import dog_data_regression_ave_pooling
-import utility
+import load_datasets
+
+
+def fix(model, stream, t):
+    for it in stream_test.get_epoch_iterator():
+        x, t = load_datasets.data_crop(it[0], test=True, t=t)
+    y = model.predict(x, True)
+    error = t - y
+    error_abs = np.abs(t - y)
+    return error, error_abs
+
+
+def draw_graph(loss, loss_abs, success_asp, num_test, num_split):
+    num_t = num_split + 1
+    threshold = np.log(success_asp)
+    base_line = np.ones((num_test,))
+    for i in range(num_test):
+        base_line[i] = threshold
+
+    mean_loss_abs = np.mean(loss_abs, axis=0)
+    plt.figure(figsize=(18, 10))
+    plt.plot(mean_loss_abs, label='average Error')
+    plt.plot(base_line, 'r-', label='Error=0.0953')
+    plt.title('average absolute Error for each test data', fontsize=28)
+    plt.legend(loc="upper left")
+    plt.xlabel('Order of test data number', fontsize=28)
+    plt.ylabel('average Error(|t-y|)', fontsize=28)
+    plt.ylim(0, max(mean_loss_abs)+0.01)
+    plt.grid()
+    plt.show()
+
+    plt.figure(figsize=(18, 10))
+    plt.boxplot(loss)
+    plt.xlim([np.log(1/3.5), np.log(3.5)])
+    plt.xticks(range(num_t), t_list)
+    plt.title('Order of r in log scale vs. Error(t-y)', fontsize=28)
+    plt.xlabel('Order of r in log scale', fontsize=28)
+    plt.ylabel('Error(t-y)', fontsize=28)
+    plt.grid()
+    plt.show()
+
+    loss_dot = np.stack(loss, axis=0)
+    loss_dot = loss_dot.reshape(num_t, num_test)
+    average = np.mean(loss, axis=1)
+    plt.figure(figsize=(18, 10))
+    plt.plot(loss_dot, 'o', c='#348ABD')
+    plt.plot(average, 'b-', label='average Error')
+    plt.xticks(range(num_t), t_list)
+    plt.title('Order of r in log scale vs. Error(t-y)', fontsize=28)
+    plt.legend(loc="upper right")
+    plt.xlabel('Order of r in log scale', fontsize=28)
+    plt.ylabel('Error(t-y)', fontsize=28)
+    plt.grid()
+    plt.show()
+
+    plt.figure(figsize=(18, 10))
+    plt.plot(average, label='average Error')
+    plt.plot(base_line, 'r-', label='Error=0.0953')
+    plt.plot(-base_line, 'r-', label='Error=-0.0953')
+    plt.xticks(range(num_t), t_list)
+    plt.xlim(0, num_t)
+    plt.title('Order of r in log scale vs. Error(t-y)', fontsize=28)
+    plt.legend(loc="upper right")
+    plt.xlabel('Order of r in log scale', fontsize=28)
+    plt.ylabel('Error(t-y)', fontsize=28)
+    plt.grid()
+    plt.show()
+
+    average_abs = np.abs(average)
+    plt.figure(figsize=(18, 10))
+    plt.plot(average_abs, label='average Error')
+    plt.plot(base_line, 'r-', label='Error=0.0953')
+    plt.xticks(range(num_t), t_list)
+    plt.xlim(0, num_t)
+    plt.title('Order of r in log scale vs. Error(|t-y|)', fontsize=28)
+    plt.legend(loc="upper right")
+    plt.xlabel('Order of r in log scale', fontsize=28)
+    plt.ylabel('Error(|t-y|)', fontsize=28)
+    plt.grid()
+    plt.show()
+
+    count = 0
+    for i in range(num_test):
+        if mean_loss_abs[i] < threshold:
+            count += 1
+    print 'under', threshold, '=', count, '%'
+    print 'num_test', num_test
+    print 'model_file', model_file
 
 
 if __name__ == '__main__':
     file_name = os.path.splitext(os.path.basename(__file__))[0]
-    # 超パラメータ
+    # テスト結果を保存するルートパス
     save_root = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\demo'
-    txt_file = r'E:\voc\variable_dataset\output_size_256\output_size_256.txt'
+    # hdf5ファイルのルートパス
+    hdf5_filepath = r'E:\voc\variable_dataset\output_size_256\output_size_256.hdf5'
+    # モデルのルートパス
     model_file = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\dog_data_regression_ave_pooling\1485768519.06_asp_max_4.0\dog_data_regression_ave_pooling.npz'
-
+    batch_size = 100
     crop_size = 224
-    num_train = 17000
+    num_train = 16500
+    num_valid = 500
     num_test = 100
-    th = np.log(1.1)
-    num_split = 50
-    test = True
+    success_asp = 1.1  # 修正成功とみなすアスペクト比
+    num_split = 50  # 歪み画像のアスペクト比の段階
 
     loss = []
     loss_abs = []
     t_list = []
-    base_line = np.ones((num_test,))
 
     num_t = num_split + 1
     t_step = np.log(3.0) * 2 / num_split
@@ -48,94 +134,13 @@ if __name__ == '__main__':
     # Optimizerの設定
     serializers.load_npz(model_file, model)
 
-    # テキストファイル読み込み
-    image_paths = []
-    f = open(txt_file, 'r')
-    for path in f:
-        path = path.strip()
-        image_paths.append(path)
-    test_paths = image_paths[num_train:num_train+num_test]
+    stream_train, stream_valid, stream_test = load_datasets.load_dog_stream(
+        hdf5_filepath, batch_size, num_train, num_valid, num_test)
 
     for t in t_list:
         print t
-        # アスペクト比を設定
-        t_l = t
-        t_r = np.exp(t_l)
-        x_list = []
+        error, error_abs = fix(model, stream_test, t)
+        loss.append(error)
+        loss_abs.append(error_abs)
 
-        for i in range(num_test):
-            # 画像読み込み
-            img = plt.imread(test_paths[i])
-            dis_img = utility.change_aspect_ratio(img, t_r)
-            square_img = utility.crop_center(dis_img)
-            resize_img = cv2.resize(square_img, (256, 256))
-            crop_img = utility.crop_224(resize_img)
-            x_list.append(crop_img)
-
-        x_bhwc = np.stack(x_list, axis=0)
-        x_bchw = np.transpose(x_bhwc, (0, 3, 1, 2))
-        x_bchw = x_bchw.astype(np.float32)
-        y_l = model.predict(x_bchw, test)
-        y_r = np.exp(y_l)
-
-        e_l = t_l - y_l
-        e_l_abs = np.abs(t_l - y_l)
-        e_r = t_r - y_r
-        loss.append(e_l)
-        loss_abs.append(e_l_abs)
-
-    for i in range(100):
-        base_line[i] = th
-
-    error = np.stack(loss, axis=0)
-    error_flat = error.flat
-    a = error_flat
-#    if np.abs(max(a)) > np.abs(min(a)):
-#        max_value = np.abs(max(a))
-#    else:
-#        max_value = np.abs(min(a))
-
-    mean_value_abs = np.mean(loss_abs, axis=0)
-    plt.figure(figsize=(16, 12))
-    plt.plot(mean_value_abs)
-    plt.plot(base_line, 'r-')
-    plt.title('average absolute Error for each test data', fontsize=28)
-    plt.legend(["average Error", "Error=0.0953"], loc="upper left")
-    plt.xlabel('Order of test data number', fontsize=28)
-    plt.ylabel('average Error(|t-y|)', fontsize=28)
-    plt.ylim(0, max(mean_value_abs)+0.01)
-    plt.grid()
-    plt.show()
-
-    losses = np.stack(loss, axis=0)
-    losses = losses.reshape(num_t, num_test)
-    average = np.mean(loss, axis=1)
-    plt.figure(figsize=(16, 12))
-    plt.plot(losses, 'o', c='#348ABD')
-    plt.plot(average, 'r-', label='average Error')
-#    plt.xlim([np.log(1/3.5), np.log(3.5)])
-    plt.xticks(range(num_t), t_list)
-    plt.title('Order of r in log scale vs. Error(t-y)', fontsize=28)
-    plt.legend(loc="upper right")
-    plt.xlabel('Order of r in log scale', fontsize=28)
-    plt.ylabel('Error(t-y)', fontsize=28)
-    plt.grid()
-    plt.show()
-
-    plt.figure(figsize=(16, 12))
-    plt.boxplot(loss)
-    plt.xlim([np.log(1/3.5), np.log(3.5)])
-    plt.xticks(range(num_t), t_list)
-    plt.title('Order of r in log scale vs. Error(t-y)', fontsize=28)
-    plt.xlabel('Order of r in log scale', fontsize=28)
-    plt.ylabel('Error(t-y)', fontsize=28)
-    plt.grid()
-    plt.show()
-
-    count = 0
-    for i in range(100):
-        if mean_value_abs[i] < th:
-            count += 1
-    print 'under', th, '=', count, '%'
-    print 'num_test', num_test
-    print 'model_file', model_file
+    draw_graph(loss, loss_abs, success_asp, num_test, num_split)

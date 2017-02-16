@@ -9,7 +9,7 @@ import numpy as np
 import cv2
 
 
-def change_aspect_ratio(image, aspect_ratio):
+def change_aspect_ratio(image, aspect_ratio, u):
     h_image, w_image = image.shape[:2]
     r = aspect_ratio
 
@@ -22,10 +22,27 @@ def change_aspect_ratio(image, aspect_ratio):
     # cv2.resize:（image, (w, h))
     # transform.resize:(image, (h, w))
     if image.shape[2] == 1:
-        resize_image = cv2.resize(image, (w_image, h_image))[..., None]
+        if u == 0:
+            resize_image = cv2.resize(image, (w_image, h_image),interpolation=cv2.INTER_NEAREST)[..., None]
+        elif u == 1:
+            resize_image = cv2.resize(image, (w_image, h_image),interpolation=cv2.INTER_LINEAR)[..., None]
+        elif u == 2:
+            resize_image = cv2.resize(image, (w_image, h_image),interpolation=cv2.INTER_AREA)[..., None]
+        elif u == 3:
+            resize_image = cv2.resize(image, (w_image, h_image),interpolation=cv2.INTER_CUBIC)[..., None]
+        elif u == 4:
+            resize_image = cv2.resize(image, (w_image, h_image),interpolation=cv2.INTER_LANCZOS4)[..., None]
     else:
-        resize_image = cv2.resize(image, (w_image, h_image))
-
+        if u == 0:
+            resize_image = cv2.resize(image, (w_image, h_image),interpolation=cv2.INTER_NEAREST)
+        elif u == 1:
+            resize_image = cv2.resize(image, (w_image, h_image),interpolation=cv2.INTER_LINEAR)
+        elif u == 2:
+            resize_image = cv2.resize(image, (w_image, h_image),interpolation=cv2.INTER_AREA)
+        elif u == 3:
+            resize_image = cv2.resize(image, (w_image, h_image),interpolation=cv2.INTER_CUBIC)
+        elif u == 4:
+            resize_image = cv2.resize(image, (w_image, h_image),interpolation=cv2.INTER_LANCZOS4)
     return resize_image
 
 
@@ -83,11 +100,12 @@ def sample_random_aspect_ratio(r_max, r_min=1):
 
 
 def fix_image(image, aspect_ratio):
+    u = 1
     image_size = image.shape[2]
     r = 1 / aspect_ratio
     image = image.reshape(-1, image_size, image_size)
     image = np.transpose(image, (1, 2, 0))
-    fix_image = change_aspect_ratio(image, r)
+    fix_image = change_aspect_ratio(image, r, u)
     fix_image = np.transpose(fix_image, (2, 0, 1))
     return fix_image
 
