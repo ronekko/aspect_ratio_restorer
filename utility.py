@@ -127,3 +127,19 @@ def random_crop_and_flip(image, crop_size):
         image = image[:, ::-1]  # 左右反転
 
     return image
+
+
+def crop_224(image):
+    h_image, w_image = image.shape[:2]
+    h_crop = 224
+    w_crop = 224
+
+    # 0以上 h_image - h_crop以下の整数乱数
+    top = (h_image - h_crop + 1) / 2
+    left = (h_image - h_crop + 1) / 2
+    bottom = top + h_crop
+    right = left + w_crop
+
+    image = image[top:bottom, left:right]
+
+    return image
