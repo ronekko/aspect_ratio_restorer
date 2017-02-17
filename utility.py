@@ -8,6 +8,7 @@ Created on Wed Dec 14 20:54:58 2016
 import os
 import numpy as np
 import cv2
+import matplotlib.pyplot as plt
 
 
 def change_aspect_ratio(image, aspect_ratio, u):
@@ -153,3 +154,8 @@ def create_folder(root, folder_name):
     else:
         os.makedirs(folder_path)
     return folder_path
+
+
+def save_image(image, save_path, image_name):
+    image_name = os.path.join(save_path, image_name)
+    plt.imsave(image_name+'.jpg', image)

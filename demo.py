@@ -17,27 +17,6 @@ import dog_data_regression_ave_pooling
 import make_html
 
 
-def create_save_folder(save_root, model_file):
-    folder_name = model_file.split('\\')[-2]
-    fix_folder = os.path.join(folder_name, 'fix')
-    distorted_folder = os.path.join(folder_name, 'distorted')
-    original_folder = os.path.join(folder_name, 'original')
-    save_path_f = os.path.join(save_root, fix_folder)
-    save_path_d = os.path.join(save_root, distorted_folder)
-    save_path_o = os.path.join(save_root, original_folder)
-    if os.path.exists(save_path_f):
-        pass
-    elif os.path.exists(save_path_d):
-        pass
-    elif os.path.exists(save_path_o):
-        pass
-    else:
-        os.makedirs(save_path_f)
-        os.makedirs(save_path_d)
-        os.makedirs(save_path_o)
-    return save_path_f, save_path_d, save_path_o
-
-
 def fix(model, stream, save_path_f, save_path_d, save_path_o):
     loss = []
     loss_abs = []
@@ -50,9 +29,6 @@ def fix(model, stream, save_path_f, save_path_d, save_path_o):
         e_r = t_r - y_r
         e_l_abs = np.abs(t_l - y_l)
         for i in range(len(e_l)):
-            file_name_f = os.path.join(save_path_f, ('%.18f' % e_l[i]))
-            file_name_d = os.path.join(save_path_d, ('%.18f' % e_l[i]))
-            file_name_o = os.path.join(save_path_o, ('%.18f' % e_l[i]))
             img = it[0][i]
             dis_img = dis_img = utility.change_aspect_ratio(img, t_r[i], 1)
             fix_img = utility.change_aspect_ratio(dis_img, 1/y_r[i], 1)
@@ -63,28 +39,29 @@ def fix(model, stream, save_path_f, save_path_d, save_path_o):
             print '[e_l]:', round(e_l[i], 4), '\t[e_r]:', round(e_r[i], 4)
 
             plt.figure(figsize=(16, 16))
-#            plt.subplot(131)
-#            plt.title('Distorted image')
+            plt.subplot(131)
+            plt.title('Distorted image')
             plt.tick_params(labelbottom='off', labeltop='off', labelleft='off',
                             labelright='off')
             plt.tick_params(bottom='off', top='off', left='off', right='off')
             plt.imshow(dis_img)
-            plt.savefig(file_name_d+'.jpg', format='jpg', bbox_inches='tight')
-#            plt.subplot(132)
-#            plt.title('Fixed image')
+            plt.subplot(132)
+            plt.title('Fixed image')
             plt.tick_params(labelbottom='off', labeltop='off', labelleft='off',
                             labelright='off')
             plt.tick_params(bottom='off', top='off', left='off', right='off')
             plt.imshow(fix_img)
-            plt.savefig(file_name_f+'.jpg', format='jpg', bbox_inches='tight')
-#            plt.subplot(133)
-#            plt.title('Normal image')
+            plt.subplot(133)
+            plt.title('Normal image')
             plt.tick_params(labelbottom='off', labeltop='off', labelleft='off',
                             labelright='off')
             plt.tick_params(bottom='off', top='off', left='off', right='off')
             plt.imshow(img)
-            plt.savefig(file_name_o+'.jpg', format='jpg', bbox_inches='tight')
-#            plt.show()
+            plt.show()
+
+            utility.save_image(dis_img, save_path_d, ('%.18f' % e_l[i]))
+            utility.save_image(fix_img, save_path_f, ('%.18f' % e_l[i]))
+            utility.save_image(img, save_path_o, ('%.18f' % e_l[i]))
 
     loss.append(e_l)
     loss_abs.append(e_l_abs)
