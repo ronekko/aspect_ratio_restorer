@@ -13,7 +13,6 @@ import h5py
 from fuel.datasets.hdf5 import H5PYDataset
 from skimage import io, color, transform
 import tqdm
-import cv2
 import utility
 
 
@@ -44,7 +43,7 @@ def output_path_list(path_list, output_root_dir):
     f.close()
 
 
-def output_hdf5(path_list, data_chw, output_root_dir):
+def output_hdf5(path_list, output_root_dir):
     num_data = len(path_list)
     shapes = []
 
@@ -96,11 +95,9 @@ def output_hdf5(path_list, data_chw, output_root_dir):
     f.close()
 
 
-def main(data_location, output_location, output_size):
+def main(data_location, output_location):
     dataset_root_dir = r'E:\voc\VOCdevkit\VOC2012\JPEGImages'
-    output_dir_name = 'output_size_' + str(output_size)
-    output_root_dir = os.path.join(output_location, output_dir_name)
-    data_chw = (3, output_size, output_size)
+    output_root_dir = output_location
 
     if os.path.exists(output_root_dir):
         print u"すでに存在するため終了します."
@@ -111,12 +108,13 @@ def main(data_location, output_location, output_size):
     path_list = create_path_list(data_location, dataset_root_dir)
     shuffled_path_list = np.random.permutation(path_list)
     output_path_list(shuffled_path_list, output_root_dir)
-    output_hdf5(shuffled_path_list, data_chw, output_root_dir)
+    output_hdf5(shuffled_path_list, output_root_dir)
 
 
 if __name__ == '__main__':
-    data_location = r'E:\voc'
-    output_location = r'E:\voc\variable_dataset'
-    output_size = 256
+    # PASCALVOC2012データセットの保存場所
+    data_location = r'E:\voc2012'
+    # hdf５ファイルを保存する場所
+    output_location = r'E:\voc\hdf5_dataset'
 
-    main(data_location, output_location, output_size)
+    main(data_location, output_location)
