@@ -16,16 +16,6 @@ import load_datasets
 import utility
 
 
-def create_save_folder(save_root, model_file):
-    folder_name = model_file.split('\\')[-2]
-    save_path = os.path.join(save_root, folder_name)
-    if os.path.exists(save_path):
-        pass
-    else:
-        os.makedirs(save_path)
-    return save_path
-
-
 def fix(model, stream, t):
     for it in stream_test.get_epoch_iterator():
         x, t = load_datasets.data_crop(it[0], random=False, t=t)
