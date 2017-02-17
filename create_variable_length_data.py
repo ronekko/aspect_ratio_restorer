@@ -11,9 +11,8 @@ import sys
 import numpy as np
 import h5py
 from fuel.datasets.hdf5 import H5PYDataset
-from skimage import io, color, transform
+from skimage import io
 import tqdm
-import utility
 
 
 def create_path_list(data_location, dataset_root_dir):
