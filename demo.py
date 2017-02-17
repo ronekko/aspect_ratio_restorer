@@ -17,25 +17,40 @@ import dog_data_regression_ave_pooling
 import make_html
 
 
-def fix(model, stream, save_path_f, save_path_d, save_path_o):
+def lossfun(model, stream):
     loss = []
     loss_abs = []
+    target = []
+    predict = []
     for it in stream.get_epoch_iterator():
         x, t_l = load_datasets.data_crop(it[0])
-        t_r = np.exp(t_l)
         y_l = model.predict(x, True)
-        y_r = np.exp(y_l)
         e_l = t_l - y_l
-        e_r = t_r - y_r
         e_l_abs = np.abs(t_l - y_l)
-        for i in range(len(e_l)):
+        loss.append(e_l)
+        loss_abs.append(e_l_abs)
+        target.append(t_l)
+        predict.append(y_l)
+
+    return loss, loss_abs, target, predict
+
+
+def show_and_save(stream, target, predict, save_path_f, save_path_d,
+                  save_path_o):
+    batch = 0
+    t_r = np.exp(target)
+    y_r = np.exp(predict)
+    for it in stream.get_epoch_iterator():
+        e_l = target[batch] - predict[batch]
+        e_r = t_r[batch] - y_r[batch]
+        for i in range(len(it[0])):
             img = it[0][i]
-            dis_img = dis_img = utility.change_aspect_ratio(img, t_r[i], 1)
-            fix_img = utility.change_aspect_ratio(dis_img, 1/y_r[i], 1)
+            dis_img = utility.change_aspect_ratio(img, t_r[batch][i], 1)
+            fix_img = utility.change_aspect_ratio(dis_img, 1/y_r[batch][i], 1)
 
             print '[test_data]:', i+1
-            print '[t_l]:', round(t_l[i], 4), '\t[t_r]:', round(t_r[i], 4)
-            print '[y_l]:', round(y_l[i], 4), '\t[y_r]:', round(y_r[i], 4)
+            print '[t_l]:', round(target[batch][i], 4), '\t[t_r]:', round(t_r[batch][i], 4)
+            print '[y_l]:', round(predict[batch][i], 4), '\t[y_r]:', round(y_r[batch][i], 4)
             print '[e_l]:', round(e_l[i], 4), '\t[e_r]:', round(e_r[i], 4)
 
             plt.figure(figsize=(16, 16))
@@ -63,13 +78,10 @@ def fix(model, stream, save_path_f, save_path_d, save_path_o):
             utility.save_image(fix_img, save_path_f, ('%.18f' % e_l[i]))
             utility.save_image(img, save_path_o, ('%.18f' % e_l[i]))
 
-    loss.append(e_l)
-    loss_abs.append(e_l_abs)
-
+        batch += 1
     make_html.make_html(save_path_d)
     make_html.make_html(save_path_f)
     make_html.make_html(save_path_o)
-    return loss, loss_abs
 
 
 def draw_graph(loss, loss_abs, success_asp, num_test, save_root):
@@ -159,7 +171,6 @@ if __name__ == '__main__':
 
     # モデル読み込み
     model = dog_data_regression_ave_pooling.Convnet().to_gpu()
-    # Optimizerの設定
     serializers.load_npz(model_file, model)
 
     # streamを取得
@@ -167,8 +178,10 @@ if __name__ == '__main__':
         hdf5_file, batch_size)
 
     # 歪み画像の修正を実行
-    loss, loss_abs = fix(model, stream_test,
-                         fix_folder_path, dis_folder_path, ori_folder_path)
+    loss, loss_abs, target, predict = lossfun(model, stream_test)
+
+    show_and_save(stream_test, target, predict, fix_folder_path,
+                  dis_folder_path, ori_folder_path)
 
     # 修正結果の誤差を描画
     draw_graph(loss, loss_abs, success_asp, num_test, test_folder_path)
