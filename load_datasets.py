@@ -66,7 +66,7 @@ def load_toy_stream(batch_size, ):
 
 
 def data_crop(X_batch, aspect_ratio_max=3.0, output_size=256, crop_size=224,
-              test=False, t=0):
+              random=True, t=0):
     images = []
     ts = []
 
@@ -74,7 +74,7 @@ def data_crop(X_batch, aspect_ratio_max=3.0, output_size=256, crop_size=224,
         # 補間方法を乱数で設定
         u = np.random.randint(5)
         image = X_batch[b]
-        if test is True:
+        if random is False:
             t = t
         else:
             t = utility.sample_random_aspect_ratio(np.log(aspect_ratio_max),
@@ -99,7 +99,7 @@ def data_crop(X_batch, aspect_ratio_max=3.0, output_size=256, crop_size=224,
         elif u == 4:
             resize_image = cv2.resize(square_image, (output_size, output_size),
                                       interpolation=cv2.INTER_LANCZOS4)
-        if test is True:
+        if random is False:
             crop_image = utility.crop_224(resize_image)
         else:
             crop_image = utility.random_crop_and_flip(resize_image, crop_size)
@@ -113,14 +113,14 @@ def data_crop(X_batch, aspect_ratio_max=3.0, output_size=256, crop_size=224,
 
 
 def data_padding(X_batch, aspect_ratio_max=3.0, output_size=256, crop_size=224,
-                 test=False, t=0):
+                 random=True, t=0):
     images = []
     ts = []
     for b in range(X_batch.shape[0]):
         # 補間方法を乱数で設定
         u = np.random.randint(5)
         image = X_batch[b]
-        if test is True:
+        if random is False:
             t = t
         else:
             t = utility.sample_random_aspect_ratio(np.log(aspect_ratio_max),
@@ -144,7 +144,7 @@ def data_padding(X_batch, aspect_ratio_max=3.0, output_size=256, crop_size=224,
             resize_image = cv2.resize(square_image, (output_size, output_size),
                                       interpolation=cv2.INTER_LANCZOS4)
         resize_image = resize_image[..., None]
-        if test is True:
+        if random is False:
             crop_image = utility.crop_224(resize_image)
         else:
             crop_image = utility.random_crop_and_flip(resize_image, crop_size)
@@ -158,16 +158,16 @@ def data_padding(X_batch, aspect_ratio_max=3.0, output_size=256, crop_size=224,
 
 
 def load_data(queue, stream, crop, aspect_ratio_max=3.0, output_size=256,
-              crop_size=224, test=False, t=0):
+              crop_size=224, random=True, t=0):
     while True:
         try:
             for X in stream.get_epoch_iterator():
                 if crop is True:
                     X, T = data_crop(X[0], aspect_ratio_max, output_size,
-                                     crop_size, test, t)
+                                     crop_size, random, t)
                 else:
                     X, T = data_padding(X[0], aspect_ratio_max, crop_size,
-                                        test, t)
+                                        random, t)
                 queue.put((X, T), timeout=0.05)
         except Full:
             print 'Full'

@@ -5,6 +5,7 @@ Created on Wed Dec 14 20:54:58 2016
 @author: yamane
 """
 
+import os
 import numpy as np
 import cv2
 
@@ -143,3 +144,12 @@ def crop_224(image):
     image = image[top:bottom, left:right]
 
     return image
+
+
+def create_folder(root, folder_name):
+    folder_path = os.path.join(root, folder_name)
+    if os.path.exists(folder_path):
+        pass
+    else:
+        os.makedirs(folder_path)
+    return folder_path

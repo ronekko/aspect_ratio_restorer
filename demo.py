@@ -63,28 +63,28 @@ def fix(model, stream, save_path_f, save_path_d, save_path_o):
             print '[e_l]:', round(e_l[i], 4), '\t[e_r]:', round(e_r[i], 4)
 
             plt.figure(figsize=(16, 16))
-            plt.subplot(131)
-            plt.title('Distorted image')
+#            plt.subplot(131)
+#            plt.title('Distorted image')
             plt.tick_params(labelbottom='off', labeltop='off', labelleft='off',
                             labelright='off')
             plt.tick_params(bottom='off', top='off', left='off', right='off')
             plt.imshow(dis_img)
             plt.savefig(file_name_d+'.jpg', format='jpg', bbox_inches='tight')
-            plt.subplot(132)
-            plt.title('Fixed image')
+#            plt.subplot(132)
+#            plt.title('Fixed image')
             plt.tick_params(labelbottom='off', labeltop='off', labelleft='off',
                             labelright='off')
             plt.tick_params(bottom='off', top='off', left='off', right='off')
             plt.imshow(fix_img)
             plt.savefig(file_name_f+'.jpg', format='jpg', bbox_inches='tight')
-            plt.subplot(133)
-            plt.title('Normal image')
+#            plt.subplot(133)
+#            plt.title('Normal image')
             plt.tick_params(labelbottom='off', labeltop='off', labelleft='off',
                             labelright='off')
             plt.tick_params(bottom='off', top='off', left='off', right='off')
             plt.imshow(img)
             plt.savefig(file_name_o+'.jpg', format='jpg', bbox_inches='tight')
-            plt.show()
+#            plt.show()
 
     loss.append(e_l)
     loss_abs.append(e_l_abs)
@@ -95,9 +95,7 @@ def fix(model, stream, save_path_f, save_path_d, save_path_o):
     return loss, loss_abs
 
 
-def draw_graph(loss, loss_abs, success_asp, num_test, save_root, model_file):
-    folder_name = model_file.split('\\')[-2]
-    save_root = os.path.join(save_root, folder_name)
+def draw_graph(loss, loss_abs, success_asp, num_test, save_root):
     loss_abs_file = os.path.join(save_root, 'loss_abs')
     loss_file = os.path.join(save_root, 'loss')
     loss_hist = os.path.join(save_root, 'loss_hist')
@@ -173,9 +171,14 @@ if __name__ == '__main__':
     success_asp = 1.1  # 修正成功とみなす修正画像のアスペクト比の最大値
     batch_size = 100
 
+    # モデルのファイル名をフォルダ名にする
+    folder_name = model_file.split('\\')[-2]
+
     # テスト結果を保存するフォルダを作成
-    save_path_f, save_path_d, save_path_o = create_save_folder(save_root,
-                                                               model_file)
+    test_folder_path = utility.create_folder(save_root, folder_name)
+    fix_folder_path = utility.create_folder(test_folder_path, 'fix')
+    dis_folder_path = utility.create_folder(test_folder_path, 'distorted')
+    ori_folder_path = utility.create_folder(test_folder_path, 'original')
 
     # モデル読み込み
     model = dog_data_regression_ave_pooling.Convnet().to_gpu()
@@ -188,7 +191,7 @@ if __name__ == '__main__':
 
     # 歪み画像の修正を実行
     loss, loss_abs = fix(model, stream_test,
-                         save_path_f, save_path_d, save_path_o)
+                         fix_folder_path, dis_folder_path, ori_folder_path)
 
     # 修正結果の誤差を描画
-    draw_graph(loss, loss_abs, success_asp, num_test, save_root, model_file)
+    draw_graph(loss, loss_abs, success_asp, num_test, test_folder_path)

@@ -13,6 +13,7 @@ from chainer import serializers
 
 import dog_data_regression_ave_pooling
 import load_datasets
+import utility
 
 
 def create_save_folder(save_root, model_file):
@@ -27,7 +28,7 @@ def create_save_folder(save_root, model_file):
 
 def fix(model, stream, t):
     for it in stream_test.get_epoch_iterator():
-        x, t = load_datasets.data_crop(it[0], test=True, t=t)
+        x, t = load_datasets.data_crop(it[0], random=False, t=t)
     y = model.predict(x, True)
     error = t - y
     error_abs = np.abs(t - y)
@@ -132,16 +133,17 @@ if __name__ == '__main__':
     # モデルのルートパス
     model_file = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\dog_data_regression_ave_pooling\1485768519.06_asp_max_4.0\dog_data_regression_ave_pooling.npz'
     batch_size = 100
-    crop_size = 224
+    crop_size = 224  # 切り抜きサイズ
     num_train = 16500
     num_valid = 500
     num_test = 100
     success_asp = 1.1  # 修正成功とみなすアスペクト比
     num_split = 50  # 歪み画像のアスペクト比の段階
 
-    loss = []
-    loss_abs = []
+    loss_list = []
+    loss_abs_list = []
     t_list = []
+    folder_name = model_file.split('\\')[-2]
 
     num_t = num_split + 1
     t_step = np.log(3.0) * 2 / num_split
@@ -151,7 +153,7 @@ if __name__ == '__main__':
         t = t + t_step
 
     # 結果を保存するフォルダを作成
-    save_path = create_save_folder(save_root, model_file)
+    folder_path = utility.create_folder(save_root, folder_name)
     # モデル読み込み
     model = dog_data_regression_ave_pooling.Convnet().to_gpu()
     # Optimizerの設定
@@ -162,8 +164,8 @@ if __name__ == '__main__':
     # アスペクト比ごとに歪み画像を作成し、修正誤差を計算
     for t in t_list:
         print t
-        error, error_abs = fix(model, stream_test, t)
-        loss.append(error)
-        loss_abs.append(error_abs)
+        loss, loss_abs = fix(model, stream_test, t)
+        loss_list.append(loss)
+        loss_abs_list.append(loss_abs)
     # 修正誤差をグラフに描画
-    draw_graph(loss, loss_abs, success_asp, num_test, num_split, save_path)
+    draw_graph(loss_list, loss_abs_list, success_asp, num_test, num_split, folder_path)
