@@ -25,13 +25,16 @@ def fix(model, stream, t):
     return error, error_abs
 
 
-def draw_graph(loss, loss_abs, success_asp, num_test, num_split, save_path):
+def draw_graph(loss, loss_abs, success_asp, num_test, t_list, save_path):
     average_abs_file = os.path.join(save_path, 'average_abs')
     loss_file = os.path.join(save_path, 'loss')
     dot_file = os.path.join(save_path, 'dot_hist')
     average_asp_file = os.path.join(save_path, 'average_asp')
     average_asp_abs_file = os.path.join(save_path, 'average_asp_abs')
-    num_t = num_split + 1
+    num_t = len(t_list)
+    prot_t = []
+    for i in t_list:
+        prot_t.append(round(i, 2))
     threshold = np.log(success_asp)
     base_line = np.ones((num_test,))
     for i in range(num_test):
@@ -50,10 +53,10 @@ def draw_graph(loss, loss_abs, success_asp, num_test, num_split, save_path):
     plt.savefig(average_abs_file+'.jpg', format='jpg', bbox_inches='tight')
     plt.show()
 
-    plt.figure(figsize=(18, 10))
+    plt.figure(figsize=(26, 10))
     plt.boxplot(loss)
     plt.xlim([np.log(1/3.5), np.log(3.5)])
-    plt.xticks(range(num_t), t_list)
+    plt.xticks(range(num_t), prot_t)
     plt.title('Error for each aspect ratio in log scale', fontsize=28)
     plt.xlabel('Order of aspect ratio in log scale', fontsize=28)
     plt.ylabel('Error(t-y) in log scale', fontsize=28)
@@ -64,10 +67,10 @@ def draw_graph(loss, loss_abs, success_asp, num_test, num_split, save_path):
     loss_dot = np.stack(loss, axis=0)
     loss_dot = loss_dot.reshape(num_t, num_test)
     average = np.mean(loss, axis=1)
-    plt.figure(figsize=(18, 10))
+    plt.figure(figsize=(26, 10))
     plt.plot(loss_dot, 'o', c='#348ABD')
     plt.plot(average, label='average')
-    plt.xticks(range(num_t), t_list)
+    plt.xticks(range(num_t), prot_t)
     plt.title('Error for each aspect ratio in log scale', fontsize=28)
     plt.legend(loc="upper right")
     plt.xlabel('Order of aspect ratio in log scale', fontsize=28)
@@ -76,11 +79,11 @@ def draw_graph(loss, loss_abs, success_asp, num_test, num_split, save_path):
     plt.savefig(dot_file+'.jpg', format='jpg', bbox_inches='tight')
     plt.show()
 
-    plt.figure(figsize=(18, 10))
+    plt.figure(figsize=(26, 10))
     plt.plot(average, label='average Error')
     plt.plot(base_line, label='log(1.1)')
     plt.plot(-base_line, label='log(1.1^-1)')
-    plt.xticks(range(num_t), t_list)
+    plt.xticks(range(num_t), prot_t)
     plt.xlim(0, num_t)
     plt.title('average Error for each aspect ratio in log scale', fontsize=28)
     plt.legend(loc="upper right")
@@ -91,10 +94,10 @@ def draw_graph(loss, loss_abs, success_asp, num_test, num_split, save_path):
     plt.show()
 
     average_abs = np.abs(average)
-    plt.figure(figsize=(18, 10))
+    plt.figure(figsize=(26, 10))
     plt.plot(average_abs, label='average absolute Error')
     plt.plot(base_line, label='log(1,1)')
-    plt.xticks(range(num_t), t_list)
+    plt.xticks(range(num_t), prot_t)
     plt.xlim(0, num_t)
     plt.title('average absolute Error for each aspect ratio in log scale',
               fontsize=28)
@@ -158,4 +161,4 @@ if __name__ == '__main__':
         loss_list.append(loss)
         loss_abs_list.append(loss_abs)
     # 修正誤差をグラフに描画
-    draw_graph(loss_list, loss_abs_list, success_asp, num_test, num_split, folder_path)
+    draw_graph(loss_list, loss_abs_list, success_asp, num_test, t_list, folder_path)
