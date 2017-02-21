@@ -93,12 +93,13 @@ def draw_graph(loss, loss_abs, success_asp, num_test, t_list, save_path):
     plt.savefig(average_asp_file+'.jpg', format='jpg', bbox_inches='tight')
     plt.show()
 
-    average_abs = np.abs(average)
+    average_abs = np.mean(loss_abs, axis=1)
     plt.figure(figsize=(26, 10))
     plt.plot(average_abs, label='average absolute Error')
     plt.plot(base_line, label='log(1,1)')
     plt.xticks(range(num_t), prot_t)
     plt.xlim(0, num_t)
+    plt.ylim(0, 0.1)
     plt.title('average absolute Error for each aspect ratio in log scale',
               fontsize=28)
     plt.legend(loc="upper right")
