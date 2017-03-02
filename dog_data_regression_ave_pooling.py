@@ -100,17 +100,17 @@ if __name__ == '__main__':
     t_loss = []
 
     # 超パラメータ
-    max_iteration = 200  # 繰り返し回数
+    max_iteration = 1000  # 繰り返し回数
     batch_size = 100  # ミニバッチサイズ
-    num_train = 20000  # 学習データ数
-    num_test = 500  # 検証データ数
+    num_train = 16500  # 学習データ数
+    num_valid = 500  # 検証データ数
     learning_rate = 0.01  # 学習率
     output_size = 256  # 生成画像サイズ
     crop_size = 224  # ネットワーク入力画像サイズ
     aspect_ratio_min = 1.0  # 最小アスペクト比の誤り
-    aspect_ratio_max = 2.0  # 最大アスペクト比の誤り
+    aspect_ratio_max = 4.0  # 最大アスペクト比の誤り
     crop = True
-    hdf5_filepath = r'E:\stanford_Dogs_Dataset\raw_dataset_binary\output_size_500\output_size_500.hdf5'  # データセットファイル保存場所
+    hdf5_filepath = r'E:\voc\variable_dataset\output_size_256\output_size_256.hdf5'  # データセットファイル保存場所
     output_location = 'C:\Users\yamane\Dropbox\correct_aspect_ratio'  # 学習結果保存場所
     # 学習結果保存フォルダ作成
     output_root_dir = os.path.join(output_location, file_name)
@@ -128,26 +128,22 @@ if __name__ == '__main__':
     loss_filename = os.path.join(output_root_dir, loss_filename)
     t_dis_filename = os.path.join(output_root_dir, t_dis_filename)
     # バッチサイズ計算
-    train_data = range(0, num_train)
-    test_data = range(num_train, num_train + num_test)
     num_batches_train = num_train / batch_size
-    num_batches_test = num_test / batch_size
+    num_batches_valid = num_valid / batch_size
     # stream作成
-    dog_stream_train, dog_stream_test = load_datasets.load_dog_stream(
-        hdf5_filepath, batch_size)
+    train_stream, valid_stream, test_stream = load_datasets.load_dog_stream(
+        hdf5_filepath, batch_size, num_train, num_batches_valid)
     # キューを作成、プロセススタート
     queue_train = Queue(10)
     process_train = Process(target=load_datasets.load_data,
-                            args=(queue_train, dog_stream_train, crop,
-                                  aspect_ratio_max, aspect_ratio_min,
-                                  output_size, crop_size))
+                            args=(queue_train, train_stream, crop,
+                                  aspect_ratio_max, output_size, crop_size))
     process_train.start()
-    queue_test = Queue(10)
-    process_test = Process(target=load_datasets.load_data,
-                           args=(queue_test, dog_stream_test, crop,
-                                 aspect_ratio_max, aspect_ratio_min,
-                                 output_size, crop_size))
-    process_test.start()
+    queue_valid = Queue(10)
+    process_valid = Process(target=load_datasets.load_data,
+                            args=(queue_valid, valid_stream, crop,
+                                  aspect_ratio_max, output_size, crop_size))
+    process_valid.start()
     # モデル読み込み
     model = Convnet().to_gpu()
     # Optimizerの設定
@@ -178,7 +174,7 @@ if __name__ == '__main__':
             total_time = time_end - time_origin
             epoch_loss.append(np.mean(losses))
 
-            loss_valid = model.loss_ave(queue_test, num_batches_test, True)
+            loss_valid = model.loss_ave(queue_valid, num_batches_valid, True)
             epoch_valid_loss.append(loss_valid)
             if loss_valid < loss_valid_best:
                 loss_valid_best = loss_valid
@@ -186,6 +182,7 @@ if __name__ == '__main__':
                 model_best = copy.deepcopy(model)
 
             # 訓練データでの結果を表示
+            print
             print "dog_data_regression_ave_pooling.py"
             print "epoch:", epoch
             print "time", epoch_time, "(", total_time, ")"
@@ -194,22 +191,25 @@ if __name__ == '__main__':
             print "loss[valid_best]:", loss_valid_best
             print "epoch[valid_best]:", epoch__loss_best
 
-            plt.plot(epoch_loss)
-            plt.plot(epoch_valid_loss)
-            plt.ylim(0, 0.5)
-            plt.title("loss")
-            plt.legend(["train", "valid"], loc="upper right")
-            plt.grid()
-            plt.show()
+            if (epoch % 10) == 0:
+                plt.figure(figsize=(16, 12))
+                plt.plot(epoch_loss)
+                plt.plot(epoch_valid_loss)
+                plt.ylim(0, 0.5)
+                plt.title("loss")
+                plt.legend(["train", "valid"], loc="upper right")
+                plt.grid()
+                plt.show()
 
-            # テスト用のデータを取得
-            X_test, T_test = queue_test.get()
-            t_loss = dog_data_regression.test_output(model_best, X_test,
-                                                     T_test, t_loss)
+            # 検証用のデータを取得
+            X_valid, T_valid = queue_valid.get()
+            t_loss = dog_data_regression.test_output(model_best, X_valid,
+                                                     T_valid, t_loss)
 
     except KeyboardInterrupt:
         print "割り込み停止が実行されました"
 
+    plt.figure(figsize=(16, 12))
     plt.plot(epoch_loss)
     plt.plot(epoch_valid_loss)
     plt.ylim(0, 0.5)
@@ -219,22 +219,16 @@ if __name__ == '__main__':
     plt.savefig(loss_filename)
     plt.show()
 
-    plt.plot(t_loss)
-    plt.title("t_disdance")
-    plt.grid()
-    plt.savefig(t_dis_filename)
-    plt.show()
-
     model_filename = os.path.join(output_root_dir, model_filename)
     serializers.save_npz(model_filename, model_best)
 
     process_train.terminate()
-    process_test.terminate()
+    process_valid.terminate()
     print 'max_iteration:', max_iteration
     print 'learning_rate:', learning_rate
     print 'batch_size:', batch_size
     print 'train_size', num_train
-    print 'valid_size', num_test
+    print 'valid_size', num_valid
     print 'output_size', output_size
     print 'crop_size', crop_size
     print 'aspect_ratio_min', aspect_ratio_min
