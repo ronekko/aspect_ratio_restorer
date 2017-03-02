@@ -168,7 +168,7 @@ def load_data(queue, stream, crop, aspect_ratio_max=3.0, output_size=256,
                 else:
                     X, T = data_padding(X[0], aspect_ratio_max, crop_size,
                                         random, t)
-                queue.put((X, T), timeout=0.05)
+                queue.put((X, T))
         except Full:
             print 'Full'
 
