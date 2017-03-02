@@ -8,10 +8,10 @@
 pip install fuel==0.2.0
 ```
 
-次にfuelのルートディレクトリを設定する。例えば `E:\Dataset\fuel` をfuelのルートディレクトリとして指定するなら、ホームディレクトリに `.fuelrc` ファイルを作成し、以下の内容で保存する:
+次にfuelのルートディレクトリを設定する。例えば `E:/Dataset/fuel` をfuelのルートディレクトリとして指定するなら、ホームディレクトリに `.fuelrc` ファイルを作成し、以下の内容で保存する:
 
 ```
-data_path: E:\Dataset\fuel
+data_path: E:/Dataset/fuel
 ```
 
 ### データセットをダウンロード
