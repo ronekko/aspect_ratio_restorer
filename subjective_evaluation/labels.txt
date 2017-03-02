@@ -1,0 +1,11 @@
+images/00001.jpg -0.4648
+images/00002.jpg -0.6383
+images/00003.jpg  0.3194
+images/00004.jpg  0.8340
+images/00005.jpg  0.7307
+images/00006.jpg -0.5881
+images/00007.jpg -0.7802
+images/00008.jpg  0.8059
+images/00009.jpg -0.3610
+images/00010.jpg  0.0419
+images/Black_Footed_Albatross_0049_796063.jpg 0.9459
