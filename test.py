@@ -53,7 +53,7 @@ def draw_graph(loss, loss_abs, success_asp, num_test, t_list, save_path):
     plt.savefig(average_abs_file+'.jpg', format='jpg', bbox_inches='tight')
     plt.show()
 
-    plt.figure(figsize=(26, 10))
+    plt.figure(figsize=(18, 10))
     plt.boxplot(loss)
     plt.xlim([np.log(1/3.5), np.log(3.5)])
     plt.xticks(range(num_t), prot_t)
@@ -67,7 +67,7 @@ def draw_graph(loss, loss_abs, success_asp, num_test, t_list, save_path):
     loss_dot = np.stack(loss, axis=0)
     loss_dot = loss_dot.reshape(num_t, num_test)
     average = np.mean(loss, axis=1)
-    plt.figure(figsize=(26, 10))
+    plt.figure(figsize=(18, 10))
     plt.plot(loss_dot, 'o', c='#348ABD')
     plt.plot(average, label='average')
     plt.xticks(range(num_t), prot_t)
@@ -79,7 +79,7 @@ def draw_graph(loss, loss_abs, success_asp, num_test, t_list, save_path):
     plt.savefig(dot_file+'.jpg', format='jpg', bbox_inches='tight')
     plt.show()
 
-    plt.figure(figsize=(26, 10))
+    plt.figure(figsize=(18, 10))
     plt.plot(average, label='average Error')
     plt.plot(base_line, label='log(1.1)')
     plt.plot(-base_line, label='log(1.1^-1)')
@@ -94,7 +94,7 @@ def draw_graph(loss, loss_abs, success_asp, num_test, t_list, save_path):
     plt.show()
 
     average_abs = np.mean(loss_abs, axis=1)
-    plt.figure(figsize=(26, 10))
+    plt.figure(figsize=(18, 10))
     plt.plot(average_abs, label='average absolute Error')
     plt.plot(base_line, label='log(1,1)')
     plt.xticks(range(num_t), prot_t)
@@ -132,7 +132,7 @@ if __name__ == '__main__':
     num_valid = 500
     num_test = 100
     success_asp = 1.1  # 修正成功とみなすアスペクト比
-    num_split = 50  # 歪み画像のアスペクト比の段階
+    num_split = 20  # 歪み画像のアスペクト比の段階
 
     loss_list = []
     loss_abs_list = []
