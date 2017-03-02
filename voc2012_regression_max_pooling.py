@@ -17,7 +17,7 @@ from chainer import cuda, optimizers, Chain, serializers
 import chainer.functions as F
 import chainer.links as L
 
-import dog_data_regression
+import voc2012_regression
 import load_datasets
 
 
@@ -203,8 +203,8 @@ if __name__ == '__main__':
 
             # 検証用のデータを取得
             X_valid, T_valid = queue_valid.get()
-            t_loss = dog_data_regression.test_output(model_best, X_valid,
-                                                     T_valid, t_loss)
+            t_loss = voc2012_regression.test_output(model_best, X_valid,
+                                                    T_valid, t_loss)
 
     except KeyboardInterrupt:
         print "割り込み停止が実行されました"
