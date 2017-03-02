@@ -1,5 +1,18 @@
 # correct aspect ratio
-## データセット作成手順  
+## データセット作成手順
+
+### fuelを準備する
+まずfuelをインストールする:
+
+```
+pip install fuel==0.2.0
+```
+
+次にfuelのルートディレクトリを設定する。例えば `E:\Dataset\fuel` をfuelのルートディレクトリとして指定するなら、ホームディレクトリに `.fuelrc` ファイルを作成し、以下の内容で保存する:
+
+```
+data_path: E:\Dataset\fuel
+```
 
 ### データセットをダウンロード
 -  [Stanford Dogs Dataset](http://vision.stanford.edu/aditya86/ImageNetDogs/) から[Images](http://vision.stanford.edu/aditya86/ImageNetDogs/images.tar) (757MB) をダウンロードする
