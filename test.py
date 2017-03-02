@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 from chainer import serializers
 
-import dog_data_regression_ave_pooling
+import voc2012_regression_max_pooling
 import load_datasets
 import utility
 
@@ -149,7 +149,7 @@ if __name__ == '__main__':
     # 結果を保存するフォルダを作成
     folder_path = utility.create_folder(save_root, folder_name)
     # モデル読み込み
-    model = dog_data_regression_ave_pooling.Convnet().to_gpu()
+    model = voc2012_regression_max_pooling.Convnet().to_gpu()
     # Optimizerの設定
     serializers.load_npz(model_file, model)
     # streamの取得

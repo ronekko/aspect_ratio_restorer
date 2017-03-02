@@ -13,7 +13,7 @@ from chainer import serializers
 
 import utility
 import load_datasets
-import dog_data_regression_ave_pooling
+import voc2012_regression_max_pooling
 import make_html
 
 
@@ -170,7 +170,7 @@ if __name__ == '__main__':
     ori_folder_path = utility.create_folder(test_folder_path, 'original')
 
     # モデル読み込み
-    model = dog_data_regression_ave_pooling.Convnet().to_gpu()
+    model = voc2012_regression_max_pooling.Convnet().to_gpu()
     serializers.load_npz(model_file, model)
 
     # streamを取得
