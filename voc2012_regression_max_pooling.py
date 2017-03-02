@@ -110,8 +110,8 @@ if __name__ == '__main__':
     aspect_ratio_min = 1.0  # 最小アスペクト比の誤り
     aspect_ratio_max = 4.0  # 最大アスペクト比の誤り
     crop = True
-    hdf5_filepath = r'E:\voc\variable_dataset\output_size_256\output_size_256.hdf5'  # データセットファイル保存場所
-    output_location = 'C:\Users\yamane\Dropbox\correct_aspect_ratio'  # 学習結果保存場所
+    # 学習結果保存場所
+    output_location = 'C:\Users\yamane\Dropbox\correct_aspect_ratio'
     # 学習結果保存フォルダ作成
     output_root_dir = os.path.join(output_location, file_name)
     folder_name = str(time_start) + '_asp_max_' + str(aspect_ratio_max)
@@ -131,8 +131,9 @@ if __name__ == '__main__':
     num_batches_train = num_train / batch_size
     num_batches_valid = num_valid / batch_size
     # stream作成
-    train_stream, valid_stream, test_stream = load_datasets.load_dog_stream(
-        hdf5_filepath, batch_size, num_train, num_batches_valid)
+    streams = load_datasets.load_voc2012_stream(
+        batch_size, num_train, num_batches_valid)
+    train_stream, valid_stream, test_stream = streams
     # キューを作成、プロセススタート
     queue_train = Queue(10)
     process_train = Process(target=load_datasets.load_data,

@@ -149,8 +149,6 @@ def draw_graph(loss, loss_abs, success_asp, num_test, save_root):
 if __name__ == '__main__':
     # テスト結果を保存する場所
     save_root = r'E:\demo'
-    # テスト用のhdf5ファイルのルートパス
-    hdf5_file = r'E:\voc\variable_dataset\output_size_256\output_size_256.hdf5'
     # テストに使うモデルのnpzファイルの場所
     model_file = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\dog_data_regression_ave_pooling\1485768519.06_asp_max_4.0\dog_data_regression_ave_pooling.npz'
     num_train = 16500  # 学習データ数
@@ -174,13 +172,14 @@ if __name__ == '__main__':
     serializers.load_npz(model_file, model)
 
     # streamを取得
-    stream_train, stream_valid, stream_test = load_datasets.load_dog_stream(
-        hdf5_file, batch_size)
+    streams = load_datasets.load_voc2012_stream(
+        batch_size, num_train, num_valid, num_test)
+    train_stream, valid_stream, test_stream = streams
 
     # 歪み画像の修正を実行
-    loss, loss_abs, target, predict = lossfun(model, stream_test)
+    loss, loss_abs, target, predict = lossfun(model, test_stream)
 
-    show_and_save(stream_test, target, predict, fix_folder_path,
+    show_and_save(test_stream, target, predict, fix_folder_path,
                   dis_folder_path, ori_folder_path)
 
     # 修正結果の誤差を描画

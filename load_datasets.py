@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 from multiprocessing import Process, Queue
 from Queue import Full
 
+import fuel
 from fuel.datasets.hdf5 import H5PYDataset
 from fuel.streams import DataStream
 from fuel.schemes import ShuffledScheme, SequentialScheme
@@ -22,8 +23,12 @@ import utility
 from datasets import RandomCircleSquareDataset
 
 
-def load_dog_stream(hdf5_filepath, batch_size, train_size=16500,
-                    validation_size=500, test_size=100, shuffle=False):
+def load_voc2012_stream(batch_size, train_size=16500, validation_size=500,
+                        test_size=100, shuffle=False):
+    fuel_root = fuel.config.data_path[0]
+    # データセットファイル保存場所
+    hdf5_filepath = os.path.join(
+        fuel_root, 'voc2012\hdf5_dataset\hdf5_dataset.hdf5')
     valid_size = train_size + validation_size
     test_size = valid_size + test_size
     indices_train = range(0, train_size)
@@ -171,50 +176,3 @@ def load_data(queue, stream, crop, aspect_ratio_max=3.0, output_size=256,
                 queue.put((X, T))
         except Full:
             print 'Full'
-
-
-if __name__ == '__main__':
-#    hdf5_filepath = r'E:\voc\raw_dataset\output_size_256\output_size_256.hdf5'
-#    hdf5_filepath = r'E:\voc2012\raw_dataset\output_size_500\output_size_500.hdf5'
-    hdf5_filepath = r'E:\voc\variable_dataset\output_size_256\output_size_256.hdf5'  # データセットファイル保存場所
-    assert os.path.exists(hdf5_filepath)
-    batch_size = 100
-    p = [0.3, 0.3, 0.4]  # [円の生成率、四角の生成率、円と四角の混合生成率]
-    aspect_ratio_max = 3.0
-    output_size = 256
-    crop_size = 224
-    crop = True
-
-#    draw_toy_image_class = RandomCircleSquareDataset(p=p)
-
-    dog_stream_train, dog_stream_valid, dog_stream_test = load_dog_stream(
-        hdf5_filepath, batch_size)
-#    toy_stream_train, toy_stream_test = load_toy_stream(batch_size)
-
-#    for batch in dog_stream_train.get_epoch_iterator():
-#        plt.imshow(batch[0][0])
-#        plt.show()
-
-    q_dog_train = Queue(10)
-    process_dog = Process(target=load_data,
-                          args=(q_dog_train, dog_stream_train, crop))
-
-    process_dog.start()
-
-#    q_toy_train = Queue(10)
-#    process_toy = Process(target=load_data,
-#                          args=(q_toy_train, toy_stream_train, False))
-#    process_toy.start()
-
-    for i in range(10):
-        X, T = q_dog_train.get()
-        image = np.transpose(X, (0, 2, 3, 1))
-        plt.imshow(image[0]/256.0)
-        plt.show()
-    process_dog.terminate()
-
-#    for i in range(10):
-#        X, T = q_toy_train.get()
-#        plt.imshow(X[0][0])
-#        plt.show()
-#    process_toy.terminate()

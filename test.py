@@ -17,7 +17,7 @@ import utility
 
 
 def fix(model, stream, t):
-    for it in stream_test.get_epoch_iterator():
+    for it in stream.get_epoch_iterator():
         x, t = load_datasets.data_crop(it[0], random=False, t=t)
     y = model.predict(x, True)
     error = t - y
@@ -122,8 +122,6 @@ if __name__ == '__main__':
     file_name = os.path.splitext(os.path.basename(__file__))[0]
     # テスト結果を保存するルートパス
     save_root = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\demo'
-    # hdf5ファイルのルートパス
-    hdf5_filepath = r'E:\voc\variable_dataset\output_size_256\output_size_256.hdf5'
     # モデルのルートパス
     model_file = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\dog_data_regression_ave_pooling\1485768519.06_asp_max_4.0\dog_data_regression_ave_pooling.npz'
     batch_size = 100
@@ -153,12 +151,13 @@ if __name__ == '__main__':
     # Optimizerの設定
     serializers.load_npz(model_file, model)
     # streamの取得
-    stream_train, stream_valid, stream_test = load_datasets.load_dog_stream(
-        hdf5_filepath, batch_size, num_train, num_valid, num_test)
+    streams = load_datasets.load_voc2012_stream(
+        batch_size, num_train, num_valid, num_test)
+    train_stream, valid_stream, test_stream = streams
     # アスペクト比ごとに歪み画像を作成し、修正誤差を計算
     for t in t_list:
         print t
-        loss, loss_abs = fix(model, stream_test, t)
+        loss, loss_abs = fix(model, test_stream, t)
         loss_list.append(loss)
         loss_abs_list.append(loss_abs)
     # 修正誤差をグラフに描画
