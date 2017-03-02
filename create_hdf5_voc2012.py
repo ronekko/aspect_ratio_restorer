@@ -15,11 +15,10 @@ from skimage import io
 import tqdm
 
 
-def create_path_list(data_location, dataset_root_dir):
+def create_path_list(dataset_root_dir):
     path_list = []
-    root_dir_path = os.path.join(data_location, dataset_root_dir)
 
-    for root, dirs, files in os.walk(root_dir_path):
+    for root, dirs, files in os.walk(dataset_root_dir):
         for file_name in tqdm.tqdm(files):
             file_path = os.path.join(root, file_name)
             image = io.imread(file_path)
@@ -94,9 +93,10 @@ def output_hdf5(path_list, output_root_dir):
     f.close()
 
 
-def main(data_location, output_location):
-    dataset_root_dir = r'VOCdevkit\VOC2012\JPEGImages'
-    output_root_dir = output_location
+def main(data_location):
+    # hdf５ファイルを保存する場所
+    output_root_dir = os.path.join(data_location, 'hdf5_dataset')
+    dataset_root_dir = os.path.join(data_location, 'VOCdevkit\VOC2012\JPEGImages')
 
     if os.path.exists(output_root_dir):
         print u"すでに存在するため終了します."
@@ -104,7 +104,7 @@ def main(data_location, output_location):
     else:
         os.makedirs(output_root_dir)
 
-    path_list = create_path_list(data_location, dataset_root_dir)
+    path_list = create_path_list(dataset_root_dir)
     shuffled_path_list = np.random.permutation(path_list)
     output_path_list(shuffled_path_list, output_root_dir)
     output_hdf5(shuffled_path_list, output_root_dir)
@@ -112,8 +112,6 @@ def main(data_location, output_location):
 
 if __name__ == '__main__':
     # PASCALVOC2012データセットの保存場所
-    data_location = r'E:\voc'
-    # hdf５ファイルを保存する場所
-    output_location = r'E:\voc\hdf5_dataset_c'
+    data_location = r'E:\voc2012'
 
-    main(data_location, output_location)
+    main(data_location)
