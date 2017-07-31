@@ -5,10 +5,12 @@ Created on Thu Jan 19 15:27:22 2017
 @author: yamane
 """
 
+from path import Path
 import os
 import numpy as np
 import matplotlib.pyplot as plt
 
+import chainer
 from chainer import serializers
 
 import utility
@@ -48,10 +50,10 @@ def show_and_save(stream, target, predict, save_path_f, save_path_d,
             dis_img = utility.change_aspect_ratio(img, t_r[batch][i], 1)
             fix_img = utility.change_aspect_ratio(dis_img, 1/y_r[batch][i], 1)
 
-            print '[test_data]:', i+1
-            print '[t_l]:', round(target[batch][i], 4), '\t[t_r]:', round(t_r[batch][i], 4)
-            print '[y_l]:', round(predict[batch][i], 4), '\t[y_r]:', round(y_r[batch][i], 4)
-            print '[e_l]:', round(e_l[i], 4), '\t[e_r]:', round(e_r[i], 4)
+            print('[test_data]:', i+1)
+            print('[t_l]:', np.round(target[batch][i], 4), '\t[t_r]:', np.round(t_r[batch][i], 4))
+            print('[y_l]:', np.round(predict[batch][i], 4), '\t[y_r]:', np.round(y_r[batch][i], 4))
+            print('[e_l]:', np.round(e_l[i], 4), '\t[e_r]:', np.round(e_r[i], 4))
 
             plt.figure(figsize=(16, 16))
             plt.subplot(131)
@@ -142,15 +144,17 @@ def draw_graph(loss, loss_abs, success_asp, num_test, save_root):
     for i in range(num_test):
         if loss_abs[0][i] < threshold:
             count += 1
-    print 'under log(1.1) =', count, '%'
-    print '[mean]:', np.mean(loss_abs)
+    print('under log(1.1) =', count, '%')
+    print('[mean]:', np.mean(loss_abs))
 
 
 if __name__ == '__main__':
     # テスト結果を保存する場所
-    save_root = r'E:\demo'
+#    save_root = r'E:\demo'
+    save_root = r'E:\yamane'
     # テストに使うモデルのnpzファイルの場所
-    model_file = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\dog_data_regression_ave_pooling\1485768519.06_asp_max_4.0\dog_data_regression_ave_pooling.npz'
+#    model_file = r'voc2012_regression_max_pooling\1489665734.69_asp_max_4.0\voc2012_regression_max_pooling.npz'
+    model_file = 'dog_data_regression_ave_pooling.npz'
     num_train = 16500  # 学習データ数
     num_valid = 500  # 検証データ数
     num_test = 100  # テストデータ数
@@ -159,17 +163,19 @@ if __name__ == '__main__':
     batch_size = 100
 
     # モデルのファイル名をフォルダ名にする
-    folder_name = model_file.split('\\')[-2]
+#    folder_name = model_file.split('\\')[-2]
+    folder_name = model_file.split('.')[-2]
 
     # テスト結果を保存するフォルダを作成
     test_folder_path = utility.create_folder(save_root, folder_name)
     fix_folder_path = utility.create_folder(test_folder_path, 'fix')
     dis_folder_path = utility.create_folder(test_folder_path, 'distorted')
     ori_folder_path = utility.create_folder(test_folder_path, 'original')
+    model_path = Path(save_root) / model_file
 
     # モデル読み込み
     model = voc2012_regression_max_pooling.Convnet().to_gpu()
-    serializers.load_npz(model_file, model)
+    serializers.load_npz(model_path, model)
 
     # streamを取得
     streams = load_datasets.load_voc2012_stream(
@@ -177,7 +183,8 @@ if __name__ == '__main__':
     train_stream, valid_stream, test_stream = streams
 
     # 歪み画像の修正を実行
-    loss, loss_abs, target, predict = lossfun(model, test_stream)
+    with chainer.using_config('train', False):
+        loss, loss_abs, target, predict = lossfun(model, test_stream)
 
     show_and_save(test_stream, target, predict, fix_folder_path,
                   dis_folder_path, ori_folder_path)

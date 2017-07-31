@@ -48,17 +48,17 @@ class Convnet(Chain):
         )
 
     def network(self, X, test):
-        h = F.relu(self.norm1_1(self.conv1_1(X), test=test))
+        h = F.relu(self.norm1_1(self.conv1_1(X)))
 
-        h = F.relu(self.norm2_1(self.conv2_1(h), test=test))
+        h = F.relu(self.norm2_1(self.conv2_1(h)))
 
-        h = F.relu(self.norm3_1(self.conv3_1(h), test=test))
+        h = F.relu(self.norm3_1(self.conv3_1(h)))
 
-        h = F.relu(self.norm4_1(self.conv4_1(h), test=test))
-        h = F.relu(self.norm4_2(self.conv4_2(h), test=test))
+        h = F.relu(self.norm4_1(self.conv4_1(h)))
+        h = F.relu(self.norm4_2(self.conv4_2(h)))
 
-        h = F.relu(self.norm5_1(self.conv5_1(h), test=test))
-        h = F.relu(self.norm5_2(self.conv5_2(h), test=test))
+        h = F.relu(self.norm5_1(self.conv5_1(h)))
+        h = F.relu(self.norm5_2(self.conv5_2(h)))
 
         h = F.max_pooling_2d(h, 7)
         y = self.l1(h)
@@ -111,7 +111,7 @@ if __name__ == '__main__':
     aspect_ratio_max = 4.0  # 最大アスペクト比の誤り
     crop = True
     # 学習結果保存場所
-    output_location = 'C:\Users\yamane\Dropbox\correct_aspect_ratio'
+    output_location = '.'
     # 学習結果保存フォルダ作成
     output_root_dir = os.path.join(output_location, file_name)
     folder_name = str(time_start) + '_asp_max_' + str(aspect_ratio_max)
@@ -183,17 +183,17 @@ if __name__ == '__main__':
                 model_best = copy.deepcopy(model)
 
             # 訓練データでの結果を表示
-            print
-            print "dog_data_regression_ave_pooling.py"
-            print "epoch:", epoch
-            print "time", epoch_time, "(", total_time, ")"
-            print "loss[train]:", epoch_loss[epoch]
-            print "loss[valid]:", loss_valid
-            print "loss[valid_best]:", loss_valid_best
-            print "epoch[valid_best]:", epoch__loss_best
+            print()
+            print("dog_data_regression_ave_pooling.py")
+            print("epoch:", epoch)
+            print("time", epoch_time, "(", total_time, ")")
+            print("loss[train]:", epoch_loss[epoch])
+            print("loss[valid]:", loss_valid)
+            print("loss[valid_best]:", loss_valid_best)
+            print("epoch[valid_best]:", epoch__loss_best)
 
             if (epoch % 10) == 0:
-                plt.figure(figsize=(16, 12))
+                plt.figure(figsize=(8, 6))
                 plt.plot(epoch_loss)
                 plt.plot(epoch_valid_loss)
                 plt.ylim(0, 0.5)
@@ -208,7 +208,7 @@ if __name__ == '__main__':
                                                     T_valid, t_loss)
 
     except KeyboardInterrupt:
-        print "割り込み停止が実行されました"
+        print("割り込み停止が実行されました")
 
     plt.figure(figsize=(16, 12))
     plt.plot(epoch_loss)
@@ -220,17 +220,17 @@ if __name__ == '__main__':
     plt.savefig(loss_filename)
     plt.show()
 
-    model_filename = os.path.join(output_root_dir, model_filename)
+#    model_filename = os.path.join(output_root_dir, model_filename)
     serializers.save_npz(model_filename, model_best)
 
     process_train.terminate()
     process_valid.terminate()
-    print 'max_iteration:', max_iteration
-    print 'learning_rate:', learning_rate
-    print 'batch_size:', batch_size
-    print 'train_size', num_train
-    print 'valid_size', num_valid
-    print 'output_size', output_size
-    print 'crop_size', crop_size
-    print 'aspect_ratio_min', aspect_ratio_min
-    print 'aspect_ratio_max', aspect_ratio_max
+    print('max_iteration:', max_iteration)
+    print('learning_rate:', learning_rate)
+    print('batch_size:', batch_size)
+    print('train_size', num_train)
+    print('valid_size', num_valid)
+    print('output_size', output_size)
+    print('crop_size', crop_size)
+    print('aspect_ratio_min', aspect_ratio_min)
+    print('aspect_ratio_max', aspect_ratio_max)

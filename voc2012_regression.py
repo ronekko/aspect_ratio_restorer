@@ -92,8 +92,8 @@ def test_output(model, X, T, t_loss):
     t_dis = predict_t - target_t
     t_loss.append(t_dis)
 
-    print 'predict t:', predict_t[0], 'target t:', target_t[0]
-    print 'predict r:', predict_r[0], 'target r:', target_r[0]
+    print('predict t:', predict_t[0], 'target t:', target_t[0])
+    print('predict r:', predict_r[0], 'target r:', target_r[0])
 
 #    plt.plot(t_loss)
 #    plt.title("t_disdance")
@@ -134,7 +134,7 @@ if __name__ == '__main__':
     aspect_ratio_max = 2.0  # 最大アスペクト比の誤り
     crop = True
     hdf5_filepath = r'E:\stanford_Dogs_Dataset\raw_dataset_binary\output_size_500\output_size_500.hdf5'  # データセットファイル保存場所
-    output_location = 'C:\Users\yamane\Dropbox\correct_aspect_ratio'  # 学習結果保存場所
+    output_location = r'C:\Users\yamane\Dropbox\correct_aspect_ratio'  # 学習結果保存場所
     # 学習結果保存フォルダ作成
     output_root_dir = os.path.join(output_location, file_name)
     folder_name = str(time_start) + '_asp_max_' + str(aspect_ratio_max)
@@ -208,13 +208,13 @@ if __name__ == '__main__':
                 model_best = copy.deepcopy(model)
 
             # 訓練データでの結果を表示
-            print "dog_data_regression.py"
-            print "epoch:", epoch
-            print "time", epoch_time, "(", total_time, ")"
-            print "loss[train]:", epoch_loss[epoch]
-            print "loss[valid]:", loss_valid
-            print "loss[valid_best]:", loss_valid_best
-            print "epoch[valid_best]:", epoch__loss_best
+            print("dog_data_regression.py")
+            print("epoch:", epoch)
+            print("time", epoch_time, "(", total_time, ")")
+            print("loss[train]:", epoch_loss[epoch])
+            print("loss[valid]:", loss_valid)
+            print("loss[valid_best]:", loss_valid_best)
+            print("epoch[valid_best]:", epoch__loss_best)
 
             plt.plot(epoch_loss)
             plt.plot(epoch_valid_loss)
@@ -229,7 +229,7 @@ if __name__ == '__main__':
             t_loss = test_output(model_best, X_test, T_test, t_loss)
 
     except KeyboardInterrupt:
-        print "割り込み停止が実行されました"
+        print("割り込み停止が実行されました")
 
     plt.plot(epoch_loss)
     plt.plot(epoch_valid_loss)
@@ -251,12 +251,12 @@ if __name__ == '__main__':
 
     process_train.terminate()
     process_test.terminate()
-    print 'max_iteration:', max_iteration
-    print 'learning_rate:', learning_rate
-    print 'batch_size:', batch_size
-    print 'train_size', num_train
-    print 'valid_size', num_test
-    print 'output_size', output_size
-    print 'crop_size', crop_size
-    print 'aspect_ratio_min', aspect_ratio_min
-    print 'aspect_ratio_max', aspect_ratio_max
+    print('max_iteration:', max_iteration)
+    print('learning_rate:', learning_rate)
+    print('batch_size:', batch_size)
+    print('train_size', num_train)
+    print('valid_size', num_test)
+    print('output_size', output_size)
+    print('crop_size', crop_size)
+    print('aspect_ratio_min', aspect_ratio_min)
+    print('aspect_ratio_max', aspect_ratio_max)
