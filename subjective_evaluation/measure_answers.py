@@ -51,9 +51,9 @@ if __name__ == '__main__':
     l_human = np.array(l_human)
     l_error = l_human - l_true
 
-    print 'Erros (l_human - l_true):'
-    print l_error
-    print
+    print('Erros (l_human - l_true):')
+    print(l_error)
+    print()
 
     image_numbers = np.arange(len(l_true)) + 1
     plt.plot(image_numbers, l_error.T, '.', markersize=10)
@@ -65,11 +65,26 @@ if __name__ == '__main__':
     plt.grid()
 
     average_absolute_error = np.absolute(l_error).mean()
-    print 'Average absolute error:', average_absolute_error
-    print
+    print('Average absolute error (log scale):', average_absolute_error)
+    print()
 
     subjectwise_aae = np.absolute(l_error).mean(axis=1)
-    print 'Individual scores'
+    print('Individual scores (log scale)')
     for rank, i in enumerate(np.argsort(subjectwise_aae)):
-        print '{:2} {:<11} {}'.format(
-            rank, subject_names[i], subjectwise_aae[i])
+        print('{:2} {:<11} {}'.format(
+            rank + 1, subject_names[i], subjectwise_aae[i]))
+    print()
+
+    print('Average absolute error: {:.2f} %'.format(
+        (np.exp(average_absolute_error) - 1) * 100))
+    print('Individual scores')
+    for rank, i in enumerate(np.argsort(subjectwise_aae)):
+        print('{:2} {:<11} {:.2f} %'.format(
+            rank + 1, subject_names[i], (np.exp(subjectwise_aae[i]) - 1) * 100)
+            )
+    print()
+
+    imagewise_aae = np.absolute(l_error).mean(axis=0)
+    print('Image-wise average absolute errors')
+    for i in np.argsort(imagewise_aae):
+        print('{:2} {}'.format(i + 1, imagewise_aae[i]))

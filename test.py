@@ -5,10 +5,12 @@ Created on Fri Jan 06 16:59:52 2017
 @author: yamane
 """
 
+from path import Path
 import os
 import numpy as np
 import matplotlib.pyplot as plt
 
+import chainer
 from chainer import serializers
 
 import voc2012_regression_max_pooling
@@ -19,7 +21,8 @@ import utility
 def fix(model, stream, t):
     for it in stream.get_epoch_iterator():
         x, t = load_datasets.data_crop(it[0], random=False, t=t)
-    y = model.predict(x, True)
+    with chainer.using_config('train' ,False):
+        y = model.predict(x, True)
     error = t - y
     error_abs = np.abs(t - y)
     return error, error_abs
@@ -113,17 +116,21 @@ def draw_graph(loss, loss_abs, success_asp, num_test, t_list, save_path):
     for i in range(num_test):
         if mean_loss_abs[i] < threshold:
             count += 1
-    print 'under log(1.1) =', count, '%'
-    print 'num_test', num_test
-    print 'model_file', model_file
+    print('under log(1.1) =', count, '%')
+    print('num_test', num_test)
+    print('model_file', model_file)
 
 
 if __name__ == '__main__':
     file_name = os.path.splitext(os.path.basename(__file__))[0]
     # テスト結果を保存するルートパス
-    save_root = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\demo'
+#    save_root = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\demo'
+    save_root = r'E:\yamane'
     # モデルのルートパス
-    model_file = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\dog_data_regression_ave_pooling\1485768519.06_asp_max_4.0\dog_data_regression_ave_pooling.npz'
+#    model_file = r'C:\Users\yamane\Dropbox\correct_aspect_ratio\dog_data_regression_ave_pooling\1485768519.06_asp_max_4.0\dog_data_regression_ave_pooling.npz'
+    model_file = 'dog_data_regression_ave_pooling.npz'
+    model_path = Path(save_root) / model_file
+
     batch_size = 100
     crop_size = 224  # 切り抜きサイズ
     num_train = 16500
@@ -135,7 +142,7 @@ if __name__ == '__main__':
     loss_list = []
     loss_abs_list = []
     t_list = []
-    folder_name = model_file.split('\\')[-2]
+    folder_name = model_file.split('.')[-2]
 
     num_t = num_split + 1
     t_step = np.log(3.0) * 2 / num_split
@@ -149,14 +156,14 @@ if __name__ == '__main__':
     # モデル読み込み
     model = voc2012_regression_max_pooling.Convnet().to_gpu()
     # Optimizerの設定
-    serializers.load_npz(model_file, model)
+    serializers.load_npz(model_path, model)
     # streamの取得
     streams = load_datasets.load_voc2012_stream(
         batch_size, num_train, num_valid, num_test)
     train_stream, valid_stream, test_stream = streams
     # アスペクト比ごとに歪み画像を作成し、修正誤差を計算
     for t in t_list:
-        print t
+        print(t)
         loss, loss_abs = fix(model, test_stream, t)
         loss_list.append(loss)
         loss_abs_list.append(loss_abs)

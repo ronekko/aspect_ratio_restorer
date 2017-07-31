@@ -11,7 +11,7 @@ import h5py
 import cv2
 import matplotlib.pyplot as plt
 from multiprocessing import Process, Queue
-from Queue import Full
+from six.moves.queue import Full
 
 import fuel
 from fuel.datasets.hdf5 import H5PYDataset
@@ -46,9 +46,9 @@ def load_voc2012_stream(batch_size, train_size=16500, validation_size=500,
     stream_train = DataStream(dataset, iteration_scheme=scheme_train)
     stream_valid = DataStream(dataset, iteration_scheme=scheme_valid)
     stream_test = DataStream(dataset, iteration_scheme=scheme_test)
-    stream_train.get_epoch_iterator().next()
-    stream_valid.get_epoch_iterator().next()
-    stream_test.get_epoch_iterator().next()
+    next(stream_train.get_epoch_iterator())
+    next(stream_valid.get_epoch_iterator())
+    next(stream_test.get_epoch_iterator())
 
     return stream_train, stream_valid, stream_test
 
@@ -175,4 +175,4 @@ def load_data(queue, stream, crop, aspect_ratio_max=3.0, output_size=256,
                                         random, t)
                 queue.put((X, T))
         except Full:
-            print 'Full'
+            print('Full')
