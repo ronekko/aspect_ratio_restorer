@@ -61,17 +61,24 @@ def draw_graph(loss, success_asp, num_test, t_list, save_path,
     base_line = np.full((num_test,), threshold)
 
     # histogram of signed errors
+    bins = 101
+    ytick_resolution = 20
+    y_upper_lim_in_unit = 4
     plt.rcParams["font.size"] = 14
     plt.figure(figsize=(10, 3))
 
-    plt.hist(loss.ravel(), normed=True, bins=101, range=(-1.0, 1.0))
-#    formatter = FuncFormatter(to_percent)
+    plt.hist(loss.ravel(), bins=101, range=(-1.0, 1.0), histtype='stepfilled')
     plt.legend(loc="upper left")
     plt.xlabel('Error', fontsize=20)
     plt.ylabel('Percentage', fontsize=20)
-    plt.ylim(0, 0.15)
-#    formatter = FuncFormatter(to_percent)
-#    plt.gca().yaxis.set_major_formatter(formatter)
+
+    ytick_unit = loss.size * bins / ytick_resolution
+    ytick_locs = np.arange(0, loss.size, ytick_unit)
+    ytick_labels = ytick_locs * bins / loss.size
+    ax = plt.gca()
+    ax.set_yticks(ytick_locs[:y_upper_lim_in_unit])
+    ax.set_yticklabels(ytick_labels[:y_upper_lim_in_unit])
+
     plt.grid()
     plt.savefig(hist_file+'.png', format='png', bbox_inches='tight')
     plt.show()
