@@ -7,9 +7,7 @@ Created on Fri Jan 06 16:59:52 2017
 
 import os
 import numpy as np
-import matplotlib
 import matplotlib.pyplot as plt
-from matplotlib.ticker import FuncFormatter
 import scipy.stats as st
 
 import chainer
@@ -28,19 +26,6 @@ def fix(model, stream, t, preprocess):
     error = t - y
     error_abs = np.abs(t - y)
     return error, error_abs
-
-
-def to_percent(y, position):
-    # Ignore the passed in position. This has the effect of scaling the default
-    # tick locations.
-    # https://matplotlib.org/examples/pylab_examples/histogram_percent_demo.html
-    s = str(100 * y)
-
-    # The percent symbol needs escaping in latex
-    if matplotlib.rcParams['text.usetex'] is True:
-        return s + r'$\%$'
-    else:
-        return s + '%'
 
 
 def draw_graph(loss, success_asp, num_test, t_list, save_path,
