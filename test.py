@@ -64,14 +64,11 @@ def draw_graph(loss, success_asp, num_test, t_list, save_path,
     plt.rcParams["font.size"] = 14
     plt.figure(figsize=(10, 3))
 
-    plt.hist(loss.ravel(), normed=True, bins=101, range=(-1.0, 1.0))
-#    formatter = FuncFormatter(to_percent)
-    plt.legend(loc="upper left")
+    plt.hist(loss.ravel(), density=True, bins=101, range=(-1.0, 1.0),
+             histtype='stepfilled')
     plt.xlabel('Error', fontsize=20)
-    plt.ylabel('Percentage', fontsize=20)
-    plt.ylim(0, 0.15)
-#    formatter = FuncFormatter(to_percent)
-#    plt.gca().yaxis.set_major_formatter(formatter)
+    plt.ylabel('Density', fontsize=20)
+
     plt.grid()
     plt.savefig(hist_file+'.png', format='png', bbox_inches='tight')
     plt.show()
