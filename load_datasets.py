@@ -71,7 +71,15 @@ def load_toy_stream(batch_size, ):
 
 
 def data_crop(X_batch, aspect_ratio_max=3.0, output_size=256, crop_size=224,
-              random=True, t=0):
+              random=True, t=0, preprocess=None):
+    if preprocess == 'edge':
+        kernel = np.array([[-1, -1, -1],
+                           [-1,  8, -1],
+                           [-1, -1, -1]
+                           ], np.float32)
+    elif preprocess == 'blur':
+        kernel = np.ones((5, 5), np.float32) / 25
+
     images = []
     ts = []
 
@@ -79,6 +87,10 @@ def data_crop(X_batch, aspect_ratio_max=3.0, output_size=256, crop_size=224,
         # 補間方法を乱数で設定
         u = np.random.randint(5)
         image = X_batch[b]
+
+        if preprocess is not None:
+            image = cv2.filter2D(image, -1, kernel)
+
         if random is False:
             t = t
         else:

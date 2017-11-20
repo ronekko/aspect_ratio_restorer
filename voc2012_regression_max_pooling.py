@@ -111,7 +111,7 @@ if __name__ == '__main__':
     aspect_ratio_max = 4.0  # 最大アスペクト比の誤り
     crop = True
     # 学習結果保存場所
-    output_location = '.'
+    output_location = r'C:\Users\yamane\Dropbox\correct_aspect_ratio'
     # 学習結果保存フォルダ作成
     output_root_dir = os.path.join(output_location, file_name)
     folder_name = str(time_start) + '_asp_max_' + str(aspect_ratio_max)
@@ -193,7 +193,7 @@ if __name__ == '__main__':
             print("epoch[valid_best]:", epoch__loss_best)
 
             if (epoch % 10) == 0:
-                plt.figure(figsize=(8, 6))
+                plt.figure(figsize=(16, 12))
                 plt.plot(epoch_loss)
                 plt.plot(epoch_valid_loss)
                 plt.ylim(0, 0.5)
@@ -220,7 +220,7 @@ if __name__ == '__main__':
     plt.savefig(loss_filename)
     plt.show()
 
-#    model_filename = os.path.join(output_root_dir, model_filename)
+    model_filename = os.path.join(output_root_dir, model_filename)
     serializers.save_npz(model_filename, model_best)
 
     process_train.terminate()
