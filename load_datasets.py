@@ -5,6 +5,8 @@ Created on Thu Dec 15 15:06:51 2016
 @author: yamane
 """
 
+# TODO: remove this file after edge/blur is implemented as separate functions.
+
 import os
 import numpy as np
 import h5py
