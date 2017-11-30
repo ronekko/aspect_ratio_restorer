@@ -15,32 +15,30 @@ import chainer
 import chainer.functions as F
 from chainer.dataset import concat_examples
 from chainer.iterators import MultithreadIterator
+from chainer.iterators import MultiprocessIterator
 
 from h5py_dataset import H5pyDataset
-from load_dataset import Transform
+from dataset_transform import Transform
 
 
 def train_eval(model, hparams):
     p = hparams
     xp = np if p.gpu < 0 else chainer.cuda.cupy
 
-    # Dataset
-    filepath = 'E:/tmp_voc2012/voc2012.hdf5'
-    max_horizontal_factor = 3.0
-    scaled_size = 256
-    crop_size = 224
-    dataset = H5pyDataset(filepath)
-    train_raw, valid_raw = chainer.datasets.split_dataset(dataset, 16500)
-    valid_raw, test_raw = chainer.datasets.split_dataset(valid_raw, 500)
-    test, _ = chainer.datasets.split_dataset(test_raw, 100)
-
-    transform = Transform(max_horizontal_factor, scaled_size, crop_size)
-    train = chainer.datasets.TransformDataset(train_raw, transform)
-    valid = chainer.datasets.TransformDataset(valid_raw, transform)
-    test = chainer.datasets.TransformDataset(test_raw, transform)
-    num_train = len(train)
-    num_valid = len(valid)
-    num_test = len(test)
+    # Load datasets (as iterators)
+    if p.filepath.endswith('.txt'):
+        it_train, it_valid, it_test = load_image_dataset_iterators(
+            p.filepath, p.batch_size, p.max_horizontal_factor,
+            p.scaled_size, p.crop_size)
+    elif p.filepath.endswith('.hdf5'):
+        it_train, it_valid, it_test = load_h5py_dataset_iterators(
+            p.filepath, p.batch_size, p.max_horizontal_factor,
+            p.scaled_size, p.crop_size)
+    else:
+        raise ValueError('"{}" is not supported.'.format(p.filepath))
+    num_train = len(it_train.dataset)
+    num_valid = len(it_valid.dataset)
+    num_test = len(it_test.dataset)
 
 #    # normalize by mean and stddev of the train set
 #    std_rgb = x_train.std((0, 2, 3), keepdims=True)
@@ -66,8 +64,9 @@ def train_eval(model, hparams):
         for epoch in range(p.num_epochs):
 
             epoch_losses = []
-            it_train = MultithreadIterator(train, p.batch_size, False, True, 7)
-            for batch in tqdm(it_train, total=num_train / p.batch_size):
+            num_batches = int(num_train / p.batch_size)
+            for b in tqdm(range(num_batches)):
+                batch = next(it_train)
                 # separate images and log aspect ratios
                 x_batch, l_batch = concat_examples(batch, p.gpu)
                 model.cleargrads()
@@ -83,9 +82,9 @@ def train_eval(model, hparams):
 
             # Evaluate the test set
             losses = []
-            it_valid = MultithreadIterator(
-                valid, p.batch_size, False, False, 7)
-            for batch in tqdm(it_valid, total=num_valid / p.batch_size):
+            num_batches = int(num_valid / p.batch_size)
+            for b in tqdm(range(num_batches)):
+                batch = next(it_valid)
                 # separate images and log aspect ratios
                 x_batch, l_batch = concat_examples(batch, p.gpu)
                 with chainer.no_backprop_mode(), \
@@ -129,3 +128,41 @@ def train_eval(model, hparams):
     best_model.cleargrads()
     return (best_model, best_valid_loss, best_epoch,
             train_loss_log, valid_loss_log)
+
+
+def load_image_dataset_iterators(filepath, batch_size, max_horizontal_factor,
+                                 scaled_size, crop_size, shuffle_train=True):
+    dataset = chainer.datasets.ImageDataset(filepath)
+
+    train_raw, valid_raw = chainer.datasets.split_dataset(dataset, 16500)
+    valid_raw, test_raw = chainer.datasets.split_dataset(valid_raw, 500)
+    test, _ = chainer.datasets.split_dataset(test_raw, 100)
+
+    transform = Transform(max_horizontal_factor, scaled_size, crop_size)
+    train = chainer.datasets.TransformDataset(train_raw, transform)
+    valid = chainer.datasets.TransformDataset(valid_raw, transform)
+    test = chainer.datasets.TransformDataset(test_raw, transform)
+
+    it_train = MultiprocessIterator(train, batch_size, True, shuffle_train, 5)
+    it_valid = MultiprocessIterator(valid, batch_size, True, False, 1, 5)
+    it_test = MultiprocessIterator(test, batch_size, True, False, 1, 1)
+    return it_train, it_valid, it_test
+
+
+def load_h5py_dataset_iterators(filepath, batch_size, max_horizontal_factor,
+                                scaled_size, crop_size, shuffle_train=True):
+    dataset = H5pyDataset(filepath)
+
+    train_raw, valid_raw = chainer.datasets.split_dataset(dataset, 16500)
+    valid_raw, test_raw = chainer.datasets.split_dataset(valid_raw, 500)
+    test, _ = chainer.datasets.split_dataset(test_raw, 100)
+
+    transform = Transform(max_horizontal_factor, scaled_size, crop_size)
+    train = chainer.datasets.TransformDataset(train_raw, transform)
+    valid = chainer.datasets.TransformDataset(valid_raw, transform)
+    test = chainer.datasets.TransformDataset(test_raw, transform)
+
+    it_train = MultithreadIterator(train, batch_size, True, shuffle_train, 6)
+    it_valid = MultithreadIterator(valid, batch_size, True, False, 1)
+    it_test = MultithreadIterator(test, batch_size, True, False, 1)
+    return it_train, it_valid, it_test
