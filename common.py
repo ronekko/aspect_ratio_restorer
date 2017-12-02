@@ -104,15 +104,15 @@ def train_eval(model, hparams):
             # Display the training log
             print('{}: loss = {}'.format(epoch, epoch_loss))
             print('valid loss = {}'.format(valid_loss))
-            print('best test acc = {} (# {})'.format(best_valid_loss,
-                                                     best_epoch))
+            print('best valid loss = {} (# {})'.format(best_valid_loss,
+                                                       best_epoch))
             print(p)
 
             plt.figure(figsize=(10, 4))
             plt.title('Loss')
             plt.plot(train_loss_log, label='train loss')
             plt.plot(valid_loss_log, label='valid loss')
-            plt.ylim(0, 1)
+            plt.ylim(0, 0.1)
             plt.legend()
             plt.grid()
             plt.show()
