@@ -23,23 +23,23 @@ class Resnet(chainer.Chain):
         n (tuple of ints):
             Numbers of blocks for each stages.
     '''
-    def __init__(self, n=[3, 3, 4, 4], channels=[32, 64, 128, 256, 512],
-                 use_bottleneck=False):
+    def __init__(self, ch_first_conv=32, num_blocks=[3, 3, 4, 4],
+                 ch_blocks=[64, 128, 256, 512], use_bottleneck=False):
         self.use_bottleneck = use_bottleneck
-        self.first_stage_in_ch = channels[1]
-        if not use_bottleneck:  # default case
-            ch_out = channels
-        else:
-            ch_out = [channels[0]] + [ch * 4 for ch in channels[1:]]
+        self.first_stage_in_ch = ch_blocks[0]
+        if use_bottleneck:
+            ch_blocks = [ch * 4 for ch in ch_blocks[1:]]
 
+        n = num_blocks
+        ch = ch_blocks
         super(Resnet, self).__init__(
-            conv1=L.Convolution2D(3, ch_out[0], ksize=3, stride=2, pad=1),
-            stage2=ResnetStage(n[0], ch_out[1], True, use_bottleneck),
-            stage3=ResnetStage(n[1], ch_out[2], True, use_bottleneck),
-            stage4=ResnetStage(n[2], ch_out[3], True, use_bottleneck),
-            stage5=ResnetStage(n[3], ch_out[4], True, use_bottleneck),
-            bn_out=L.BatchNormalization(ch_out[4]),
-            fc_out=L.Linear(ch_out[4], 1)
+            conv1=L.Convolution2D(3, ch_first_conv, ksize=3, stride=2, pad=1),
+            stage2=ResnetStage(n[0], ch[0], True, use_bottleneck),
+            stage3=ResnetStage(n[1], ch[1], True, use_bottleneck),
+            stage4=ResnetStage(n[2], ch[2], True, use_bottleneck),
+            stage5=ResnetStage(n[3], ch[3], True, use_bottleneck),
+            bn_out=L.BatchNormalization(ch[3]),
+            fc_out=L.Linear(ch[3], 1)
         )
 
     def __call__(self, x):
@@ -139,10 +139,10 @@ if __name__ == '__main__':
     hparams.crop_size = 224
 
     # Parameters for network
-    use_bottleneck = False
-    hparams.n = [3, 3, 4, 4]   # numbers of blocks for each of stages
-    hparams.channels = [32, 64, 128, 256, 512]
-#    hparams.channels = [64, 64, 128, 256, 512]
+    hparams.ch_first_conv = 32
+    hparams.num_blocks = [3, 4, 5, 6]
+    hparams.ch_blocks = [64, 128, 256, 512]
+    hparams.use_bottleneck = False
 
     # Parameters for optimization
     hparams.gpu = 0  # GPU>=0, CPU < 0
@@ -153,7 +153,8 @@ if __name__ == '__main__':
 #    hparams.weight_decay = 1e-4
 
     # Model and optimizer
-    model = Resnet(hparams.n, hparams.channels)
+    model = Resnet(hparams.ch_first_conv, hparams.num_blocks,
+                   hparams.ch_blocks, hparams.use_bottleneck)
 
     chainer.config.autotune = True
     result = common.train_eval(model, hparams)
