@@ -5,6 +5,7 @@ Created on Fri Dec  1 15:50:27 2017
 @author: sakurai
 """
 
+import time
 from types import SimpleNamespace
 
 import chainer
@@ -19,10 +20,10 @@ from links import BRCChain
 class Resnet(chainer.Chain):
     '''
     Args:
-        n (int):
-            Number of blocks in each group.
+        n (tuple of ints):
+            Numbers of blocks for each stages.
     '''
-    def __init__(self, n=2, channels=[32, 32, 64, 128, 256],
+    def __init__(self, n=[3, 3, 4, 4], channels=[32, 64, 128, 256, 512],
                  use_bottleneck=False):
         self.use_bottleneck = use_bottleneck
         self.first_stage_in_ch = channels[1]
@@ -32,11 +33,11 @@ class Resnet(chainer.Chain):
             ch_out = [channels[0]] + [ch * 4 for ch in channels[1:]]
 
         super(Resnet, self).__init__(
-            conv1=L.Convolution2D(3, ch_out[0], ksize=7, stride=2, pad=3),
-            stage2=ResnetStage(n, ch_out[1], False, use_bottleneck),
-            stage3=ResnetStage(n, ch_out[2], True, use_bottleneck),
-            stage4=ResnetStage(n, ch_out[3], True, use_bottleneck),
-            stage5=ResnetStage(n, ch_out[4], True, use_bottleneck),
+            conv1=L.Convolution2D(3, ch_out[0], ksize=3, stride=2, pad=1),
+            stage2=ResnetStage(n[0], ch_out[1], True, use_bottleneck),
+            stage3=ResnetStage(n[1], ch_out[2], True, use_bottleneck),
+            stage4=ResnetStage(n[2], ch_out[3], True, use_bottleneck),
+            stage5=ResnetStage(n[3], ch_out[4], True, use_bottleneck),
             bn_out=L.BatchNormalization(ch_out[4]),
             fc_out=L.Linear(ch_out[4], 1)
         )
@@ -45,7 +46,6 @@ class Resnet(chainer.Chain):
         x = self.conv1(x)
         if self.use_bottleneck:
             x = extend_channels(x, self.first_stage_in_ch * 4)
-        x = F.max_pooling_2d(x, ksize=3, stride=2)
         x = self.stage2(x)
         x = self.stage3(x)
         x = self.stage4(x)
@@ -131,8 +131,8 @@ if __name__ == '__main__':
 
     # Hyperparameters
     hparams = SimpleNamespace()
-    hparams.filepath = 'E:/voc2012/voc2012.hdf5'
-#    hparams.filepath = 'E:/voc2012/rgb_jpg_paths.txt'
+#    hparams.filepath = 'E:/voc2012/voc2012.hdf5'
+    hparams.filepath = 'E:/voc2012/rgb_jpg_paths.txt'
 #    hparams.filepath = 'E:/voc2012/rgb_jpg_paths_for_paper_v1.3.txt'
     hparams.max_horizontal_factor = 3.0
     hparams.scaled_size = 256
@@ -140,8 +140,8 @@ if __name__ == '__main__':
 
     # Parameters for network
     use_bottleneck = False
-    hparams.n = 4   # number of blocks in each group
-    hparams.channels = [32, 32, 64, 128, 256]
+    hparams.n = [3, 3, 4, 4]   # numbers of blocks for each of stages
+    hparams.channels = [32, 64, 128, 256, 512]
 #    hparams.channels = [64, 64, 128, 256, 512]
 
     # Parameters for optimization
@@ -153,10 +153,14 @@ if __name__ == '__main__':
 #    hparams.weight_decay = 1e-4
 
     # Model and optimizer
-    model = Resnet()
+    model = Resnet(hparams.n, hparams.channels)
 
     chainer.config.autotune = True
     result = common.train_eval(model, hparams)
 
     best_model, best_valid_loss, best_epoch = result[:3]
     train_loss_log, valid_loss_log = result[3:]
+
+    model_file_name = '{}, {}.chainer'.format(best_valid_loss,
+                                              time.strftime("%Y%m%dT%H%M%S"))
+    chainer.serializers.save_npz(model_file_name, model)
