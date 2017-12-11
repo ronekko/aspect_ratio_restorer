@@ -6,6 +6,7 @@ Created on Fri Nov 24 15:58:54 2017
 """
 
 import math
+import random
 
 from chainercv import transforms
 import cv2
@@ -145,7 +146,29 @@ def sample_log_aspect_ratio(
 
 
 # TODO: Implement a transform for edge extractor
+def random_blur(img, p_blur, max_ksize):
+    """Randomly applies random blur. More precisely, blur is applied with
+    probability `p_blur` (i.e. it does nothing to the input with probability
+    `1 - p_blur`). In addition, the `ksize` of blur is uniformly chosen from a
+    set of {3, 5, ..., max_ksize}, i.e. integer that is odd and larger than 3.
 
-# TODO: Implement a transform for blurer
+    Args:
+        img (~numpy.ndarray):
+            An image array to add black lines. This is in CHW format.
+        p_blur (float):
+            The probability that the blur is applied. p_blur \in (0, 1).
+        max_ksize (int):
+            The max of random `ksize`.
+    """
+
+    if random.random() > p_blur:  # the case that does nothing
+        return img
+
+    ksize = random.choice(range(3, max_ksize + 1, 2))
+    img = img.transpose(1, 2, 0)
+    img = cv2.blur(img, (ksize, ksize))
+    img = img.transpose(2, 0, 1)
+    return img
+
 
 # TODO: Implement a transform for adding black lines
