@@ -137,6 +137,8 @@ if __name__ == '__main__':
     hparams.max_horizontal_factor = 3.0
     hparams.scaled_size = 256
     hparams.crop_size = 224
+    hparams.p_blur = 0.3
+    hparams.blur_max_ksize = 3
 
     # Parameters for network
     hparams.ch_first_conv = 32
