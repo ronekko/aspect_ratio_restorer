@@ -132,8 +132,8 @@ if __name__ == '__main__':
     # Hyperparameters
     hparams = SimpleNamespace()
 #    hparams.filepath = 'E:/voc2012/voc2012.hdf5'
-    hparams.filepath = 'E:/voc2012/rgb_jpg_paths.txt'
-#    hparams.filepath = 'E:/voc2012/rgb_jpg_paths_for_paper_v1.3.txt'
+#    hparams.filepath = 'E:/voc2012/rgb_jpg_paths.txt'
+    hparams.filepath = 'E:/voc2012/rgb_jpg_paths_for_paper_v1.3.txt'
     hparams.max_horizontal_factor = 3.0
     hparams.scaled_size = 256
     hparams.crop_size = 224
