@@ -34,7 +34,8 @@ def train_eval(model, hparams):
         raise ValueError('"{}" is not supported.'.format(p.filepath))
     it_train, it_valid, it_test = loader(
         p.filepath, p.batch_size, p.max_horizontal_factor, p.scaled_size,
-        p.crop_size, p.p_blur, p.blur_max_ksize)
+        p.crop_size, p.p_blur, p.blur_max_ksize,
+        p.p_add_lines,  p.max_num_lines)
     num_train = len(it_train.dataset)
     num_valid = len(it_valid.dataset)
     num_test = len(it_test.dataset)
@@ -131,7 +132,9 @@ def train_eval(model, hparams):
 
 def load_image_dataset_iterators(filepath, batch_size, max_horizontal_factor,
                                  scaled_size, crop_size,
-                                 p_blur, blur_max_ksize, shuffle_train=True):
+                                 p_blur, blur_max_ksize,
+                                 p_add_lines,  max_num_lines,
+                                 shuffle_train=True):
     dataset = chainer.datasets.ImageDataset(filepath)
 
     train_raw, valid_raw = chainer.datasets.split_dataset(dataset, 16500)
@@ -152,7 +155,9 @@ def load_image_dataset_iterators(filepath, batch_size, max_horizontal_factor,
 
 def load_h5py_dataset_iterators(filepath, batch_size, max_horizontal_factor,
                                 scaled_size, crop_size,
-                                p_blur, blur_max_ksize, shuffle_train=True):
+                                p_blur, blur_max_ksize,
+                                p_add_lines,  max_num_lines,
+                                shuffle_train=True):
     dataset = H5pyDataset(filepath)
 
     train_raw, valid_raw = chainer.datasets.split_dataset(dataset, 16500)
