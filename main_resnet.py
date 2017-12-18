@@ -139,6 +139,8 @@ if __name__ == '__main__':
     hparams.crop_size = 224
     hparams.p_blur = 0.3
     hparams.blur_max_ksize = 3
+    hparams.p_add_lines = 0.3
+    hparams.max_num_lines = 2
 
     # Parameters for network
     hparams.ch_first_conv = 32
