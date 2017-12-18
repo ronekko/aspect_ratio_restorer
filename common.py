@@ -27,15 +27,14 @@ def train_eval(model, hparams):
 
     # Load datasets (as iterators)
     if p.filepath.endswith('.txt'):
-        it_train, it_valid, it_test = load_image_dataset_iterators(
-            p.filepath, p.batch_size, p.max_horizontal_factor,
-            p.scaled_size, p.crop_size)
+        loader = load_image_dataset_iterators
     elif p.filepath.endswith('.hdf5'):
-        it_train, it_valid, it_test = load_h5py_dataset_iterators(
-            p.filepath, p.batch_size, p.max_horizontal_factor,
-            p.scaled_size, p.crop_size)
+        loader = load_h5py_dataset_iterators
     else:
         raise ValueError('"{}" is not supported.'.format(p.filepath))
+    it_train, it_valid, it_test = loader(
+        p.filepath, p.batch_size, p.max_horizontal_factor, p.scaled_size,
+        p.crop_size, p.p_blur, p.blur_max_ksize)
     num_train = len(it_train.dataset)
     num_valid = len(it_valid.dataset)
     num_test = len(it_test.dataset)
@@ -131,14 +130,16 @@ def train_eval(model, hparams):
 
 
 def load_image_dataset_iterators(filepath, batch_size, max_horizontal_factor,
-                                 scaled_size, crop_size, shuffle_train=True):
+                                 scaled_size, crop_size,
+                                 p_blur, blur_max_ksize, shuffle_train=True):
     dataset = chainer.datasets.ImageDataset(filepath)
 
     train_raw, valid_raw = chainer.datasets.split_dataset(dataset, 16500)
     valid_raw, test_raw = chainer.datasets.split_dataset(valid_raw, 500)
     test, _ = chainer.datasets.split_dataset(test_raw, 100)
 
-    transform = Transform(max_horizontal_factor, scaled_size, crop_size)
+    transform = Transform(
+        max_horizontal_factor, scaled_size, crop_size, p_blur, blur_max_ksize)
     train = chainer.datasets.TransformDataset(train_raw, transform)
     valid = chainer.datasets.TransformDataset(valid_raw, transform)
     test = chainer.datasets.TransformDataset(test_raw, transform)
@@ -150,14 +151,16 @@ def load_image_dataset_iterators(filepath, batch_size, max_horizontal_factor,
 
 
 def load_h5py_dataset_iterators(filepath, batch_size, max_horizontal_factor,
-                                scaled_size, crop_size, shuffle_train=True):
+                                scaled_size, crop_size,
+                                p_blur, blur_max_ksize, shuffle_train=True):
     dataset = H5pyDataset(filepath)
 
     train_raw, valid_raw = chainer.datasets.split_dataset(dataset, 16500)
     valid_raw, test_raw = chainer.datasets.split_dataset(valid_raw, 500)
     test, _ = chainer.datasets.split_dataset(test_raw, 100)
 
-    transform = Transform(max_horizontal_factor, scaled_size, crop_size)
+    transform = Transform(
+        max_horizontal_factor, scaled_size, crop_size, p_blur, blur_max_ksize)
     train = chainer.datasets.TransformDataset(train_raw, transform)
     valid = chainer.datasets.TransformDataset(valid_raw, transform)
     test = chainer.datasets.TransformDataset(test_raw, transform)

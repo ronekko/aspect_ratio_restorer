@@ -18,13 +18,17 @@ class Transform(object):
     An input must be a CHW shaped, RGB ordered, [0, 255] valued image.
     """
     def __init__(self, max_horizontal_factor=4.0,
-                 scaled_size=256, crop_size=224):
+                 scaled_size=256, crop_size=224,
+                 p_blur=0.1, blur_max_ksize=5):
         self.max_horizontal_factor = max_horizontal_factor
         self.scaled_size = scaled_size
         self.crop_size = crop_size
+        self.p_blur = p_blur
+        self.blur_max_ksize = blur_max_ksize
 
     def __call__(self, chw):
         chw = chw.astype(np.uint8)
+        chw = random_blur(chw, self.p_blur, self.blur_max_ksize)
         chw = transforms.random_flip(chw, False, True)
         chw, param_stretch = random_stretch(chw, self.max_horizontal_factor,
                                             return_param=True)
