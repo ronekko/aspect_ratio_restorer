@@ -79,11 +79,12 @@ def inscribed_center_crop(img, return_param=False, copy=False):
     the input image.
 
     Args:
-        img (~numpy.ndarray): An image array to be cropped. This is in
-            CHW format.
-        return_param (bool): If :obj:`True`, this function returns information
-            of slices.
-        copy (bool): If :obj:`False`, a view of :obj:`img` is returned.
+        img (~numpy.ndarray):
+            An image array to be cropped. This is in CHW format.
+        return_param (bool):
+            If :obj:`True`, this function returns information of slices.
+        copy (bool):
+            If :obj:`False`, a view of :obj:`img` is returned.
 
     Returns:
         ~numpy.ndarray or (~numpy.ndarray, dict):
