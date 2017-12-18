@@ -20,16 +20,26 @@ class Transform(object):
     """
     def __init__(self, max_horizontal_factor=4.0,
                  scaled_size=256, crop_size=224,
-                 p_blur=0.1, blur_max_ksize=5):
+                 p_blur=0.1, blur_max_ksize=5,
+                 p_add_lines=0.1,  max_num_lines=2):
+        if not 0 <= p_blur <= 1:
+            raise ValueError('p_blur must be "0 <= p_blur <=1".')
+        if not 0 <= p_add_lines <= 1:
+            raise ValueError('p_add_lines must be "0 <= p_add_lines <=1".')
         self.max_horizontal_factor = max_horizontal_factor
         self.scaled_size = scaled_size
         self.crop_size = crop_size
         self.p_blur = p_blur
         self.blur_max_ksize = blur_max_ksize
+        self.p_add_lines = p_add_lines
+        self.max_num_lines = max_num_lines
 
     def __call__(self, chw):
         chw = chw.astype(np.uint8)
-        chw = random_blur(chw, self.p_blur, self.blur_max_ksize)
+        if self.p_blur > 0:
+            chw = random_blur(chw, self.p_blur, self.blur_max_ksize)
+        if self.p_add_lines > 0:
+            chw = add_random_lines(chw, self.p_add_lines, self.max_num_lines)
         chw = transforms.random_flip(chw, False, True)
         chw, param_stretch = random_stretch(chw, self.max_horizontal_factor,
                                             return_param=True)
