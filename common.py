@@ -6,6 +6,7 @@ Created on Thu Nov 30 14:59:19 2017
 """
 
 from copy import deepcopy
+import time
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -116,6 +117,11 @@ def train_eval(model, hparams):
             plt.legend()
             plt.grid()
             plt.show()
+
+            if epoch == 1000:
+                model_file_name = '{}, {}.chainer'.format(
+                    best_valid_loss, time.strftime("%Y%m%dT%H%M%S"))
+                chainer.serializers.save_npz(model_file_name, model)
 
     except KeyboardInterrupt:
         print('Interrupted by Ctrl+c!')
