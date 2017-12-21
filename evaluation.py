@@ -6,6 +6,8 @@ Created on Fri Jan 06 16:59:52 2017
 """
 
 import os
+from pathluib import Path
+
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.stats as st
@@ -13,7 +15,7 @@ import scipy.stats as st
 import chainer
 from chainer import serializers
 
-import voc2012_regression_max_pooling
+import main_resnet
 import load_datasets
 import utility
 
@@ -184,51 +186,102 @@ def draw_graph(loss, success_asp, num_test, t_list, save_path,
     print('model_file', model_file)
 
 
+class TransformTestdata(object):
+    """
+    An input must be a CHW shaped, RGB ordered, [0, 255] valued image.
+    """
+    def __init__(self, max_horizontal_factor=4.0,
+                 scaled_size=256, crop_size=224,
+                 p_blur=0.1, blur_max_ksize=5,
+                 p_add_lines=0.1,  max_num_lines=2):
+        if not 0 <= p_blur <= 1:
+            raise ValueError('p_blur must be "0 <= p_blur <=1".')
+        if not 0 <= p_add_lines <= 1:
+            raise ValueError('p_add_lines must be "0 <= p_add_lines <=1".')
+        self.max_horizontal_factor = max_horizontal_factor
+        self.scaled_size = scaled_size
+        self.crop_size = crop_size
+        self.p_blur = p_blur
+        self.blur_max_ksize = blur_max_ksize
+        self.p_add_lines = p_add_lines
+        self.max_num_lines = max_num_lines
+
+    def __call__(self, chw):
+        chw = chw.astype(np.uint8)
+        if self.p_blur > 0:
+            chw = random_blur(chw, self.p_blur, self.blur_max_ksize)
+        if self.p_add_lines > 0:
+            chw = add_random_lines(chw, self.p_add_lines, self.max_num_lines)
+        chw = transforms.random_flip(chw, False, True)
+        chw, param_stretch = random_stretch(chw, self.max_horizontal_factor,
+                                            return_param=True)
+        chw = inscribed_center_crop(chw)
+        chw = transforms.scale(chw, self.scaled_size)
+#        chw = transforms.center_crop(chw, (256, 256))
+        chw = transforms.random_crop(chw, (self.crop_size, self.crop_size))
+        chw = chw.astype(np.float32) / 256.0
+
+        return chw, param_stretch['log_ar'].astype(np.float32)
+
+def load_test_dataset(filepath, batch_size, scaled_size, crop_size):
+    dataset = chainer.datasets.ImageDataset(filepath)
+
+    _, test_raw = chainer.datasets.split_dataset(dataset, 17000)
+    test_raw, _ = chainer.datasets.split_dataset(test_raw, 100)
+
+    transform = Transform(
+        max_horizontal_factor, scaled_size, crop_size, p_blur, blur_max_ksize)
+    test = chainer.datasets.TransformDataset(test_raw, transform)
+
+    it_train = MultiprocessIterator(train, batch_size, True, shuffle_train, 5)
+    it_valid = MultiprocessIterator(valid, batch_size, True, False, 1, 5)
+    it_test = MultiprocessIterator(test, batch_size, True, False, 1, 1)
+    return it_train, it_valid, it_test
+
+
 if __name__ == '__main__':
-    file_name = os.path.splitext(os.path.basename(__file__))[0]
-    # テスト結果を保存するルートパス
-    save_root = r'demo'
+    save_root = r'evaluation_results'
     # モデルのルートパス
-    model_file = r'npz\dog_data_regression_ave_pooling.npz'
+    model_file = '0.000312133168336004, 20171206T000238, 4c22664.chainer'
+    data_file_path = 'E:/voc2012/rgb_jpg_paths_for_paper_v1.3.txt'
     batch_size = 100
     crop_size = 224  # 切り抜きサイズ
     num_train = 16500
     num_valid = 500
     num_test = 100
     success_asp = np.exp(0.12247601469)  # 修正成功とみなすアスペクト比
-    num_split = 20  # 歪み画像のアスペクト比の段階
+    ar_interval = (-3, 3)
+    num_split = 21  # 歪み画像のアスペクト比の段階
     # specify None or 'edge' or 'blur'
 #    preprocesses = [None, 'edge', 'blur']
     preprocesses = [None]
 
+    # モデル読み込み
+    model_path = Path(model_file)
+    model = main_resnet.Resnet()
+    serializers.load_npz(model_file, model)
+    model.to_gpu()
+
     for preprocess in preprocesses:
         loss_list = []
         loss_abs_list = []
-        t_list = []
-        folder_name = model_file.split('\\')[-2]
+        output_folder_name = model_path.stem
         if preprocess:
-            folder_name += '_' + preprocess
-
-        num_t = num_split + 1
-        t_step = np.log(3.0) * 2 / num_split
-        t = np.log(1/3.0)
-        for i in range(num_t):
-            t_list.append(t)
-            t = t + t_step
+            output_folder_name = output_folder_name / ', ' + preprocess
 
         # 結果を保存するフォルダを作成
-        folder_path = utility.create_folder(save_root, folder_name)
-        # モデル読み込み
-        model = voc2012_regression_max_pooling.Convnet().to_gpu()
-        # Optimizerの設定
-        serializers.load_npz(model_file, model)
+        output_folder_path = Path(save_root) / output_folder_name
+        output_folder_path.mkdir(parents=True)
+
+        t_list = np.linspace(
+            -np.log(ar_interval), np.log(ar_interval), num_split)
+
         # streamの取得
         streams = load_datasets.load_voc2012_stream(
             batch_size, num_train, num_valid, num_test)
         train_stream, valid_stream, test_stream = streams
         # アスペクト比ごとに歪み画像を作成し、修正誤差を計算
         for t in t_list:
-#            print(t)
             with chainer.no_backprop_mode(), \
                     chainer.using_config('train', False):
                 loss, loss_abs = fix(model, test_stream, t, preprocess)
