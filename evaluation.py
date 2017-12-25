@@ -32,9 +32,6 @@ def draw_graph(l_pred, l_gt, baseline_ar, output_folder_path,
     error_abs = np.abs(error)
     threshold = np.log(baseline_ar)
     base_line = np.full((num_examples,), threshold)
-    xticks_num = 5
-    xticks_loc = np.linspace(0, num_level, xticks_num)
-    xticks_label = np.linspace(-1, 1, xticks_num)
 
     # histogram of signed errors
     plt.rcParams["font.size"] = 14
@@ -43,32 +40,11 @@ def draw_graph(l_pred, l_gt, baseline_ar, output_folder_path,
              histtype='stepfilled')
     plt.xlabel('Error', fontsize=20)
     plt.ylabel('Density', fontsize=20)
-#    plt.legend(['Blur image'])
 
     plt.grid()
     error_hist_path = str(output_folder_path / 'error_hist.png')
     plt.savefig(error_hist_path, format='png', bbox_inches='tight')
     plt.show()
-
-#    # per image, averaged over distortion levels (std version)
-#    plt.rcParams["font.size"] = 14
-#    mean_error_abs = np.mean(error_abs, axis=0)
-#    std_abs = np.std(error_abs, axis=0)
-#    plt.figure(figsize=(10, 3))
-#    plt.errorbar(range(num_examples), mean_error_abs, marker='o', linewidth=0,
-#                 elinewidth=1.5, yerr=std_abs, label='avg. abs. error + std')
-##    plt.plot(base_line, label='log(1.1303)')
-#    plt.plot(np.linspace(-1000, 1000, len(base_line)), base_line,
-#             label='avg. abs. human error')
-#    plt.legend(loc="upper left")
-#    plt.xlabel('Image ID of test data', fontsize=20)
-#    plt.ylabel('Avg abs. error in log', fontsize=20)
-#    plt.xlim(-1, 100)
-#    plt.ylim(0, max(mean_error_abs)+max(std_abs)+0.1)
-#    plt.grid()
-#    image_wise_aae_std_path = str(output_folder_path / 'image_wise_aae_std.png')
-#    plt.savefig(image_wise_aae_std_path, format='png', bbox_inches='tight')
-#    plt.show()
 
     # per image, averaged over distortion levels (confidence interval version)
     plt.rcParams["font.size"] = 14
@@ -87,76 +63,11 @@ def draw_graph(l_pred, l_gt, baseline_ar, output_folder_path,
     plt.xlabel('Image ID of test data', fontsize=20)
     plt.ylabel('Avg abs. error in log', fontsize=20)
     plt.xlim(*xlim)
-#    plt.ylim(0, max(mean_loss_abs)+max(std_abs)+0.1)
     plt.ylim(0, threshold+0.01)
     plt.grid()
     image_wise_aae_ci_path = str(output_folder_path / 'image_wise_aae_ci.png')
     plt.savefig(image_wise_aae_ci_path, format='png', bbox_inches='tight')
     plt.show()
-
-#    # per distortion, averaged signed errors (box plot)
-#    plt.figure(figsize=(9, 3))
-#    plt.boxplot(error)
-#    plt.xlim([np.log(1/3.5), np.log(3.5)])
-#    plt.xticks(range(num_t), prot_t)
-#    plt.title('Error for each aspect ratio in log scale', fontsize=24)
-#    plt.xlabel('Order of aspect ratio in log scale', fontsize=24)
-#    plt.ylabel('Error(t-y) in log scale', fontsize=24)
-#    plt.grid()
-#    plt.savefig(loss_file+'.png', format='png', bbox_inches='tight')
-#    plt.show()
-
-#    # per distortion, averaged signed errors
-#    loss_dot = np.stack(error, axis=0)
-#    loss_dot = loss_dot.reshape(num_level, num_examples)
-#    average = np.mean(error, axis=1)
-#    plt.figure(figsize=(9, 3))
-#    plt.plot(loss_dot, 'o', c='#348ABD')
-#    plt.plot(average, label='average')
-#    plt.xticks(xticks_loc, xticks_label)
-#    plt.title('Error for each aspect ratio in log scale', fontsize=24)
-#    plt.legend(loc="upper left", fontsize=20)
-#    plt.xlabel('Order of aspect ratio in log scale', fontsize=24)
-#    plt.ylabel('Error(t-y) in log scale', fontsize=24)
-#    plt.grid()
-#    level_wise_ase_std_path = output_folder_path / 'level_wise_ase_std.png'
-#    plt.savefig(level_wise_ase_std_path, format='png', bbox_inches='tight')
-#    plt.show()
-
-#    # per distortion, averaged signed errors
-#    plt.figure(figsize=(9, 3))
-#    plt.plot(average, label='average error')
-#    plt.plot(base_line, label='log(1.1303)')
-#    plt.plot(-base_line, label='log(1.1303^-1)')
-#    plt.xticks(xticks_loc, xticks_label)
-#    plt.xlim(-0.5, num_level)
-#    plt.title('average Error for each aspect ratio in log scale', fontsize=24)
-#    plt.legend(loc="upper left", fontsize=20)
-#    plt.xlabel('Order of aspect ratio in log scale', fontsize=24)
-#    plt.ylabel('average Error(t-y) in log scale', fontsize=24)
-#    plt.grid()
-##    average_asp_file = os.path.join(save_path, 'average_asp')
-##    plt.savefig(average_asp_file+'.png', format='png', bbox_inches='tight')
-#    plt.show()
-
-#    # per distortion level, averaged over images (std version)
-#    average_abs = np.mean(error_abs, axis=1)
-#    std_abs = np.std(error_abs, axis=1)
-#    plt.figure(figsize=(10, 3))
-#    plt.errorbar(range(num_level), average_abs, yerr=std_abs,
-#                 label='avg. abs. error + std')
-#    plt.plot(np.linspace(-100, 100, len(base_line)), base_line,
-#             label='avg. abs. human error')
-#    plt.xticks(xticks_loc, xticks_label)
-#    plt.xlim(-0.5, num_level - 0.5)
-#    plt.ylim(0, max(mean_loss_abs)+0.05)
-#    plt.legend(loc="upper right")
-#    plt.xlabel('Distortion of aspect ratio in log scale', fontsize=20)
-#    plt.ylabel('Avg. abs. error in log', fontsize=20)
-#    plt.grid()
-#    level_wise_aae_std_path = output_folder_path / 'level_wise_aae_std.png'
-#    plt.savefig(level_wise_aae_std_path, format='png', bbox_inches='tight')
-#    plt.show()
 
     # per distortion level, averaged over images (confidence interval version)
     average_abs = np.mean(error_abs, axis=1)
@@ -164,8 +75,6 @@ def draw_graph(l_pred, l_gt, baseline_ar, output_folder_path,
     lcbs, ucbs = st.t.interval(
         0.95, num_level - 1, loc=average_abs, scale=sems)
     plt.figure(figsize=(10, 3))
-#    plt.errorbar(np.arange(num_level) + 0.5, average_abs, yerr=(lcbs, ucbs),
-#                 label='avg. abs. error + 95% CI')
     plt.errorbar(l_gt[:, 0], average_abs, yerr=(lcbs, ucbs),
                  label='avg. abs. error + 95% CI')
     base_line = np.full((2,), threshold)
@@ -182,6 +91,7 @@ def draw_graph(l_pred, l_gt, baseline_ar, output_folder_path,
     plt.savefig(level_wise_aae_ci_path, format='png', bbox_inches='tight')
     plt.show()
 
+    # save text
     success = error_abs < threshold
     avg_abs_error = error_abs.mean()
     texts = []
@@ -300,9 +210,9 @@ if __name__ == '__main__':
     data_file_path = 'E:/voc2012/rgb_jpg_paths_for_paper_v1.3.txt'
     model_files = [
         '0.000312133168336004, 20171206T000238, 4c22664.chainer',  # normal
-#        '0.00021331777679733932, 20171222T020337, 0b9fee8.chainer',  # random line
-#        '0.0008955627563409507, 20171213T025642, ac596e6.chainer',  # random blur
-#        '0.0012712525203824043, 20171220T025634, 0b9fee8.chainer'  # random line & blur
+        '0.00021331777679733932, 20171222T020337, 0b9fee8.chainer',  # random line
+        '0.0008955627563409507, 20171213T025642, ac596e6.chainer',  # random blur
+        '0.0012712525203824043, 20171220T025634, 0b9fee8.chainer'  # random line & blur
         ]
     batch_size = 100
     scaled_size = 256
