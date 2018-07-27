@@ -9,11 +9,9 @@ import time
 from types import SimpleNamespace
 
 import chainer
-import chainer.functions as F
-import chainer.links as L
 
-import common
-from links import Resnet
+from aspect_ratio_restorer import common
+from aspect_ratio_restorer.links import Resnet
 
 
 if __name__ == '__main__':
