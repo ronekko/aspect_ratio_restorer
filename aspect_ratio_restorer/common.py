@@ -18,8 +18,8 @@ from chainer.dataset import concat_examples
 from chainer.iterators import MultithreadIterator
 from chainer.iterators import MultiprocessIterator
 
-from h5py_dataset import H5pyDataset
-from dataset_transform import Transform
+from .h5py_dataset import H5pyDataset
+from .dataset_transform import Transform
 
 
 def train_eval(model, hparams):

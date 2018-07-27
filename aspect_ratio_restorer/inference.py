@@ -12,9 +12,9 @@ import numpy as np
 import chainer
 from chainer.dataset.download import get_dataset_directory, cached_download
 
-from evaluation import stretch
-from evaluation import TransformTestdata
-from links import Resnet
+from .evaluation import stretch
+from .evaluation import TransformTestdata
+from .links import Resnet
 
 
 class Restorer(object):

@@ -9,7 +9,7 @@ import chainer
 import chainer.functions as F
 import chainer.links as L
 
-from functions import extend_channels
+from .functions import extend_channels
 
 
 class Resnet(chainer.Chain):

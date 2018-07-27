@@ -18,8 +18,8 @@ from chainer.iterators import MultiprocessIterator
 from chainer import serializers
 from chainercv import transforms
 
-import dataset_transform
-from links import Resnet
+from . import dataset_transform
+from .links import Resnet
 #import load_datasets
 
 
