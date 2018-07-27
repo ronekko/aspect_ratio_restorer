@@ -20,7 +20,8 @@ import main_resnet
 class Restorer(object):
 
     _model_url = (
-        'https://github.com/ronekko/model_parameters/releases/download/v1/'
+        'https://github.com/ronekko/aspect_ratio_restorer/'
+        'releases/download/v0.1/'
         'resnet101-20171206T000238-4c22664.npz')
 
     def __init__(self):
