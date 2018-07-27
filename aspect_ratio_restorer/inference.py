@@ -12,9 +12,9 @@ import numpy as np
 import chainer
 from chainer.dataset.download import get_dataset_directory, cached_download
 
-from evaluation import stretch
-from evaluation import TransformTestdata
-import main_resnet
+from .evaluation import stretch
+from .evaluation import TransformTestdata
+from .links import Resnet
 
 
 class Restorer(object):
@@ -25,7 +25,7 @@ class Restorer(object):
         'resnet101-20171206T000238-4c22664.npz')
 
     def __init__(self):
-        self.net = main_resnet.Resnet(
+        self.net = Resnet(
             32, [3, 4, 5, 6], [64, 128, 256, 512], False)
 
         npz_path = download_model(

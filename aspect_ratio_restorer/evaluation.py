@@ -18,8 +18,8 @@ from chainer.iterators import MultiprocessIterator
 from chainer import serializers
 from chainercv import transforms
 
-import dataset_transform
-import main_resnet
+from . import dataset_transform
+from .links import Resnet
 #import load_datasets
 
 
@@ -227,7 +227,7 @@ if __name__ == '__main__':
     for model_file in model_files:
         # モデル読み込み
         model_path = Path(model_file)
-        model = main_resnet.Resnet(
+        model = Resnet(
             32, [3, 4, 5, 6], [64, 128, 256, 512], False)
         serializers.load_npz(model_file, model)
         model.to_gpu()
